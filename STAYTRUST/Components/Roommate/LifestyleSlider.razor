@@ -1,0 +1,49 @@
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SelectedValue { get; set; } = string.Empty;
+
+    [Parameter]
+    public int Value { get; set; }
+
+    [Parameter]
+    public string LeftLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string CenterLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RightLabel { get; set; } = string.Empty;
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newValue))
+        {
+            Value = newValue;
+            await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+
+    [Parameter]
+    public EventCallback<int> ValueChanged { get; set; }
+}
+
+<div class="flex flex-col gap-4">
+    <div class="flex justify-between">
+        <label class="font-medium">@Title</label>
+        <span class="text-primary text-sm bg-primary/10 px-2 py-1 rounded">@SelectedValue</span>
+    </div>
+    
+    <input class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb" 
+           max="100" min="0" type="range" 
+           value="@Value" 
+           @oninput="OnValueChanged" />
+           
+    <div class="flex justify-between text-xs text-slate-500">
+        <span>@LeftLabel</span>
+        <span>@CenterLabel</span>
+        <span>@RightLabel</span>
+    </div>
+</div>

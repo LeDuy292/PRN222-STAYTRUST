@@ -1,0 +1,34 @@
+@code {
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsActive { get; set; }
+
+    [Parameter]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+}
+
+@if (IsActive)
+{
+    <button class="flex h-10 items-center gap-2 px-4 rounded-xl bg-primary text-background-dark font-bold text-sm shadow-lg shadow-primary/20" @onclick="OnClick">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <span class="material-symbols-outlined text-lg">@Icon</span>
+        }
+        @Label
+    </button>
+}
+else
+{
+    <button class="flex h-10 items-center gap-2 px-4 rounded-xl glass-card hover:bg-primary/10 transition-colors text-sm font-medium" @onclick="OnClick">
+        @Label 
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <span class="material-symbols-outlined text-sm">@Icon</span>
+        }
+    </button>
+}

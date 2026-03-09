@@ -1,0 +1,20 @@
+@code {
+    [Parameter]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+}
+
+<div class="flex gap-4">
+    <div class="h-12 w-12 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-primary">@Icon</span>
+    </div>
+    <div>
+        <h4 class="font-bold text-lg">@Title</h4>
+        <p class="text-slate-400 text-sm">@Description</p>
+    </div>
+</div>
