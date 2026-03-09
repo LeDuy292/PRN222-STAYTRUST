@@ -1,0 +1,641 @@
+@page "/landlord/home"
+@layout LandlordLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>STAYTRUST - Landlord Portal</PageTitle>
+
+<HeadContent>
+    <style>
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 1s ease-out both; }
+        .animate-fadeInUp { animation: fadeInUp 1s ease-out both; }
+        .animate-fadeInDown { animation: fadeInDown 1s ease-out both; }
+    </style>
+</HeadContent>
+
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+
+                <!-- Logo -->
+                <a href="/landlord/home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fas fa-home text-xl text-white"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
+                        <div class="text-xs text-gray-400">Landlord Portal</div>
+                    </div>
+                </a>
+
+                <!-- Nav Links -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/landlord/dashboard" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Dashboard</a>
+                    <a href="/landlord/properties" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Properties</a>
+                    <a href="/landlord/prime" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Prime Plans</a>
+                    <a href="/landlord/features" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Features</a>
+                </div>
+
+                <!-- User Area -->
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <i class="fas fa-bell text-xl text-gray-300"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-cyan-500 rounded-full"></span>
+                    </button>
+                    <div class="relative">
+                        <button @onclick="() => showUserMenu = !showUserMenu"
+                                class="flex items-center gap-3 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl transition-colors border border-gray-700/50">
+                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">CQ</div>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold">Chủ Quản</div>
+                                <div class="text-xs text-gray-400">Landlord</div>
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
+                                <a href="/landlord/dashboard" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span>
+                                </a>
+                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-home text-blue-400"></i><span>My Properties</span>
+                                </a>
+                                <a href="/landlord/settings" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-cog text-gray-400"></i><span>Settings</span>
+                                </a>
+                                <div class="border-t border-gray-700"></div>
+                                <button @onclick='() => Nav.NavigateTo("/auth")'
+                                        class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors w-full text-left text-red-400">
+                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== HERO SECTION ========== -->
+    <section id="hero" class="relative min-h-screen flex items-center justify-center px-6 py-20 mt-20"
+             style="transform: translateY(@(scrollY * 0.3)px)">
+        <div class="absolute inset-0 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=2560&h=1440&fit=crop&q=95"
+                 alt="Modern luxury apartment building" class="w-full h-full object-cover opacity-90" />
+            <div class="absolute inset-0 bg-gradient-to-b from-gray-900/40 via-gray-900/30 to-gray-900/60"></div>
+            <div class="absolute top-20 left-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay:1s"></div>
+            <div class="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay:2s"></div>
+        </div>
+
+        <div class="relative z-10 max-w-6xl mx-auto text-center">
+            <div class="mb-8 inline-block">
+                <span class="px-6 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 rounded-full text-cyan-400 font-semibold text-sm backdrop-blur-lg animate-fadeIn">
+                    🏠 Welcome back, Landlord!
+                </span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black mb-6 animate-fadeInUp">
+                <span class="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">STAYTRUST</span>
+            </h1>
+            <p class="text-2xl md:text-3xl font-bold mb-4 text-cyan-300 animate-fadeInUp" style="animation-delay:0.2s">
+                Your All-in-One Rental Management Platform
+            </p>
+            <p class="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto animate-fadeInUp" style="animation-delay:0.4s">
+                Manage properties, automate billing, and grow your rental business with AI-powered tools
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style="animation-delay:0.6s">
+                <a href="/landlord/dashboard"
+                   class="group relative px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/50">
+                    <span class="relative z-10 flex items-center justify-center gap-2">
+                        <i class="fas fa-chart-line"></i>
+                        Go to Dashboard
+                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </span>
+                </a>
+                <a href="/landlord/properties"
+                   class="group px-8 py-4 bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-xl font-bold text-lg hover:border-cyan-500 transition-all duration-300 hover:scale-105">
+                    <span class="flex items-center justify-center gap-2">
+                        <i class="fas fa-home"></i>
+                        Manage Properties
+                    </span>
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20 animate-fadeInUp" style="animation-delay:0.8s">
+                @foreach (var stat in stats)
+                {
+                    <div class="group relative bg-gray-800/30 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-@(stat.IconClass) text-4xl text-@(stat.Color)-400 mb-3 block mx-auto group-hover:scale-110 transition-transform"></i>
+                        <div class="text-3xl font-bold mb-1">@stat.Value</div>
+                        <div class="text-sm text-gray-400">@stat.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
+            <div class="w-6 h-10 border-2 border-cyan-500 rounded-full flex items-start justify-center p-2">
+                <div class="w-1 h-3 bg-cyan-500 rounded-full animate-pulse"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRIME PACKAGES ========== -->
+    <section id="prime" class="py-20 px-6 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-4">
+                    <span class="px-4 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-full text-yellow-400 font-semibold text-sm">
+                        <i class="fas fa-crown mr-2"></i>PRIME PACKAGES
+                    </span>
+                </div>
+                <h2 class="text-5xl font-black mb-6">
+                    <span class="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Unlock Premium Features</span>
+                </h2>
+                <p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                    Stand out from competitors with verified badges, AI automation, and priority placement
+                </p>
+            </div>
+
+            <!-- Prime Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
+                @foreach (var (feature, index) in primeFeatures.Select((f, i) => (f, i)))
+                {
+                    <div class="group relative bg-gray-800/50 backdrop-blur-lg rounded-2xl overflow-hidden border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-500 hover:scale-105"
+                         style="animation: fadeInUp 0.6s ease-out @(index * 0.1)s both">
+                        <div class="relative h-48 overflow-hidden">
+                            <img src="@feature.ImageUrl" alt="@feature.Title"
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent"></div>
+                            <div class="absolute top-4 right-4 w-16 h-16 bg-@(feature.Color)-600/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
+                                <i class="fas fa-@(feature.IconClass) text-3xl text-white"></i>
+                            </div>
+                        </div>
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold mb-3">@feature.Title</h3>
+                            <p class="text-gray-400">@feature.Description</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pricing Plans -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                @foreach (var (plan, index) in pricingPlans.Select((p, i) => (p, i)))
+                {
+                    <div class="relative bg-gray-800/50 backdrop-blur-lg rounded-3xl p-8 border @(plan.Popular ? "border-cyan-500 scale-105 shadow-2xl shadow-cyan-500/30" : "border-gray-700/50") transition-all duration-300 hover:scale-105"
+                         style="animation: fadeInUp 0.6s ease-out @(index * 0.15)s both">
+                        @if (plan.Popular)
+                        {
+                            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                                <span class="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full text-sm font-bold shadow-lg">
+                                    🔥 MOST POPULAR
+                                </span>
+                            </div>
+                        }
+                        <div class="text-center mb-8">
+                            <h3 class="text-2xl font-bold mb-2">@plan.Name</h3>
+                            <p class="text-gray-400 text-sm mb-6">@plan.Description</p>
+                            <div class="flex items-end justify-center gap-2 mb-2">
+                                <span class="text-5xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                                    @(plan.Price == "0" ? "Free" : $"₫{plan.Price}")
+                                </span>
+                            </div>
+                            <div class="text-gray-400 text-sm">@plan.Period</div>
+                        </div>
+                        <ul class="space-y-4 mb-8">
+                            @foreach (var feat in plan.Features)
+                            {
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-@(plan.Color)-400 flex-shrink-0 mt-1"></i>
+                                    <span class="text-gray-300">@feat</span>
+                                </li>
+                            }
+                        </ul>
+                        <button class="w-full py-4 rounded-xl font-bold transition-all duration-300 @(plan.Popular ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/50" : "bg-gray-700 hover:bg-gray-600")">
+                            @(plan.Price == "0" ? "Start Free Trial" : "Upgrade Now")
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== MANAGEMENT FEATURES ========== -->
+    <section id="management" class="py-20 px-6 bg-gray-900/50 relative">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute inset-0"
+                 style="background-image:url('https://images.unsplash.com/photo-1551434678-e076c223a692?w=2400&h=1600&fit=crop&q=90');background-size:cover;background-position:center"></div>
+        </div>
+        <div class="max-w-7xl mx-auto relative z-10">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-4">
+                    <span class="px-4 py-2 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-400 font-semibold text-sm">
+                        <i class="fas fa-bolt mr-2"></i>SMART MANAGEMENT
+                    </span>
+                </div>
+                <h2 class="text-5xl font-black mb-6">
+                    <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Automated Utility Billing</span>
+                </h2>
+                <p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                    Say goodbye to manual calculations. Track electricity, water, and services with precision
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                @foreach (var (feature, index) in managementFeatures.Select((f, i) => (f, i)))
+                {
+                    <div class="group relative bg-gray-800/50 backdrop-blur-lg rounded-3xl overflow-hidden border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-500"
+                         style="animation: fadeInUp 0.6s ease-out @(index * 0.15)s both">
+                        <div class="absolute inset-0">
+                            <img src="@feature.BackgroundUrl" alt="@feature.Title"
+                                 class="w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-700" />
+                        </div>
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-@(feature.Color)-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
+                        <div class="relative z-10 p-8">
+                            <div class="w-20 h-20 bg-@(feature.Color)-600/20 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                                <i class="fas fa-@(feature.IconClass) text-4xl text-@(feature.Color)-400"></i>
+                            </div>
+                            <h3 class="text-3xl font-bold mb-3">@feature.Title</h3>
+                            <p class="text-gray-400 mb-6">@feature.Description</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                @foreach (var metric in feature.Metrics)
+                                {
+                                    <div class="bg-gray-900/50 rounded-xl p-4 border border-gray-700/30">
+                                        <div class="text-sm text-gray-500 mb-1">@metric.Label</div>
+                                        <div class="text-2xl font-bold text-@(feature.Color)-400">@metric.Value</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Payment Flow -->
+            <div class="mt-16 relative overflow-hidden rounded-3xl">
+                <img src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=2000&h=1000&fit=crop&q=90"
+                     alt="Payment Flow" class="absolute inset-0 w-full h-full object-cover opacity-30" />
+                <div class="relative bg-gradient-to-r from-cyan-900/50 to-blue-900/50 backdrop-blur-sm p-12 border border-cyan-500/30">
+                    <h3 class="text-3xl font-bold text-center mb-12">Seamless Payment Flow</h3>
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                        @foreach (var (step, index) in paymentSteps.Select((s, i) => (s, i)))
+                        {
+                            <div class="flex flex-col items-center text-center group">
+                                <div class="w-24 h-24 bg-gradient-to-br from-cyan-600 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-lg shadow-cyan-500/30">
+                                    <i class="fas fa-@(step.IconClass) text-4xl text-white"></i>
+                                </div>
+                                <h4 class="font-bold mb-1">@step.Title</h4>
+                                <p class="text-sm text-gray-400">@step.Desc</p>
+                            </div>
+                            @if (index < paymentSteps.Count - 1)
+                            {
+                                <i class="fas fa-arrow-right hidden md:block text-3xl text-cyan-500 animate-pulse"></i>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== DASHBOARD FEATURES ========== -->
+    <section id="dashboard" class="py-20 px-6 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-4">
+                    <span class="px-4 py-2 bg-purple-500/20 border border-purple-500/50 rounded-full text-purple-400 font-semibold text-sm">
+                        <i class="fas fa-chart-line mr-2"></i>CONTROL CENTER
+                    </span>
+                </div>
+                <h2 class="text-5xl font-black mb-6">
+                    <span class="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Comprehensive Dashboard</span>
+                </h2>
+                <p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                    Everything you need to manage your properties in one beautiful interface
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+                @foreach (var (feature, index) in dashboardFeatures.Select((f, i) => (f, i)))
+                {
+                    <div class="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-gray-700/50 hover:border-@(feature.Color)-500/50 transition-all duration-500 hover:scale-105"
+                         style="animation: fadeInUp 0.5s ease-out @(index * 0.08)s both">
+                        <div class="w-16 h-16 bg-@(feature.Color)-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
+                            <i class="fas fa-@(feature.IconClass) text-3xl text-@(feature.Color)-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">@feature.Title</h3>
+                        <p class="text-2xl font-black text-@(feature.Color)-400">@feature.Count</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Analytics Preview -->
+            <div class="bg-gray-800/50 backdrop-blur-lg rounded-3xl overflow-hidden border border-gray-700/50">
+                <div class="relative h-64 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=2000&h=1000&fit=crop&q=90"
+                         alt="Dashboard Analytics" class="w-full h-full object-cover opacity-50" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-800 to-transparent"></div>
+                    <div class="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-3xl font-bold mb-2">Revenue Analytics</h3>
+                            <p class="text-gray-400">Real-time financial insights at your fingertips</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-4xl font-black text-green-400 mb-1">₫125,000,000</div>
+                            <div class="text-sm text-gray-400">Monthly Revenue</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-green-900/30 to-green-800/30 rounded-2xl p-6 border border-green-500/30 relative overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&h=600&fit=crop&q=90"
+                                 alt="Growth" class="absolute inset-0 w-full h-full object-cover opacity-30" />
+                            <div class="relative z-10">
+                                <i class="fas fa-chart-line text-4xl text-green-400 mb-3 block"></i>
+                                <div class="text-2xl font-bold mb-1">+12.5%</div>
+                                <div class="text-sm text-gray-400">Growth Rate</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-cyan-900/30 to-cyan-800/30 rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&q=90"
+                                 alt="Occupancy" class="absolute inset-0 w-full h-full object-cover opacity-30" />
+                            <div class="relative z-10">
+                                <i class="fas fa-home text-4xl text-cyan-400 mb-3 block"></i>
+                                <div class="text-2xl font-bold mb-1">87.5%</div>
+                                <div class="text-sm text-gray-400">Occupancy Rate</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-900/30 to-purple-800/30 rounded-2xl p-6 border border-purple-500/30 relative overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop&q=90"
+                                 alt="Tenants" class="absolute inset-0 w-full h-full object-cover opacity-30" />
+                            <div class="relative z-10">
+                                <i class="fas fa-users text-4xl text-purple-400 mb-3 block"></i>
+                                <div class="text-2xl font-bold mb-1">42/48</div>
+                                <div class="text-sm text-gray-400">Rooms Occupied</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Bar Chart Simulation -->
+                    <div class="h-64 bg-gray-900/50 rounded-2xl p-6 border border-gray-700/30 flex items-end justify-between gap-2">
+                        @foreach (var (height, i) in chartData.Select((h, i) => (h, i)))
+                        {
+                            <div class="flex-1 bg-gradient-to-t from-cyan-600 to-blue-500 rounded-t-lg hover:from-cyan-500 hover:to-blue-400 transition-all duration-300 cursor-pointer group relative"
+                                 style="height:@(height)%">
+                                <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    @height%
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TESTIMONIALS ========== -->
+    <section id="testimonials" class="py-20 px-6 bg-gray-900/50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-4">
+                    <span class="px-4 py-2 bg-orange-500/20 border border-orange-500/50 rounded-full text-orange-400 font-semibold text-sm">
+                        <i class="fas fa-award mr-2"></i>SUCCESS STORIES
+                    </span>
+                </div>
+                <h2 class="text-5xl font-black mb-6">
+                    <span class="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">Trusted by Landlords</span>
+                </h2>
+                <p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                    Join thousands of property owners who transformed their business with STAYTRUST
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                @foreach (var (testimonial, index) in testimonials.Select((t, i) => (t, i)))
+                {
+                    <div class="group relative bg-gray-800/50 backdrop-blur-lg rounded-3xl p-8 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-500 hover:scale-105"
+                         style="animation: fadeInUp 0.6s ease-out @(index * 0.15)s both">
+                        <i class="fas fa-quote-left text-4xl text-orange-400/30 mb-6 block"></i>
+                        <p class="text-gray-300 mb-6 leading-relaxed">@testimonial.Text</p>
+                        <div class="flex items-center gap-2 mb-6">
+                            @for (int s = 0; s < testimonial.Rating; s++)
+                            {
+                                <i class="fas fa-star text-yellow-400"></i>
+                            }
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center font-bold text-lg">
+                                @testimonial.Avatar
+                            </div>
+                            <div>
+                                <div class="font-bold">@testimonial.Name</div>
+                                <div class="text-sm text-gray-400">@testimonial.Role</div>
+                                <div class="text-xs text-orange-400">@testimonial.Location</div>
+                            </div>
+                        </div>
+                        <div class="absolute top-4 right-4 w-20 h-20 bg-orange-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== CTA SECTION ========== -->
+    <section class="py-20 px-6 relative overflow-hidden">
+        <div class="absolute inset-0">
+            <div class="grid grid-cols-4 gap-0 h-full opacity-25">
+                <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=1200&fit=crop&q=90" alt="" class="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=1200&fit=crop&q=90" alt="" class="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=1200&fit=crop&q=90" alt="" class="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=1200&fit=crop&q=90" alt="" class="w-full h-full object-cover" />
+            </div>
+        </div>
+        <div class="absolute inset-0 bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-purple-600/20 backdrop-blur-md"></div>
+        <div class="absolute inset-0">
+            <div class="absolute top-0 left-0 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style="animation-delay:1s"></div>
+        </div>
+        <div class="relative z-10 max-w-4xl mx-auto text-center">
+            <h2 class="text-5xl md:text-6xl font-black mb-6">
+                <span class="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                    Ready to Transform Your Rental Business?
+                </span>
+            </h2>
+            <p class="text-xl text-gray-300 mb-10">
+                Join 10,000+ landlords managing ₫2.5B+ in monthly revenue
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <a href="/landlord/dashboard"
+                   class="group relative px-10 py-5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold text-xl overflow-hidden transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/50">
+                    <span class="relative z-10 flex items-center justify-center gap-3">
+                        <i class="fas fa-chart-line text-2xl"></i>
+                        Access Dashboard
+                        <i class="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
+                    </span>
+                </a>
+                <a href="/landlord/properties"
+                   class="px-10 py-5 bg-gray-800/50 backdrop-blur-lg border-2 border-cyan-500 rounded-2xl font-bold text-xl hover:bg-gray-700/50 transition-all duration-300 hover:scale-110 flex items-center justify-center gap-3">
+                    <i class="fas fa-home text-2xl"></i>
+                    View My Properties
+                </a>
+            </div>
+            <p class="mt-8 text-gray-400 text-sm">
+                Already managing 12 properties • 42/48 rooms occupied • ₫125M monthly revenue
+            </p>
+        </div>
+    </section>
+
+</div>
+
+@code {
+    private double scrollY = 0;
+    private bool showUserMenu = false;
+    private DotNetObjectReference<LandlordHome>? dotNetRef;
+
+    // ── Stats ──────────────────────────────────────────────────────────────────
+    private readonly List<StatItem> stats = new()
+    {
+        new("10,000+", "Active Listings",          "home",          "cyan"),
+        new("98%",     "Customer Satisfaction",    "star",          "yellow"),
+        new("₫25M",    "Average Monthly Revenue",  "chart-line",    "green"),
+        new("50+",     "Cities Covered",           "map-marked-alt","purple"),
+    };
+
+    // ── Prime Features ─────────────────────────────────────────────────────────
+    private readonly List<PrimeFeatureItem> primeFeatures = new()
+    {
+        new("star",        "Highlighted Listing",  "Stand out with premium badge and top placement",        "yellow",
+            "https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=1200&h=800&fit=crop&q=90"),
+        new("map-marked-alt","Priority Map Display","Appear first in location-based searches",              "cyan",
+            "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&h=800&fit=crop&q=90"),
+        new("images",      "Unlimited Media",      "Upload unlimited photos and videos of your property",   "blue",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=800&fit=crop&q=90"),
+        new("robot",       "AI Chatbot",           "Automated responses to common tenant questions",        "purple",
+            "https://images.unsplash.com/photo-1485217988980-11786ced9454?w=1200&h=800&fit=crop&q=90"),
+        new("chart-bar",   "Advanced Analytics",   "Detailed insights on views, contacts, and occupancy",  "green",
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=800&fit=crop&q=90"),
+        new("shield-alt",  "Verified Badge",       "\"Verified by STAYTRUST\" trust indicator",            "orange",
+            "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&h=800&fit=crop&q=90"),
+    };
+
+    // ── Pricing Plans ──────────────────────────────────────────────────────────
+    private readonly List<PricingPlan> pricingPlans = new()
+    {
+        new("Free Trial",    "0",         "15 days",    "Try STAYTRUST with limited features",
+            new() { "Up to 5 listings","Basic analytics","Standard support","Manual payment tracking" },
+            "gray", false),
+        new("Prime Monthly", "299,000",   "per month",  "Perfect for individual landlords",
+            new() { "Unlimited listings","Priority map placement","AI Chatbot included","Advanced analytics","Automated billing","Verified badge","24/7 priority support" },
+            "cyan", true),
+        new("Prime Yearly",  "2,990,000", "per year",   "Best value - Save 17%",
+            new() { "All Monthly features","Save ₫598,000/year","Free property photos","Dedicated account manager","Custom branding","API access" },
+            "purple", false),
+    };
+
+    // ── Management Features ────────────────────────────────────────────────────
+    private readonly List<ManagementFeatureItem> managementFeatures = new()
+    {
+        new("lightbulb",   "Electricity Tracking", "Automated meter reading and bill calculation", "yellow",
+            "https://images.unsplash.com/photo-1473186578172-c141e6798cf4?w=1600&h=1200&fit=crop&q=90",
+            new() { new("Avg. Consumption","245 kWh"), new("Monthly Cost","₫735K") }),
+        new("tint",        "Water Management",     "Track water usage and generate invoices",       "blue",
+            "https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=1600&h=1200&fit=crop&q=90",
+            new() { new("Avg. Usage","18 m³"), new("Monthly Cost","₫180K") }),
+        new("wifi",        "Service Fees",         "Internet, parking, cleaning, and more",         "purple",
+            "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600&h=1200&fit=crop&q=90",
+            new() { new("Services","5 types"), new("Total/Month","₫350K") }),
+        new("credit-card", "In-App Payment",       "Secure payment processing with instant settlement","green",
+            "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1600&h=1200&fit=crop&q=90",
+            new() { new("Success Rate","99.8%"), new("Avg. Time","< 2 min") }),
+    };
+
+    // ── Payment Steps ──────────────────────────────────────────────────────────
+    private readonly List<PaymentStep> paymentSteps = new()
+    {
+        new("lightbulb",   "Meter Reading",   "Input readings"),
+        new("chart-bar",   "Auto Calculate",  "AI computes bills"),
+        new("bell",        "Send Invoice",    "Notify tenants"),
+        new("credit-card", "In-App Payment",  "Instant settlement"),
+        new("check-circle","Confirmed",       "Receipt generated"),
+    };
+
+    // ── Dashboard Features ─────────────────────────────────────────────────────
+    private readonly List<DashboardFeatureItem> dashboardFeatures = new()
+    {
+        new("chart-line",  "Revenue Analytics",   "Real-time",  "green"),
+        new("home",        "Property Management", "12 units",   "cyan"),
+        new("users",       "Tenant Portal",       "42 tenants", "blue"),
+        new("tools",       "Issue Tracking",      "3 pending",  "orange"),
+        new("bell",        "Smart Notifications", "8 alerts",   "purple"),
+        new("calendar-alt","Booking Calendar",    "Integrated", "pink"),
+    };
+
+    // ── Testimonials ───────────────────────────────────────────────────────────
+    private readonly List<TestimonialItem> testimonials = new()
+    {
+        new("Nguyen Van A","Property Owner",     "NVA", 5,
+            "STAYTRUST helped me manage 15 properties effortlessly. The automated billing feature alone saves me 10 hours per month!",
+            "Da Nang"),
+        new("Tran Thi B",  "Boarding House Owner","TTB", 5,
+            "Prime package paid for itself in the first month. I got 5x more inquiries and filled all my vacant rooms within 2 weeks.",
+            "Ho Chi Minh City"),
+        new("Le Van C",    "Apartment Manager",  "LVC", 5,
+            "The AI chatbot handles 80% of repetitive questions. I can focus on providing better service to my tenants.",
+            "Hanoi"),
+    };
+
+    // ── Chart Data ─────────────────────────────────────────────────────────────
+    private readonly List<int> chartData = new() { 65, 78, 82, 88, 75, 92, 85, 90, 95, 88, 93, 97 };
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("scrollTracker.init", dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateScroll(double y)
+    {
+        scrollY = y;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("scrollTracker.dispose"); } catch { }
+        dotNetRef?.Dispose();
+    }
+
+    // ── Data Models ────────────────────────────────────────────────────────────
+    private record StatItem(string Value, string Label, string IconClass, string Color);
+    private record PrimeFeatureItem(string IconClass, string Title, string Description, string Color, string ImageUrl);
+    private record PricingPlan(string Name, string Price, string Period, string Description, List<string> Features, string Color, bool Popular);
+    private record MetricItem(string Label, string Value);
+    private record ManagementFeatureItem(string IconClass, string Title, string Description, string Color, string BackgroundUrl, List<MetricItem> Metrics);
+    private record PaymentStep(string IconClass, string Title, string Desc);
+    private record DashboardFeatureItem(string IconClass, string Title, string Count, string Color);
+    private record TestimonialItem(string Name, string Role, string Avatar, int Rating, string Text, string Location);
+}
