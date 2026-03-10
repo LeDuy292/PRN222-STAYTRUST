@@ -32,3 +32,91 @@
         radial-gradient(circle at 20% 30%, rgba(19, 236, 146, 0.05) 0%, transparent 40%),
         radial-gradient(circle at 80% 70%, rgba(19, 236, 146, 0.05) 0%, transparent 40%);
 }
+
+/* Custom UI Animations for Property Dashboard */
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes heartbeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(19, 236, 146, 0.5);
+    }
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(19, 236, 146, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(19, 236, 146, 0);
+    }
+
+    100% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(19, 236, 146, 0);
+    }
+}
+
+.animate-slide-up {
+    animation: slideUpFade 0.5s ease-out forwards;
+}
+
+.animate-slide-up-delayed {
+    animation: slideUpFade 0.5s ease-out 0.15s forwards;
+    opacity: 0;
+}
+
+.animate-heartbeat {
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+.animate-float {
+    animation: float 4s ease-in-out infinite;
+}
+
+.pulse-primary {
+    animation: pulse-ring 2s infinite;
+}
+
+.button-pop {
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.button-pop:active {
+    transform: scale(0.95);
+}
