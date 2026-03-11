@@ -1,0 +1,283 @@
+@page "/login"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Staytrust - Login</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+    .login-wrapper {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #0c1117;
+        overflow-x: hidden;
+    }
+
+    .glow-blob {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(19, 236, 218, 0.12) 0%, rgba(19, 236, 218, 0) 70%);
+        filter: blur(100px);
+        z-index: 0;
+        pointer-events: none;
+        animation: float 25s infinite alternate;
+    }
+
+    .blob-1 { top: -10%; left: -5%; animation-delay: 0s; }
+    .blob-2 { bottom: -10%; right: -5%; animation-delay: -7s; background: radial-gradient(circle, rgba(23, 127, 236, 0.08) 0%, rgba(23, 127, 236, 0) 70%); }
+
+    @@keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(40px, -60px) scale(1.05); }
+        100% { transform: translate(0, 0) scale(1); }
+    }
+
+    .brand-side {
+        background: linear-gradient(135deg, #0c1117 0%, #111827 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .brand-grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(19, 236, 218, 0.03) 1px, transparent 1px), 
+                          linear-gradient(90deg, rgba(19, 236, 218, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        mask-image: radial-gradient(ellipse at center, black, transparent 80%);
+    }
+
+    .premium-card {
+        background: rgba(17, 25, 34, 0.4);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+    }
+
+    .input-field {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .input-field:focus {
+        border-color: #13ecda;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 0 4px rgba(19, 236, 218, 0.1);
+    }
+
+    .btn-primary-glow {
+        background: linear-gradient(135deg, #13ecda 0%, #11b8a9 100%);
+        color: #0c1117;
+        box-shadow: 0 8px 20px rgba(19, 236, 218, 0.25);
+    }
+
+    .btn-primary-glow:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(19, 236, 218, 0.4);
+        filter: brightness(1.1);
+    }
+
+    .btn-secondary-outline {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-secondary-outline:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+</style>
+
+<div class="login-wrapper text-white min-h-screen relative absolute top-0 left-0 w-screen z-[100] flex flex-col lg:flex-row">
+    <!-- Brand Panel (Left) -->
+    <section class="lg:w-[50%] xl:w-[60%] brand-side hidden lg:flex flex-col justify-between p-12 xl:p-20 overflow-hidden border-r border-white/5">
+        <div class="brand-grid opacity-40"></div>
+        <div class="glow-blob blob-1"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center gap-4 group cursor-pointer mb-20" @onclick='() => NavigationManager.NavigateTo("/")'>
+                <div class="size-12 bg-[#13ecda] rounded-2xl flex items-center justify-center text-[#0c1117] shadow-[0_0_30px_rgba(19,236,218,0.3)] transition-all group-hover:scale-110 group-hover:rotate-6">
+                    <span class="material-symbols-outlined font-black text-2xl">verified_user</span>
+                </div>
+                <h2 class="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500">STAYTRUST</h2>
+            </div>
+
+            <div class="max-w-2xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#13ecda] text-[10px] font-bold uppercase tracking-widest mb-8">
+                    V2.0 Core Infrastructure
+                </div>
+                <h1 class="text-6xl xl:text-7xl font-black mb-8 tracking-tight leading-[0.9] text-white">Trust is our <span class="text-[#13ecda]">Ecosystem.</span></h1>
+                <p class="text-slate-400 text-xl xl:text-2xl leading-relaxed font-light max-w-xl">
+                    Experience the next generation of property management powered by secure blockchain verified protocols and AI trust engines.
+                </p>
+            </div>
+        </div>
+
+        <div class="relative z-10 flex items-center justify-between border-t border-white/5 pt-12">
+            <div class="flex gap-12">
+                <div>
+                    <div class="text-2xl font-bold text-white mb-1">99.9%</div>
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Uptime Reliability</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-white mb-1">256-bit</div>
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">AES Encryption</div>
+                </div>
+            </div>
+            <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                © 2024 STAYTRUST AI Technologies
+            </div>
+        </div>
+    </section>
+
+    <!-- Form Panel (Right) -->
+    <section class="flex-1 flex flex-col justify-center p-6 md:p-12 lg:p-20 relative bg-[#0c1117]">
+        <div class="lg:hidden absolute top-8 left-8">
+            <div class="flex items-center gap-3 cursor-pointer" @onclick='() => NavigationManager.NavigateTo("/")'>
+                <div class="size-8 bg-[#13ecda] rounded-lg flex items-center justify-center text-[#0c1117]">
+                    <span class="material-symbols-outlined text-sm font-bold">verified_user</span>
+                </div>
+                <h2 class="text-lg font-black tracking-tighter">STAYTRUST</h2>
+            </div>
+        </div>
+
+        <div class="w-full max-w-md mx-auto relative z-10">
+            <div class="mb-12">
+                <h1 class="text-4xl font-black tracking-tight mb-3">Sign <span class="text-[#13ecda]">In</span></h1>
+                <p class="text-slate-500 font-medium">Access your decentralized property dashboard.</p>
+            </div>
+
+            <div class="premium-card rounded-3xl overflow-hidden p-[1px]">
+                <div class="bg-[#0c1117]/80 rounded-[23px] p-8 xl:p-10">
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 text-red-100 p-4 rounded-xl mb-8 text-xs font-semibold animate-in fade-in slide-in-from-top-2">
+                            <span class="material-symbols-outlined text-lg text-red-500">error</span>
+                            @ErrorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Terminal</label>
+                                <div class="relative group">
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xl transition-colors group-focus-within:text-[#13ecda]">alternate_email</span>
+                                    <InputText @bind-Value="loginModel.Email" type="email" class="w-full input-field rounded-2xl pl-12 pr-4 py-4 text-sm outline-none text-white transition-all" placeholder="user@staytrust.io" />
+                                </div>
+                                <ValidationMessage For="@(() => loginModel.Email)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center px-1">
+                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Secure Pin</label>
+                                    <a class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-[#13ecda] transition-colors" href="#">Reset Recovery</a>
+                                </div>
+                                <div class="relative group">
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xl transition-colors group-focus-within:text-[#13ecda]">shield_lock</span>
+                                    <InputText @bind-Value="loginModel.Password" type="password" class="w-full input-field rounded-2xl pl-12 pr-4 py-4 text-sm outline-none text-white transition-all" placeholder="••••••••" />
+                                </div>
+                                <ValidationMessage For="@(() => loginModel.Password)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
+                            </div>
+                            
+                            <div class="flex items-center justify-between py-1">
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <div class="relative flex items-center justify-center size-5 rounded-md border border-white/10 bg-white/5 transition-all group-hover:border-[#13ecda]/30">
+                                        <input class="sr-only peer" id="remember" type="checkbox" />
+                                        <div class="size-2 rounded-sm bg-[#13ecda] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Maintain Session</span>
+                                </label>
+                            </div>
+                            
+                            <button class="w-full btn-primary-glow font-black py-4.5 rounded-2xl mt-4 flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.2em]" type="submit" disabled="@isSubmitting">
+                                @if(isSubmitting)
+                                {
+                                    <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                    <span>Syncing...</span>
+                                }
+                                else
+                                {
+                                    <span>Initialize Access</span>
+                                    <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">bolt</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                    
+                    <div class="mt-10 pt-8 border-t border-white/5">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest text-center leading-loose">
+                            No credentials? <a @onclick='() => NavigationManager.NavigateTo("/register")' class="text-[#13ecda] hover:text-white cursor-pointer transition-colors border-b-2 border-[#13ecda]/20 hover:border-[#13ecda]">Register Protocol</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 flex items-center justify-center gap-8 opacity-40 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-3">
+                    <div class="size-1.5 rounded-full bg-green-500"></div>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Nodes Online</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="size-1.5 rounded-full bg-blue-500"></div>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Encrypted Path</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+@code {
+    private Controllers.LoginRequest loginModel = new();
+    private bool isSubmitting = false;
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("registered", out var registered))
+        {
+            if (registered == "true")
+            {
+                SuccessMessage = "Registration successful! Please login to continue.";
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/login", loginModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Force a page refresh to update auth state context properly
+                NavigationManager.NavigateTo("/search", forceLoad: true);
+            }
+            else
+            {
+                ErrorMessage = "Invalid email or password";
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "An error occurred during login. Please ensure the server is running.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
