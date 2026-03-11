@@ -1,0 +1,324 @@
+@page "/detail"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Staytrust Property 3D Detail View</PageTitle>
+
+<style>
+    /* Scoped font for detail page */
+    @@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+    .detail-page-container {
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .glass-card {
+        background: rgba(25, 51, 49, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(19, 236, 218, 0.1);
+    }
+    .glow-button {
+        box-shadow: 0 0 15px rgba(19, 236, 218, 0.3);
+    }
+    .detail-page-container ::-webkit-scrollbar {
+        width: 8px;
+    }
+    .detail-page-container ::-webkit-scrollbar-track {
+        background: #102220;
+    }
+    .detail-page-container ::-webkit-scrollbar-thumb {
+        background: #234845;
+        border-radius: 10px;
+    }
+    
+    /* Optional: Ensure map container is absolute to hide main layout scrolling if we want fullscreen detail view */
+    /* Alternatively, this detail page can live inside the layout without absolute positioning */
+    .detail-view-wrapper {
+        background-color: #102220;
+    }
+</style>
+
+<div class="detail-page-container detail-view-wrapper text-white relative flex min-h-screen flex-col overflow-x-hidden absolute top-0 left-0 w-screen z-[100]">
+    <!-- Top Navigation -->
+    <header class="sticky top-0 z-50 w-full border-b border-white/10 bg-[#102220]/80 backdrop-blur-md px-6 lg:px-20 py-4">
+        <div class="mx-auto flex max-w-7xl items-center justify-between">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-3">
+                    <div class="text-[#13ecda]">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold tracking-tight">Staytrust</h2>
+                </div>
+                <div class="hidden md:flex items-center gap-6">
+                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="#">Properties</a>
+                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="#">Rentals</a>
+                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="#">AI Match</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <button class="hidden sm:block rounded-xl bg-[#13ecda] px-5 py-2 text-sm font-bold text-[#102220] hover:opacity-90 transition-all">List Property</button>
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="h-10 w-10 rounded-full bg-cover bg-center border border-[#13ecda]/20" title="Logged in as @context.User.Identity?.Name" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDwAIeiYmcf_-3XP-6hQLDGeWBB1qhIDuuOJyl0xq8zHMSypzJQstxG_7Xz3CxpQn6eIg3mRPklEsvX5yl7O4DiXqV8aqdSkERTPvcZVzJxO3y-F7fE_EcExp9-Z-PVgXzOeqLgttkasJuB84WXJDOf5okMO3LP5FD6a57tEE_0Z2-EyNGRFY1OR-l7_0LS0EJYVFb0pMQra1U3UggsShEMnxDB2mXYBeec_Lu-ouYf86ouWVDwL3tdDqeFUGd4pon3fOiGxrfAyL-d");'></div>
+                        <button @onclick="Logout" class="text-xs text-red-400 hover:text-red-300 font-bold uppercase tracking-widest border-l border-white/20 pl-4">Logout</button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login" class="px-4 py-2 bg-white/5 text-white border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all">Login</a>
+                        <a href="/register" class="px-4 py-2 bg-[#13ecda] text-[#102220] rounded-xl text-sm font-bold hover:bg-[#10d4c4] transition-all">Sign Up</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </header>
+    <main class="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 lg:px-20 py-6">
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center gap-2 pb-6 text-sm">
+            <a class="text-[#13ecda]/70 hover:text-[#13ecda] transition-colors" href="#">Da Nang</a>
+            <span class="text-white/30 material-symbols-outlined text-sm">chevron_right</span>
+            <a class="text-[#13ecda]/70 hover:text-[#13ecda] transition-colors" href="#">Son Tra</a>
+            <span class="text-white/30 material-symbols-outlined text-sm">chevron_right</span>
+            <span class="text-white font-medium">Azure Ocean Suite</span>
+        </nav>
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <!-- Main Content Left (2/3) -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- 3D Virtual Tour Viewer -->
+                <section class="group relative overflow-hidden rounded-3xl bg-black aspect-video shadow-2xl">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-80" data-alt="360 degree immersive virtual tour of modern apartment" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBpICKGfnG96hq-qTgStwhoWWPdvse_PIrY8IvbEbhfUTfE67PgdfSvFhH9Hi_Cw1FoVIyEtKyL9AyT7Ml5TDIU0sbF5AQrmXr2As5F3oZ34obxkCL9loXk0kIb1Te85aKPAf3K0mBwa1bA5SuaLit4VigrbbLj6_ruFgHTsWsG9u4H3TE-Rj6MruVqbaCm7GfdYYDYeCdACedbGb4gx8mi_X0TUaK2nO1hORlc3peWzM_4zg5ts5Eb6wbaP3ORNGZhChMzF6U9k0HN");'></div>
+                    <!-- HUD Overlay -->
+                    <div class="absolute inset-0 flex flex-col justify-between p-6">
+                        <div class="flex justify-between items-start">
+                            <div class="rounded-full bg-black/40 backdrop-blur-md px-4 py-2 border border-white/10 flex items-center gap-2">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#13ecda] opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-[#13ecda]"></span>
+                                </span>
+                                <span class="text-xs font-bold uppercase tracking-widest text-white">Live 3D View</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-[#13ecda] hover:text-[#102220] transition-all">
+                                    <span class="material-symbols-outlined">fullscreen</span>
+                                </button>
+                                <button class="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-[#13ecda] hover:text-[#102220] transition-all">
+                                    <span class="material-symbols-outlined">share</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-center items-center gap-6 pb-4">
+                            <div class="flex flex-col items-center gap-2">
+                                <button class="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white hover:scale-105 transition-transform">
+                                    <span class="material-symbols-outlined text-4xl">view_in_ar</span>
+                                </button>
+                                <p class="text-[10px] font-bold uppercase tracking-tighter">Enter AR</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div class="flex flex-col gap-1">
+                                <h1 class="text-3xl font-bold">Azure Ocean Suite</h1>
+                                <div class="flex items-center gap-2 text-[#13ecda]">
+                                    <span class="material-symbols-outlined text-sm">location_on</span>
+                                    <span class="text-sm">Võ Nguyên Giáp, Son Tra, Da Nang</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 bg-black/40 backdrop-blur-md p-2 rounded-xl border border-white/10">
+                                <button class="p-1 hover:text-[#13ecda]"><span class="material-symbols-outlined">zoom_in</span></button>
+                                <div class="w-px h-4 bg-white/20"></div>
+                                <button class="p-1 hover:text-[#13ecda]"><span class="material-symbols-outlined">zoom_out</span></button>
+                                <div class="w-px h-4 bg-white/20"></div>
+                                <button class="p-1 hover:text-[#13ecda]"><span class="material-symbols-outlined">360</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- 3D Room Models Grid -->
+                <section class="space-y-4">
+                    <div class="flex items-center justify-between px-2">
+                        <h3 class="text-lg font-bold">Explore Room Models</h3>
+                        <button class="text-[#13ecda] text-sm font-medium hover:underline">View All</button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
+                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="3D Floor Plan Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCRmSdGaTCS7t5uSaKXLaInI5LOaPIFLKMb5_cKXKjL0tJ2Y6qPlMlklBxZin2SXW4ofce9wIypbU3nQdi2EP7NbqDPwb0YGpkGosJu6q3KORAkYWOGFJEae6vTeoezoGKf874tRk3A_U62FCO_rwDUvM8UQuL_Rwq9WpF7S-GKBUFlAZOAHkWywCAS1-HUJHuqZPF-rHlZUAcbeRs3HA4PGP9_Ib-NnKl8Xjidl7GaZ4AXj2rNOa-EoY13FPrrGLPZ3mtl1xDuUE1H");'></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
+                            <p class="absolute bottom-3 left-3 text-sm font-bold">Floor Plan</p>
+                        </div>
+                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
+                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Master Bedroom 3D Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDKKgX0FaQTxwyfDourmRQcEEoMxYoIx-aWGxY98fbrPYXqFwr4qwuYT1YNp1G-P2mNC0xc7kpySr6IhLPBRNC5errGzs-AHm31Xd0rLXWN-1-KENWfDN1Rb3epdUNPkwyL8HTPLSkStST9Wndb-jnmyUaLAI2rnl3lhgRQynRSk6Jb_vWIPgyInAgF3HW755UdAgmrEFxDG8U6KGz3EQ5LwBNxEptkVtHX8hAgVLgyibvE5DLNZCl7T-L887cuFhWsftDKJcp0gJzJ");'></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
+                            <p class="absolute bottom-3 left-3 text-sm font-bold">Master Bed</p>
+                        </div>
+                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
+                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Modern Kitchen 3D Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuChLtUMPRN4G2S47Nq-RcoV_KnRmpKkkphkNpwAxk7gCk1GEOisMpoUaT9YIemL7X9tLSgulFbQwNlLrSigOr9TNohoxO8mJI7GXgn9a27x44nqyFbL3ZiGhREz3hB1ZDm82_dVZzc-hA0e-bMLVJCaYAzhN9YPwH3WAjpTf2lFGOVK-0TwSQBCcVMea-c1ujoZyfYszpR4ybnpIFMR1QLzb3PAmUdL6nvwR7c5iw_AaQ1G-Siu9nkAWQjzzPTukF4YWyTAJiHOZol4");'></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
+                            <p class="absolute bottom-3 left-3 text-sm font-bold">Kitchen</p>
+                        </div>
+                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
+                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Living Area 3D Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDYIfynKfn_2R83QWG1UBoRubuVVfXI-1OPXl6VJZ2479EscRqR1qCs3tvk-ghtYYGrSwruP8dC8-qKg5V7nKrBjiDvxQ5VliAZl75f9VOBPLx4iVoySBAA0XxkU7zEEdP_Ck5WQX9ZTMjUBnDot9dpq-gf3HQ6xo98x5qqlhqJR7gnHnWmGSvjJcRwOvvnZZXfr_esD8vH6WdC60wSPINiisdDgwumejqke9w4zskj8HC8wsML7Glh1AWLZJE9G1a2vhXf3hysNHf9");'></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
+                            <p class="absolute bottom-3 left-3 text-sm font-bold">Living Room</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- Amenities Grid -->
+                <section class="rounded-3xl bg-[#193331]/30 p-8 border border-white/5">
+                    <div class="flex items-center gap-3 mb-6">
+                        <h3 class="text-xl font-bold">AI-Verified Amenities</h3>
+                        <span class="rounded-full bg-[#13ecda]/10 px-3 py-1 text-[10px] font-bold text-[#13ecda] border border-[#13ecda]/20 uppercase">Trust Score: 98%</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
+                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">wifi</span>
+                            <span class="text-sm font-medium">Gigabit Fiber</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
+                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">pool</span>
+                            <span class="text-sm font-medium">Infinity Pool</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
+                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">home_iot_device</span>
+                            <span class="text-sm font-medium">Smart Access</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
+                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">fitness_center</span>
+                            <span class="text-sm font-medium">Private Gym</span>
+                        </div>
+                    </div>
+                </section>
+                <!-- House Rules -->
+                <section class="space-y-4">
+                    <h3 class="text-xl font-bold px-2">House Rules</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
+                            <span class="material-symbols-outlined text-[#13ecda]/60">smoke_free</span>
+                            <p class="text-sm">No smoking inside the apartment</p>
+                        </div>
+                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
+                            <span class="material-symbols-outlined text-[#13ecda]/60">pets</span>
+                            <p class="text-sm">Small pets allowed (deposit required)</p>
+                        </div>
+                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
+                            <span class="material-symbols-outlined text-[#13ecda]/60">schedule</span>
+                            <p class="text-sm">Check-in: After 2:00 PM</p>
+                        </div>
+                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
+                            <span class="material-symbols-outlined text-[#13ecda]/60">groups</span>
+                            <p class="text-sm">Maximum 4 guests per stay</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Sidebar Right (1/3) -->
+            <div class="space-y-8">
+                <!-- Floating Booking Card -->
+                <div class="sticky top-28 glass-card rounded-3xl p-6 shadow-2xl">
+                    <div class="mb-6 flex items-end justify-between">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-widest text-[#13ecda]">Monthly Rent</p>
+                            <h2 class="text-4xl font-bold">$450 <span class="text-lg font-normal text-white/50">/mo</span></h2>
+                        </div>
+                        <div class="flex items-center gap-1 rounded-lg bg-[#13ecda]/20 px-2 py-1 text-xs font-bold text-[#13ecda]">
+                            <span class="material-symbols-outlined text-xs">verified</span>
+                            PRICE LOCK
+                        </div>
+                    </div>
+                    <div class="space-y-4 pb-6 border-b border-white/10">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Security Deposit</span>
+                            <span class="font-bold">$450</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Utility Fee (Est.)</span>
+                            <span class="font-bold">$30/mo</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Staytrust Fee</span>
+                            <span class="font-bold text-[#13ecda]">Included</span>
+                        </div>
+                    </div>
+                    <div class="py-6 space-y-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Move-in Date</label>
+                            <div class="flex items-center justify-between rounded-xl bg-black/30 p-3 border border-white/5">
+                                <span class="text-sm">October 15, 2023</span>
+                                <span class="material-symbols-outlined text-[#13ecda]">calendar_month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all">
+                        Instant Book Now
+                    </button>
+                    <p class="mt-4 text-center text-[10px] text-white/40 font-medium">Free cancellation within 48 hours</p>
+                </div>
+                <!-- Landlord Trust Profile -->
+                <div class="rounded-3xl bg-[#193331]/30 p-6 border border-white/5">
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-white/40 mb-4">Verified Host</h3>
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <div class="h-16 w-16 rounded-full bg-cover bg-center border-2 border-[#13ecda]" data-alt="Landlord profile photo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA0gOa-lmoV0ezcxjAYn4BTLar7xFOIFRg9cfUA4VXNl7qL6hewrqo42__t-s1dO8DXOdX43JbKVNtIA0S1ECtjR5bYzRoNreOrUehQEFPnjCXUUs8UKzm6s_u3eAXa9k8ePSRsGW6Xcsna4scEKZISaQbt-AbixQj4_vkvCakYJlPCmuYb9sKbWh2hnq7NrZB0theLodclqKh7fSxjxN7ROcknS9IUSyPeVkP4gGyiVwrdQ6ys0TZTlHZlyuCvu824FCqfDsxraHrO");'></div>
+                            <div class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#13ecda] text-[#102220]">
+                                <span class="material-symbols-outlined text-xs font-bold">check</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold">Leila Nguyen</h4>
+                            <div class="flex items-center gap-1 text-sm text-[#13ecda]">
+                                <span class="material-symbols-outlined text-xs fill-1">star</span>
+                                <span class="font-bold">4.98</span>
+                                <span class="text-white/50 font-normal ml-1">(124 reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 space-y-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-white/60">Trust Score</span>
+                            <span class="font-bold text-[#13ecda]">High</span>
+                        </div>
+                        <div class="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                            <div class="h-full w-[94%] bg-[#13ecda]"></div>
+                        </div>
+                    </div>
+                    <button class="mt-6 w-full rounded-xl border border-white/10 py-3 text-sm font-medium hover:bg-white/5 transition-colors">
+                        Contact Host
+                    </button>
+                </div>
+                <!-- Location Preview Card -->
+                <div class="overflow-hidden rounded-3xl bg-[#193331]/30 border border-white/5">
+                    <div class="h-32 w-full bg-cover bg-center grayscale contrast-125 opacity-70" data-alt="Map of Son Tra Da Nang" data-location="Da Nang" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBaqM5lI3_qGZMJPg9KHNDRpm0UqJP2SYs0RBeIeZLRSo7aW73hlp4sRSxz7BDtv_QTMlQJDTahlbi1qRmL94uXoUn1I0yiwDZh2Mt1mphQOXX7i20MruPVs3DCQ7maTHTuKQJ15iJomXckQqKEHU8guY9DCUWj4fOtmHWJyLooAy3aoOFE1iKd9Nwn6vw7ZHY9MyEU6y9wywEBADK90ECSWdtbk8l_RRIkPYSa0OdaO4_ULxwC2MalP3728NoMee7w9B6LLm-9p90U");'></div>
+                    <div class="p-6">
+                        <h4 class="font-bold">Neighborhood</h4>
+                        <p class="mt-1 text-xs text-white/50 leading-relaxed">Located in the vibrant Son Tra district, just 2 minutes walk from My Khe Beach. Close to seafood markets and high-end cafes.</p>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="rounded-full bg-white/5 px-3 py-1 text-[10px] border border-white/5">Beach: 200m</span>
+                            <span class="rounded-full bg-white/5 px-3 py-1 text-[10px] border border-white/5">Market: 500m</span>
+                            <span class="rounded-full bg-white/5 px-3 py-1 text-[10px] border border-white/5">Airport: 15min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-white/10 py-12 px-6 lg:px-20 text-white/40">
+        <div class="mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-2">
+                <span class="text-[#13ecda] font-bold">Staytrust</span>
+                <span>© 2023. All rights reserved.</span>
+            </div>
+            <div class="flex gap-8 text-sm font-medium">
+                <a class="hover:text-[#13ecda] transition-colors" href="#">Privacy</a>
+                <a class="hover:text-[#13ecda] transition-colors" href="#">Terms</a>
+                <a class="hover:text-[#13ecda] transition-colors" href="#">Support</a>
+                <a class="hover:text-[#13ecda] transition-colors" href="#">Safety</a>
+            </div>
+        </div>
+    </footer>
+</div>
+
+@code {
+    private async Task Logout()
+    {
+        await Http.PostAsync("api/auth/logout", null);
+        NavigationManager.NavigateTo("/detail", forceLoad: true);
+    }
+}
