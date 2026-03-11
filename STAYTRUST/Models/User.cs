@@ -1,25 +1,50 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-namespace STAYTRUST.Models;
-
-public partial class User
+namespace STAYTRUST.Models
 {
-    public int Id { get; set; }
+    public partial class User
+    {
+        [Key]
+        public int Id { get; set; }
 
-    public string FullName { get; set; } = null!;
+        [Required]
+        [StringLength(100)]
+        public string FullName { get; set; } = string.Empty;
 
-    public string Email { get; set; } = null!;
+        [Required]
+        [StringLength(100)]
+        public string UserName { get; set; } = string.Empty;
 
-    public string? PhoneNumber { get; set; }
+        [Required]
+        [EmailAddress]
+        [StringLength(100)]
+        public string Email { get; set; } = string.Empty;
 
-    public string PasswordHash { get; set; } = null!;
+        [StringLength(15)]
+        public string? PhoneNumber { get; set; }
 
-    public string Role { get; set; } = null!;
+        [Required]
+        [StringLength(255)]
+        public string PasswordHash { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; }
+        [StringLength(20)]
+        public string Role { get; set; } = "Tenant"; // Tenant, Landlord, Admin
 
-    public string? AvatarUrl { get; set; }
+        public bool Status { get; set; } = true;
 
-    public string? Status { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public string? AvatarUrl { get; set; }
+
+        // Navigation properties
+        public virtual UserProfile? UserProfile { get; set; }
+
+        public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
+
+        public virtual ICollection<RentalContract> RentalContracts { get; set; } = new List<RentalContract>();
+
+        public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+    }
 }
