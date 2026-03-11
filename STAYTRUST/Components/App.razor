@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="dark">
 
 <head>
     <meta charset="utf-8" />
@@ -9,10 +9,33 @@
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="STAYTRUST.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="home.css" />
     <HeadOutlet />
 </head>
 
-<body>
+<body class="font-display bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-white overflow-x-hidden antialiased">
     <Routes />
     <script src="_framework/blazor.web.js"></script>
 </body>
