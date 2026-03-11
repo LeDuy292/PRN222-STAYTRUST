@@ -1,0 +1,159 @@
+@page "/user-profile"
+@layout STAYTRUST.Components.Layout.CommunityLayout
+
+<div class="bg-[#0f2320] min-h-screen font-display text-slate-100 selection:bg-primary/30">
+    <div class="relative flex h-auto min-h-[calc(100vh-64px)] w-full flex-col overflow-x-hidden">
+
+        <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 lg:px-8">
+            <!-- Profile Header -->
+            <div class="relative mb-8">
+                <div class="h-64 lg:h-80 w-full rounded-2xl overflow-hidden relative group">
+                    <img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="Aerial view of Da Nang" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL0YPsA6u3nXmn5KPFPrNVaVbOT5vpD6qsbaf2PBpaTBMIkoPflJN2She3d9N9UNFxTiD6_z4b4QmnpcC2zdc40zrXXnPM8lZ3DBtmhCqx1YeKbZQQzSgIAETjVdPb7Y43DKlWa654mxZR1jNwuLsYrlw1yeJmPzF68bvcbAN_av8cJccXLUXTJ3cDcyT1QpxIGTtHiZjQ5ISMV6sSxGcN3rb_J7wFjX8fmtiJd8N05-Wksi8NUNtfZuUGl7j6e_ICEMVZbUFFO8w"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#0f2320] via-[#0f2320]/40 to-transparent"></div>
+                </div>
+                <div class="absolute -bottom-16 left-8 right-8 flex flex-col md:flex-row items-end gap-6">
+                    <div class="relative">
+                        <div class="size-32 md:size-40 rounded-3xl border-4 border-[#0f2320] overflow-hidden shadow-2xl glass-card">
+                            <img class="w-full h-full object-cover" data-alt="Portrait of Phan Nguyễn Gia Huy" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlItsZtP48vC77HSqbtMdVAB8Raf8iaB9jBayU8SQeJdiDIT7CeKy_r_X2O6DEtsdSvlp73_bwqyFqWFSTZDaxBoGVR5nGLfOzFZ5ggulWaus7cCHjoNbtE1ixk4Pi9_J9bd3Xq0DnPl-mZJkiHaM_Mp8jtxYEGmwfnRXAwGeHkE9lfrTNApOr7Qd3ED9McEFebZFwpEjMBWg2YMYML_PcVsKLNfDLi3HJkkHSo17fFMG4a5ms5WD-Q-d1Bgqf63d1k4Cwc5Fj-78"/>
+                        </div>
+                        <div class="absolute -bottom-2 -right-2 bg-primary rounded-full p-1.5 border-4 border-[#0f2320]">
+                            <span class="material-symbols-outlined text-white text-sm">verified</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col md:flex-row justify-between items-start md:items-end pb-4 gap-4">
+                        <div>
+                            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Phan Nguyễn Gia Huy</h1>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="flex items-center gap-1 text-primary font-bold">
+                                    <span class="material-symbols-outlined text-base">shield</span>
+                                    Trust Score: 980
+                                </span>
+                                <span class="px-2 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Elite Member</span>
+                                <span class="text-slate-400 text-sm flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">location_on</span>
+                                    Da Nang, Vietnam
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-lg">edit</span>
+                                Edit Profile
+                            </button>
+                            <button class="p-2.5 glass-card rounded-xl hover:bg-white/10 transition-colors">
+                                <span class="material-symbols-outlined">share</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-24">
+                <!-- Left Column -->
+                <aside class="lg:col-span-3 space-y-6">
+                    <div class="glass-card rounded-2xl p-5">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">person</span>
+                            Personal Info
+                        </h3>
+                        <p class="text-sm text-slate-400 leading-relaxed mb-6">
+                            Passionate traveler and early adopter of decentralized living. I believe trust is the foundation...
+                        </p>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 text-sm">
+                                <span class="material-symbols-outlined text-slate-500">calendar_today</span>
+                                <span class="text-slate-300">Joined October 2021</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Achievements -->
+                    <div class="glass-card rounded-2xl p-5">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">military_tech</span>
+                            Top Achievements
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                                <div class="size-10 rounded-lg bg-gradient-to-br from-[#00d1b2] to-[#00a58e] flex items-center justify-center text-white">
+                                    <span class="material-symbols-outlined">verified_user</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold">Verified Tenant</p>
+                                    <p class="text-[11px] text-slate-400">12 successful rentals</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Middle Column -->
+                <section class="lg:col-span-6 space-y-6">
+                    <div class="flex border-b border-white/5 pb-1 gap-8 mb-4">
+                        <button class="text-primary font-bold border-b-2 border-primary pb-3 px-1">Recent Activity</button>
+                        <button class="text-slate-400 font-medium hover:text-white pb-3 px-1 transition-colors">Community Posts</button>
+                        <button class="text-slate-400 font-medium hover:text-white pb-3 px-1 transition-colors">Reviews</button>
+                    </div>
+
+                    <!-- Post 1 -->
+                    <div class="glass-card rounded-2xl overflow-hidden">
+                        <div class="p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-10 rounded-full overflow-hidden">
+                                        <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDib9iz7NgZD0IQB9T_QAjvG9jKqJYXA4bpGcoGLP7MsI3YQs5DFJZpe5bDYRnRKc23mN9MWgIWKDdpYjyCzcdOgKpsxithoIKdIPqgNi_bEp03xA8Uf4yPqhto87kb1gm2-SRzZyXdeR4SAeWzbVYjRUBkfa-brHm0ePbsJQjX5bD7HOa5ok8nmaetg1MisrF3ArFSDDuRS6HTYx0EzEOKfen51U7MhgmdBYl9TVg7UaFyuqa9BiZKYUrFm2LZGZSKorKwROs1k2k"/>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold">Phan Nguyễn Gia Huy</p>
+                                        <p class="text-[11px] text-slate-400">2 hours ago in <span class="text-primary">#VietnamLiving</span></p>
+                                    </div>
+                                </div>
+                                <button class="text-slate-500 hover:text-white transition-colors">
+                                    <span class="material-symbols-outlined">more_horiz</span>
+                                </button>
+                            </div>
+                            <p class="text-slate-300 text-sm leading-relaxed mb-4">
+                                Just moved into this amazing apartment in Da Nang. The Staytrust verification process made it so much smoother.
+                            </p>
+                            <div class="rounded-xl overflow-hidden h-64 border border-white/5">
+                                <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGEGAulAmSNny1qsr6DcYpNnZ_MSyahHcZYXk2G70nA9SVHA0erhkutg_l0K_MGCJpIxoTGH0BhKTyb07J0rtkA0g2aREYJ8nehk4JUPwQaqRVEZF_aclZuFYIXMGyRh4L5F1tYkcAn9vgl0lL_qBEwn9rPI9FAmqm4veEdRqJcs13dHwvQJc8_J4z5YeJqB2B1W5ZYWvTUebpTUSGJxbsCerAB48mPCPtOjTtoS8dfSxTi_JW5sAzM6sC38E1iLaS_csmrOEcMsY"/>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Column -->
+                <aside class="lg:col-span-3 space-y-6">
+                    <div class="glass-card rounded-2xl overflow-hidden">
+                        <div class="p-5 border-b border-white/5">
+                            <h3 class="text-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">home_work</span>
+                                My Rented Home
+                            </h3>
+                        </div>
+                        <div class="relative h-40">
+                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5XXD3RHhGc8h2U90sz3K6Ig9VR5VOMIG8NU9SgQ2FPwZ7qY62xe5CfJ_YiMEvBtOF-NfBw7WzqlmLdXuS21dlGtAYTi-On8_BbF0l158TkDWAP0Ea5Q7PeSghTp0hCdL3XrpZDve9gqk5sbPQ3of5d25gaDJqGtOyqxHyr7C5plK50jHGpXGb_yGW_JVtMb6DlQZI-cMjtHOsfp2_AQE-bwuoglkPjHvWr7VVbmlMWzLu42nrMb6GAeVqermqke5Y0xJMVmv78Fc"/>
+                            <div class="absolute top-3 right-3 px-2 py-1 bg-primary text-background-dark text-[10px] font-extrabold rounded uppercase">Active</div>
+                        </div>
+                        <div class="p-5">
+                            <h4 class="font-bold text-sm">Altamira Ocean Residences</h4>
+                            <p class="text-xs text-slate-400 mb-3">Da Nang City, Vietnam</p>
+                            <button class="w-full mt-4 py-2 border border-primary/30 rounded-xl text-primary text-xs font-bold hover:bg-primary hover:text-background-dark transition-all">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+        
+        <footer class="mt-20 py-8 border-t border-white/5 bg-[#0f2320]/50 px-4 sm:px-6 lg:px-20 text-center">
+            <div class="flex flex-col items-center gap-4">
+                <div class="flex items-center gap-3 text-primary opacity-60">
+                    <span class="text-sm font-bold tracking-tight">Staytrust Rental Platform</span>
+                </div>
+                <p class="text-[10px] text-slate-500">© 2024 Staytrust. Built for transparency.</p>
+            </div>
+        </footer>
+    </div>
+</div>
