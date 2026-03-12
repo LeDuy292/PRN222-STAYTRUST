@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Components;
 using System.Text;
+
 using STAYTRUST.Components;
 using STAYTRUST.Data;
 using STAYTRUST.Services;
@@ -14,6 +16,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Add Authentication Service
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpClient<ICaptchaService, CaptchaService>();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -51,11 +63,13 @@ builder.Services.AddAuthentication(options =>
 
 // Add HttpContextAccessor and custom Authentication state provider for Blazor
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<HttpClient>(s =>
+builder.Services.AddScoped(sp => 
 {
-    var uriHelper = s.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
-    return new HttpClient { BaseAddress = new Uri(uriHelper.BaseUri) };
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
 });
+
+
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, STAYTRUST.Providers.CustomAuthenticationStateProvider>();
 
 builder.Services.AddAuthorization();
@@ -80,8 +94,9 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
-
+app.UseSession();
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();

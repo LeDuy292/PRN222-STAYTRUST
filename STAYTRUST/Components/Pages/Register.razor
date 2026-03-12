@@ -1,4 +1,5 @@
 @page "/register"
+@rendermode InteractiveServer
 @inject STAYTRUST.Services.IAuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -102,12 +103,8 @@
         <div class="glow-blob blob-1"></div>
         
         <div class="relative z-10">
-            <div class="flex items-center gap-4 group cursor-pointer mb-20" @onclick='() => NavigationManager.NavigateTo("/")'>
-                <div class="size-11 bg-[#13ecda] rounded-2xl flex items-center justify-center text-[#0c1117] shadow-[0_0_30px_rgba(19,236,218,0.25)] transition-all group-hover:scale-110 group-hover:rotate-6">
-                    <span class="material-symbols-outlined font-black text-xl">verified_user</span>
-                </div>
-                <h2 class="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500">STAYTRUST</h2>
-            </div>
+            <Logo IconContainerSize="size-11" IconSize="text-xl" TextSize="text-2xl" Class="mb-20" />
+
 
             <div class="max-w-xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#13ecda] text-[10px] font-bold uppercase tracking-widest mb-8">
@@ -135,18 +132,14 @@
     <!-- Form Panel (Right) -->
     <section class="flex-1 flex flex-col justify-center p-6 md:p-12 lg:p-20 relative bg-[#0c1117] overflow-y-auto">
         <div class="lg:hidden absolute top-8 left-8">
-            <div class="flex items-center gap-3 cursor-pointer" @onclick='() => NavigationManager.NavigateTo("/")'>
-                <div class="size-8 bg-[#13ecda] rounded-lg flex items-center justify-center text-[#0c1117]">
-                    <span class="material-symbols-outlined text-sm font-bold">verified_user</span>
-                </div>
-                <h2 class="text-lg font-black tracking-tighter">STAYTRUST</h2>
-            </div>
+            <Logo IconContainerSize="size-8" IconSize="text-sm" TextSize="text-lg" />
         </div>
 
         <div class="w-full max-w-xl mx-auto relative z-10 py-10">
             <div class="mb-10">
-                <h1 class="text-4xl font-black tracking-tight mb-3">Initialize <span class="text-[#13ecda]">Account</span></h1>
-                <p class="text-slate-500 font-medium">Configure your node for the Staytrust ecosystem.</p>
+                <h1 class="text-4xl font-black tracking-tight mb-3">Create <span class="text-[#13ecda]">Account</span></h1>
+                <p class="text-slate-500 font-medium">Join the Staytrust community today.</p>
+
             </div>
 
             <div class="premium-card rounded-[32px] overflow-hidden p-[1px]">
@@ -159,7 +152,7 @@
                         </div>
                     }
 
-                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration">
+                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration" FormName="register-form">
                         <DataAnnotationsValidator />
                         <div class="space-y-6">
                             <div class="space-y-2">
@@ -170,24 +163,28 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-2">
-                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Node</label>
+                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
+
                                     <InputText @bind-Value="registerModel.Email" type="email" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="john@wick.com" />
                                     <ValidationMessage For="@(() => registerModel.Email)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Phone Link</label>
+                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Phone Number</label>
+
                                     <InputText @bind-Value="registerModel.PhoneNumber" type="tel" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="+1..." />
                                 </div>
                             </div>
                             
                             <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Access Protocol Pin</label>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Password</label>
+
                                 <InputText @bind-Value="registerModel.Password" type="password" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="••••••••" />
                                 <ValidationMessage For="@(() => registerModel.Password)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
                             </div>
 
                             <div class="space-y-4 pt-2">
-                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Configure Peer Role</label>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Select Your Role</label>
+
                                 <div class="grid grid-cols-2 gap-4">
                                     <button type="button" @onclick='() => registerModel.Role = "Tenant"' 
                                             class="role-btn p-5 rounded-2xl text-left transition-all @(registerModel.Role == "Tenant" ? "active" : "opacity-60")">
@@ -228,7 +225,8 @@
                                 }
                                 else
                                 {
-                                    <span>Finalize Registration</span>
+                                    <span>Complete Registration</span>
+
                                     <span class="material-symbols-outlined text-lg">rocket_launch</span>
                                 }
                             </button>
@@ -238,7 +236,8 @@
             </div>
             
             <p class="mt-8 text-center text-xs text-slate-600 font-bold uppercase tracking-widest">
-                Already part of the network? <a @onclick='() => NavigationManager.NavigateTo("/login")' class="text-[#13ecda] hover:text-white cursor-pointer transition-colors px-2">Access Portal</a>
+                Already have an account? <a @onclick='() => NavigationManager.NavigateTo("/login")' class="text-[#13ecda] hover:text-white cursor-pointer transition-colors px-2">Sign In</a>
+
             </p>
         </div>
     </section>
