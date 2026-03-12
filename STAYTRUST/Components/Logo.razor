@@ -1,0 +1,15 @@
+@inject NavigationManager NavigationManager
+
+<div class="flex items-center gap-3 group cursor-pointer @Class" @onclick='() => NavigationManager.NavigateTo("/")'>
+    <div class="@IconContainerSize bg-primary rounded-xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(19,127,236,0.3)] transition-all group-hover:scale-110 group-hover:rotate-6">
+        <span class="material-symbols-outlined font-black @IconSize">verified_user</span>
+    </div>
+    <h2 class="@TextSize font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-blue-400">STAYTRUST</h2>
+</div>
+
+@code {
+    [Parameter] public string Class { get; set; } = "";
+    [Parameter] public string IconContainerSize { get; set; } = "size-8";
+    [Parameter] public string IconSize { get; set; } = "text-xl";
+    [Parameter] public string TextSize { get; set; } = "text-xl";
+}

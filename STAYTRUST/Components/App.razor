@@ -32,7 +32,27 @@
         }
     </script>
     <link rel="stylesheet" href="home.css" />
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script>
+        window.renderRecaptcha = () => {
+            if (window.grecaptcha && window.grecaptcha.render) {
+                const elements = document.querySelectorAll('.g-recaptcha');
+                elements.forEach(el => {
+                    try {
+                        grecaptcha.render(el, {
+                            'sitekey': el.getAttribute('data-sitekey'),
+                            'theme': el.getAttribute('data-theme') || 'light'
+                        });
+                    } catch (e) {
+                        // Element might already be rendered
+                    }
+                });
+            }
+        };
+    </script>
     <HeadOutlet />
+
+
 </head>
 
 <body class="font-display bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-white overflow-x-hidden antialiased">
