@@ -66,22 +66,33 @@
                     </p>
 </div>
 <div class="glass-search-container p-3 rounded-2xl mt-8 relative z-30 max-w-2xl">
-<form @formname="search-home" class="flex flex-col lg:flex-row lg:items-center relative gap-4">
-<div class="flex-1 relative group search-input-group input-glow-focus px-4 py-2 transition-all duration-300 rounded-xl bg-white/5 border border-white/10">
-<label class="block text-[10px] font-bold text-emerald-300 mb-1 ml-9 uppercase tracking-widest opacity-90">Location</label>
-<div class="flex items-center pb-1">
-<div class="absolute left-3 text-slate-400 icon-glow transition-all duration-300">
-<span class="material-symbols-outlined text-[24px]">location_on</span>
-</div>
-<input class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-slate-400/70 text-lg font-medium pl-9 py-0 h-7" placeholder="Search by area, street name..." type="text"/>
-</div>
-</div>
-<div class="">
-<a href="/search" class="w-full lg:w-auto h-full min-h-[64px] px-10 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-[#0b2530] rounded-xl font-bold shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:shadow-[0_0_35px_rgba(52,211,153,0.6)] flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-emerald-300/30">
-<span class="material-symbols-outlined text-[24px]">search</span>
-<span class="text-base font-extrabold tracking-wide">Find Home</span>
-</a>
-</div>
+<form @formname="search-home" class="flex flex-col lg:flex-row lg:items-center relative gap-4" @onsubmit="OnSearchSubmit">
+    <div class="flex-1 relative group search-input-group input-glow-focus px-4 py-2 transition-all duration-300 rounded-xl bg-white/5 border border-white/10">
+        <label class="block text-[10px] font-bold text-emerald-300 mb-1 ml-9 uppercase tracking-widest opacity-90">Location</label>
+        <div class="flex items-center pb-1">
+            <div class="absolute left-3 text-slate-400 icon-glow transition-all duration-300">
+                <span class="material-symbols-outlined text-[24px]">location_on</span>
+            </div>
+            <input @bind="SearchText" @bind:event="oninput" @onkeyup="HandleKeyUp" autocomplete="off" class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-slate-400/70 text-lg font-medium pl-9 py-0 h-7" placeholder="Search by area, street name..." type="text"/>
+        </div>
+        @if (suggestions.Any())
+        {
+            <div class="absolute left-0 right-0 top-full mt-2 bg-[#101922] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
+                @foreach (var suggestion in suggestions)
+                {
+                    <div @onclick="() => SelectSuggestion(suggestion)" class="px-6 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-none">
+                        <p class="text-white text-sm font-semibold">@suggestion.Description</p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div class="">
+        <button type="submit" class="w-full lg:w-auto h-full min-h-[64px] px-10 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-[#0b2530] rounded-xl font-bold shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:shadow-[0_0_35px_rgba(52,211,153,0.6)] flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-emerald-300/30">
+            <span class="material-symbols-outlined text-[24px]">search</span>
+            <span class="text-base font-extrabold tracking-wide">Find Home</span>
+        </button>
+    </div>
 </form>
 </div>
 <div class="flex items-center gap-6 text-slate-300 text-sm font-medium mt-2">
@@ -376,3 +387,40 @@
 </div>
 </div>
 </footer>
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+@code {
+    private string SearchText { get; set; } = "";
+    private List<Suggestion> suggestions = new();
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (SearchText?.Length >= 2)
+        {
+            suggestions = await JSRuntime.InvokeAsync<List<Suggestion>>("goongMap.getSuggestions", SearchText);
+        }
+        else
+        {
+            suggestions.Clear();
+        }
+    }
+
+    private void SelectSuggestion(Suggestion suggestion)
+    {
+        SearchText = suggestion.Description;
+        suggestions.Clear();
+    }
+
+    private void OnSearchSubmit()
+    {
+        // Navigate to search page with the location as a query parameter (optional) or just navigate
+        NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(SearchText)}");
+    }
+
+    public class Suggestion
+    {
+        public string Description { get; set; }
+        public string Place_id { get; set; }
+    }
+}
