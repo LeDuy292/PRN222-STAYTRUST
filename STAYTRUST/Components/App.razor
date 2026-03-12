@@ -13,6 +13,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+@inject IConfiguration Configuration
+    <!-- Goong Map SDK -->
+    <link href="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.js"></script>
+    <script src="js/goong-map.js"></script>
+    <script>
+        goongMap.init('@Configuration["GoongSettings:MaptilesKey"]', '@Configuration["GoongSettings:RestApiKey"]');
+    </script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
