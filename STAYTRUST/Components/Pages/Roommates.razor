@@ -1,0 +1,209 @@
+@page "/roommates"
+@layout STAYTRUST.Components.Layout.RoommateLayout
+@rendermode InteractiveServer
+
+<HeadContent>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec92",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#10221a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/roommates.css" />
+</HeadContent>
+
+<!-- Hero Section -->
+<div class="mb-10">
+    <h1 class="text-4xl lg:text-5xl font-black tracking-tight mb-3">Find your perfect <span class="text-primary">roommate</span> in Da Nang</h1>
+    <p class="text-slate-400 text-lg max-w-2xl">Verified matches based on compatibility, lifestyle habits, and our proprietary Trust Score™ system.</p>
+</div>
+
+<!-- Filters -->
+<div class="flex flex-wrap gap-3 mb-8 pb-2 relative z-20">
+    <STAYTRUST.Components.Roommate.FilterButton Label="Filters" Icon="tune" IsActive="@(activeFilter == "Filters")" OnClick="@(() => SetActiveFilter("Filters"))" />
+    
+    <div class="h-10 w-px bg-primary/20 mx-1"></div>
+    
+    <STAYTRUST.Components.Roommate.FilterDropdown 
+        Label="Gender" Icon="expand_more" 
+        IsActive="@(activeFilter == "Gender")" OnClick="@(() => SetActiveFilter("Gender"))"
+        Options="@(new List<string> { "Any", "Male", "Female" })"
+        SelectedOption="@selectedGender" OnOptionSelected="@(val => { selectedGender = val; SetActiveFilter(""); })" />
+        
+    <STAYTRUST.Components.Roommate.FilterDropdown 
+        Label="Age Range" Icon="expand_more" 
+        IsActive="@(activeFilter == "Age Range")" OnClick="@(() => SetActiveFilter("Age Range"))"
+        Options="@(new List<string> { "Any", "18-24", "25-30", "31-40", "40+" })"
+        SelectedOption="@selectedAge" OnOptionSelected="@(val => { selectedAge = val; SetActiveFilter(""); })" />
+        
+    <STAYTRUST.Components.Roommate.FilterDropdown 
+        Label="Cleanliness" Icon="expand_more" 
+        IsActive="@(activeFilter == "Cleanliness")" OnClick="@(() => SetActiveFilter("Cleanliness"))"
+        Options="@(new List<string> { "Any", "Relaxed", "Moderate", "Spotless" })"
+        SelectedOption="@selectedCleanliness" OnOptionSelected="@(val => { selectedCleanliness = val; SetActiveFilter(""); })" />
+        
+    <STAYTRUST.Components.Roommate.FilterDropdown 
+        Label="Budget" Icon="expand_more" 
+        IsActive="@(activeFilter == "Budget")" OnClick="@(() => SetActiveFilter("Budget"))"
+        Options="@(new List<string> { "Any", "< $200/mo", "$200 - $400/mo", "$400 - $600/mo", "> $600/mo" })"
+        SelectedOption="@selectedBudget" OnOptionSelected="@(val => { selectedBudget = val; SetActiveFilter(""); })" />
+        
+    <STAYTRUST.Components.Roommate.FilterDropdown 
+        Label="District" Icon="expand_more" 
+        IsActive="@(activeFilter == "District")" OnClick="@(() => SetActiveFilter("District"))"
+        Options="@(new List<string> { "Any", "Hải Châu", "Sơn Trà", "Ngũ Hành Sơn", "Thanh Khê", "Liên Chiểu" })"
+        SelectedOption="@selectedDistrict" OnOptionSelected="@(val => { selectedDistrict = val; SetActiveFilter(""); })" />
+</div>
+
+<!-- Match Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <STAYTRUST.Components.Roommate.RoommateCard 
+        Id="1"
+        ImageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuCNrXz0PQhhDH4WaoVQ5JbTU5RrA-bAHz5O6_Hr-082tx928Dt1XgF4gKWJJ62ocyFFIXcZo1kzOJqA4LVVeCz5Ny7HTFoSaW-wHAtXUrcexf2B5qJ9csXZoRrt_jxjbHYoFrKVGXAe3A8r37nKxlxLJRHDjYK-HKw_Cb8w6slQcQVGDQpJQH7plEPB9b5cUzOrCsSUrWxY4PdHqcZoPwZOQp7XeOM2s2wDyn5FbrMVknBmcQECO6uUxjtRb46xFKVFbe-eNFpnPQzg"
+        ImageAlt="Young professional man smiling outdoors"
+        IsVerified="true"
+        MatchPercentage="98"
+        Name="Phúc Hoàng"
+        Age="24"
+        Location="Hải Châu District, Da Nang"
+        MonthlyRent="350"
+        Tags="@(new List<string> { "Early bird", "Non-smoker", "Surfing" })"
+        TrustScore="98" />
+
+    <STAYTRUST.Components.Roommate.RoommateCard 
+        Id="2"
+        ImageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuAfJKfeAr4-aa5zW0UJeRjw30jH3ul3m9H-nzhkoyUp53JZNsZJn5S8vbVV6-UtwXBesRuip-JcEDLYUl65d3W4vhq2nGdXuJ8yLD9KT236-WjRzeUQnNddxtj4vTBLc4LWs1JKj0ibtH075Hjb0SBwe_pDno89JbRmaA1m892-eEpa7061GC4ludq3obXz3xe0PH3eWLMH2pe204bgh8H1hGWe273Sass4Q-9w1On_sbRETxcQQfjHn8SsTIVvHlvdYBZOeOrB4tL5"
+        ImageAlt="Young woman with glasses smiling"
+        IsVerified="true"
+        MatchPercentage="89"
+        Name="Linh Nguyễn"
+        Age="22"
+        Location="Ngũ Hành Sơn, Da Nang"
+        MonthlyRent="280"
+        Tags="@(new List<string> { "Student", "Pet friendly", "Night owl" })"
+        TrustScore="94" />
+
+    <STAYTRUST.Components.Roommate.RoommateCard 
+        Id="3"
+        ImageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuBUmoveoZghmb7EsVCYBOfnmSm0ocy4WnTBBk3F0xL77iEbqCwkDF8rwBVq0IZFx-uZb7-ZZtSWdPeMrHt0AgYlnXD1orFuKtRVRzHdp9t2Hh7juFN3CrBoQRLl14KhIlx4fw_r_ZUsfnZmWBK_njkeeEsyXwGwtxTKdl67uM9873IZ0uXF68ccNV9I4nQ5HK9K5k68ubtaSapkjYvJ-cZl5Kr41GwTY3D9d8QTQuJ9a8QqGHjcf2728tsWH2lnvlNF7a0nTYpujgVY"
+        ImageAlt="Portrait of a friendly young man"
+        IsVerified="true"
+        MatchPercentage="82"
+        Name="Minh Tran"
+        Age="27"
+        Location="Son Tra District, Da Nang"
+        MonthlyRent="420"
+        Tags="@(new List<string> { "Remote work", "Fitness", "Vegan" })"
+        TrustScore="87" />
+</div>
+
+<!-- Load More Action -->
+<div class="mt-12 flex justify-center">
+    <button @onclick="LoadMoreMatches" disabled="@isLoading" 
+            class="group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl glass-card border border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all duration-300 hover-glow overflow-hidden">
+        
+        <!-- Animated Background Glow -->
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+
+        @if (isLoading)
+        {
+            <span class="material-symbols-outlined text-primary animate-spin-slow">refresh</span>
+            <span class="font-bold text-primary tracking-wide">Finding Matches...</span>
+        }
+        else
+        {
+            <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">explore</span>
+            <span class="font-bold text-slate-200 group-hover:text-primary transition-colors tracking-wide">Load More Matches</span>
+        }
+    </button>
+</div>
+
+<!-- Promotion / Stats Section -->
+<div class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-primary/5 rounded-3xl p-8 lg:p-12 border border-primary/10">
+    <div>
+        <h2 class="text-3xl font-black mb-6">Why trust <span class="text-primary tracking-tighter">Staytrust?</span></h2>
+        
+        <div class="space-y-6">
+            <STAYTRUST.Components.Roommate.PromotionReason 
+                Icon="security" 
+                Title="Advanced Verification" 
+                Description="Every profile is manually reviewed and cross-referenced with local identity databases." />
+                
+            <STAYTRUST.Components.Roommate.PromotionReason 
+                Icon="insights" 
+                Title="Compatibility Algorithm" 
+                Description="Our AI analyzes 40+ lifestyle data points to predict roommate harmony before you meet." />
+                
+            <STAYTRUST.Components.Roommate.PromotionReason 
+                Icon="forum" 
+                Title="Secure Communication" 
+                Description="In-app messaging protects your personal contact details until you're ready to share." />
+        </div>
+    </div>
+    
+    <div class="relative h-80 lg:h-full min-h-[400px]">
+        <div class="absolute inset-0 bg-primary/10 rounded-2xl overflow-hidden flex items-center justify-center">
+            <img class="w-full h-full object-cover opacity-60" data-alt="Friends laughing together in a modern apartment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhb17ixYZU2nVRgjh-sziC0Y_8SMtJqH58qCQeF1J-CkB6vkYX3x2IVYt783rbrsYzW1P8PTYjcYlqHpd0ND17748j0BKUfjZYZUZV6CNbaucj4DBXbN-v0504tz3IkjqqymTwtzmWgSvyAp038oL5xIU-Rzg3YZXrHDzQme7XwzkGUvrK2eRIKDpgT_rMS0j2K2GKrDyjOCO4qvYN1VdyRjLII4kuFoGVWbXJNcW1uIThktN-HM-_gbtcIyeT6l_uf3OPjZrw00dy" />
+            
+            <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
+            
+            <div class="absolute bottom-6 left-6 right-6 glass-card p-6 rounded-2xl">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="flex -space-x-3">
+                        <img class="h-8 w-8 rounded-full border-2 border-background-dark" data-alt="User avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNtq4tQyK5imhkrdfMdm-A2COci9gVhfh2qyWbimaVvSZHDBsfyS29S1cEITvGFZf2eRL3RSvntukRMGEntyhzUrgias5vfbZAsnUUP9sYrOY2jJ_gQc8dW0bcODl-pWoziJYScXgCnC_OvuiMc3zrJmmzLdZ2T4Aq76nHMlmsj2UBq2iC-3y7wpL6mRjbjRXHYWWVX11fYsP06hYE6QqkQOAXpVCZjSSMu_j7KVIbVuFMGA6-GmlhT3e03O6gPI4koQPT-BJFmJMF" />
+                        <img class="h-8 w-8 rounded-full border-2 border-background-dark" data-alt="User avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNSVG0lsFC-b5DrwyJAfi1am-pxeaGpjStnJY6fWSz-cRoRua6LR1SgoysoNNvGdz0kqMbpnzQEGrKDiPBTj3YPpwC272L4kISh21bgzMzP55dwCXWBuqZ3wOLiyMVkZoUYN25efCCiQpaOcIriRjftiVn5-1jKz9i-X8atc38TaVWSjmEg273glqpjaQBhnDcD9JBOU5QUQWTy1lWAXMZGX3CDH-0k6RnjS38GxqhHXyd2gBeKzzl9B59zlpkw1pFvnM96rsLFTnd" />
+                        <img class="h-8 w-8 rounded-full border-2 border-background-dark" data-alt="User avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClWoaTk3ydrw0xyuAj6lHpN4FOfmBN6agyWz0DQzWFQ5wknz0QKqNhKeXz4Y4fucG46TjLtWLvaoxrRYQu2qO57_ikMxNjIpcBZSKsyljk7Vqdy1pBep5iY1uM-TsqbBe833M6rD3K8N9cdAeUjuScecmZvhRvTOQWAOmw6Dp30cm5MFqgJrtzkrmsWXjNm7-M3TpXlWMaJBL6LNWdGg15HbBEZ5zrl1cO213CHp5ERyEGdmrfjjA09BndWykW37pel7NA6_VPK91T" />
+                    </div>
+                    <span class="text-sm font-bold text-primary">Join 5,000+ residents</span>
+                </div>
+                <p class="text-sm text-slate-300">"Found the perfect apartment and a lifelong friend through Staytrust within 3 days of moving to Da Nang."</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string activeFilter = "Filters";
+    private bool isLoading = false;
+    
+    // Filter Selections
+    private string selectedGender = "";
+    private string selectedAge = "";
+    private string selectedCleanliness = "";
+    private string selectedBudget = "";
+    private string selectedDistrict = "";
+
+    private void SetActiveFilter(string filter)
+    {
+        if (activeFilter == filter && filter != "Filters" && filter != "")
+        {
+            activeFilter = ""; // Toggle off if clicked again
+        }
+        else
+        {
+            activeFilter = filter;
+        }
+    }
+
+    private async Task LoadMoreMatches()
+    {
+        isLoading = true;
+        await Task.Delay(1500);
+        isLoading = false;
+    }
+}

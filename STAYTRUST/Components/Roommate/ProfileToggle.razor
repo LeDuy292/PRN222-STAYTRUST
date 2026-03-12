@@ -1,0 +1,41 @@
+@code {
+    [Parameter]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsChecked { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsCheckedChanged { get; set; }
+
+    private async Task OnToggleChanged(ChangeEventArgs e)
+    {
+        if (bool.TryParse(e.Value?.ToString(), out bool newValue))
+        {
+            IsChecked = newValue;
+            await IsCheckedChanged.InvokeAsync(newValue);
+        }
+    }
+}
+
+<div class="glass-panel p-6 rounded-xl flex flex-col gap-4">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">@Icon</span>
+            <div>
+                <p class="font-medium">@Title</p>
+                <p class="text-xs text-slate-500">@Description</p>
+            </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="sr-only peer" checked="@IsChecked" @onchange="OnToggleChanged" />
+            <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+        </label>
+    </div>
+</div>
