@@ -1,0 +1,254 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Components.Authorization
+@using STAYTRUST.Models
+@using STAYTRUST.Services
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
+
+<nav class="absolute top-0 left-0 right-0 z-50 w-full px-4 lg:px-40 py-5">
+    <div class="glass-panel rounded-xl px-6 py-3 flex items-center justify-between shadow-sm bg-white/10 backdrop-blur-md border border-white/20">
+        <Logo />
+        <div class="flex items-center gap-6">
+            <a href="/" class="text-white text-sm font-semibold hover:text-emerald-400 transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">arrow_back</span>
+                Back to Home
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="min-h-screen bg-[#0c1117] pt-32 pb-20 px-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-10 text-center lg:text-left">
+            <h1 class="text-4xl font-black text-white mb-3">Update your <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Information</span></h1>
+            <p class="text-slate-400 font-medium">Keep your profile up to date for better coordination with landlords.</p>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="flex flex-col items-center justify-center py-20 gap-4">
+                <div class="size-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                <p class="text-emerald-400 font-bold animate-pulse">Syncing encrypted data...</p>
+            </div>
+        }
+        else if (user != null)
+        {
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Sidebar / Summary -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-xl">
+                        <div class="size-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-white text-4xl font-black shadow-lg shadow-emerald-500/20 mb-6">
+                            @FullName?[0].ToString().ToUpper()
+                        </div>
+                        <h2 class="text-xl font-bold text-white mb-1">@FullName</h2>
+                        <p class="text-slate-500 text-sm font-medium mb-4">@user.Email</p>
+                        <div class="inline-flex px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
+                            @user.Role
+                        </div>
+                    </div>
+
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
+                        <h3 class="text-white font-bold text-sm uppercase tracking-widest mb-4 opacity-50">Account Integrity</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                <span class="material-symbols-outlined text-emerald-500 text-lg">verified</span>
+                                Verified Identity
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm">
+                                <span class="material-symbols-outlined text-emerald-500 text-lg">security</span>
+                                Secure Encrypted Path
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Main Form -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
+                        @if (!string.IsNullOrEmpty(statusMessage))
+                        {
+                            <div class="mb-8 p-4 rounded-2xl @(isError ? "bg-red-500/10 border border-red-500/20 text-red-100" : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-100") flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                <span class="material-symbols-outlined @(isError ? "text-red-500" : "text-emerald-500")">
+                                    @(isError ? "error" : "check_circle")
+                                </span>
+                                <span class="text-sm font-semibold">@statusMessage</span>
+                            </div>
+                        }
+
+                        <form @onsubmit="HandleUpdate" class="space-y-8">
+                            <!-- Section: Personal -->
+                            <div>
+                                <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                    <span class="size-1.5 rounded-full bg-emerald-400"></span>
+                                    Core Identity
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Full Name</label>
+                                        <input @bind="FullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" required />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
+                                        <input @bind="Phone" type="tel" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" required />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Profile -->
+                            <div>
+                                <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-3 pt-4">
+                                    <span class="size-1.5 rounded-full bg-emerald-400"></span>
+                                    Extended Metadata
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Identity Number (CCCD)</label>
+                                        <input @bind="IdentityNumber" type="text" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Gender</label>
+                                        <select @bind="Gender" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer">
+                                            <option value="" class="bg-[#0c1117]">Select Gender</option>
+                                            <option value="Nam" class="bg-[#0c1117]">Nam</option>
+                                            <option value="Nữ" class="bg-[#0c1117]">Nữ</option>
+                                            <option value="Other" class="bg-[#0c1117]">Khác</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Date of Birth</label>
+                                        <input @bind="DateOfBirth" type="date" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Avatar URL (Optional)</label>
+                                        <input @bind="AvatarUrl" type="url" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" placeholder="https://..." />
+                                    </div>
+                                </div>
+                                <div class="space-y-2 mt-6">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Permanent Address</label>
+                                    <textarea @bind="Address" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all min-h-[100px]" placeholder="Enter your full address..."></textarea>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-[#0c1117] font-black py-4.5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed group uppercase text-xs tracking-[0.2em]" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                    <span>Syncing Metadata...</span>
+                                }
+                                else
+                                {
+                                    <span>Sync Profile</span>
+                                    <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">database</span>
+                                }
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-red-500/10 border border-red-500/20 text-red-100 p-8 rounded-3xl text-center">
+                <span class="material-symbols-outlined text-4xl text-red-500 mb-4">error</span>
+                <h2 class="text-xl font-bold mb-2">Access Denied</h2>
+                <p class="text-sm opacity-70 mb-6">We could not identify your secure session. Please try logging in again.</p>
+                <a href="/login" class="inline-flex px-8 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors">Sign In</a>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* Premium aesthetics for form controls */
+    ::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    private User? user;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private string? statusMessage;
+    private bool isError = false;
+
+    // Form fields
+    private string? FullName;
+    private string? Phone;
+    private DateOnly? DateOfBirth;
+    private string? Gender;
+    private string? IdentityNumber;
+    private string? Address;
+    private string? AvatarUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var claimsUser = authState.User;
+
+        if (claimsUser.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                        ?? claimsUser.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
+                        ?? claimsUser.FindFirst("sub")?.Value;
+
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                user = await UserService.GetUserWithProfileAsync(userId);
+                if (user != null)
+                {
+                    FullName = user.FullName;
+                    Phone = user.Phone;
+                    if (user.UserProfile != null)
+                    {
+                        DateOfBirth = user.UserProfile.DateOfBirth;
+                        Gender = user.UserProfile.Gender;
+                        IdentityNumber = user.UserProfile.IdentityNumber;
+                        Address = user.UserProfile.Address;
+                        AvatarUrl = user.UserProfile.AvatarUrl;
+                    }
+                }
+            }
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (user == null || isSubmitting) return;
+
+        isSubmitting = true;
+        statusMessage = null;
+        isError = false;
+
+        var profileUpdate = new UserProfile
+        {
+            DateOfBirth = DateOfBirth,
+            Gender = Gender,
+            IdentityNumber = IdentityNumber,
+            Address = Address,
+            AvatarUrl = AvatarUrl
+        };
+
+        var result = await UserService.UpdateUserProfileAsync(user.UserId, FullName ?? "", Phone ?? "", profileUpdate);
+
+        if (result)
+        {
+            statusMessage = "Information synchronized successfully across all nodes.";
+            // Subtle delay to show success
+            await Task.Delay(1000);
+            // Optionally redirect or stay
+        }
+        else
+        {
+            statusMessage = "Synchronization failed. Please check your data connectivity.";
+            isError = true;
+        }
+
+        isSubmitting = false;
+    }
+}

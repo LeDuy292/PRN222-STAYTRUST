@@ -1,5 +1,10 @@
-@page "/detail"
-@inject HttpClient Http
+@page "/detail/{RoomId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using STAYTRUST.Models
+@using STAYTRUST.Services
+@inject IRentalService RentalService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 
 <PageTitle>Staytrust Property 3D Detail View</PageTitle>
@@ -115,10 +120,10 @@
                         </div>
                         <div class="flex justify-between items-end">
                             <div class="flex flex-col gap-1">
-                                <h1 class="text-3xl font-bold">Azure Ocean Suite</h1>
+                                <h1 class="text-3xl font-bold">@(Room?.Title ?? "Loading property...")</h1>
                                 <div class="flex items-center gap-2 text-[#13ecda]">
                                     <span class="material-symbols-outlined text-sm">location_on</span>
-                                    <span class="text-sm">Võ Nguyên Giáp, Son Tra, Da Nang</span>
+                                    <span class="text-sm">@(Room?.Address ?? "Loading location...")</span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3 bg-black/40 backdrop-blur-md p-2 rounded-xl border border-white/10">
@@ -245,9 +250,13 @@
                             </div>
                         </div>
                     </div>
-                    <button class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all">
-                        Instant Book Now
+                    <button @onclick="HandleBooking" disabled="@isBooking" class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        @(isBooking ? "Processing..." : "Instant Book Now")
                     </button>
+                    @if (!string.IsNullOrEmpty(bookingMessage))
+                    {
+                        <p class="mt-4 text-center text-sm @(bookingSuccess ? "text-emerald-400" : "text-red-400") font-medium">@bookingMessage</p>
+                    }
                     <p class="mt-4 text-center text-[10px] text-white/40 font-medium">Free cancellation within 48 hours</p>
                 </div>
                 <!-- Landlord Trust Profile -->
@@ -316,9 +325,73 @@
 </div>
 
 @code {
+    [Parameter] public int RoomId { get; set; }
+    private Room? Room { get; set; }
+    private string? bookingMessage;
+    private bool bookingSuccess;
+    private bool isBooking;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Room = await RentalService.GetRoomByIdAsync(RoomId);
+        if (Room == null)
+        {
+            // Fallback or redirect if room not found
+            // NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleBooking()
+    {
+        isBooking = true;
+        bookingMessage = null;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}");
+            return;
+        }
+
+        var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                        ?? user.FindFirst("sub")?.Value;
+        
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+        {
+            bookingMessage = "Không thể xác định thông tin người dùng.";
+            isBooking = false;
+            return;
+        }
+
+        // The core logic check requested by the user
+        if (await RentalService.HasActiveRentalAsync(userId))
+        {
+            bookingMessage = "Bạn hiện đang thuê một phòng khác. Vui lòng trả phòng trước khi thuê phòng mới.";
+            bookingSuccess = false;
+            isBooking = false;
+            return;
+        }
+
+        var contract = await RentalService.CreateRentalContractAsync(userId, RoomId);
+        if (contract != null)
+        {
+            bookingMessage = "Đặt phòng thành công! Bạn có thể xem hợp đồng trong phần 'My Rentals'.";
+            bookingSuccess = true;
+        }
+        else
+        {
+            bookingMessage = "Đặt phòng thất bại. Có thể phòng này đã được thuê hoặc có lỗi xảy ra.";
+            bookingSuccess = false;
+        }
+
+        isBooking = false;
+    }
+
     private async Task Logout()
     {
-        await Http.PostAsync("api/auth/logout", null);
-        NavigationManager.NavigateTo("/detail", forceLoad: true);
+        // This was using HttpClient, but we can just navigate to a logout endpoint if it exists or use AuthService
+        NavigationManager.NavigateTo("/login", true);
     }
 }

@@ -7,6 +7,8 @@ using System.Text;
 using STAYTRUST.Components;
 using STAYTRUST.Data;
 using STAYTRUST.Services;
+using STAYTRUST.Models;
+using PayOS;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Add Authentication Service
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRentalService, RentalService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOSSettings"));
 builder.Services.AddHttpClient<ICaptchaService, CaptchaService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddDistributedMemoryCache();

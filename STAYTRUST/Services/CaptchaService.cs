@@ -32,7 +32,6 @@ namespace STAYTRUST.Services
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<RecaptchaResponse>(responseString, options);
 
-
             return result?.Success ?? false;
         }
 

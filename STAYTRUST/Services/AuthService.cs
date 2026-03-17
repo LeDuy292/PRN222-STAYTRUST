@@ -8,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using STAYTRUST.Data;
 using STAYTRUST.Models;
-using BCrypt.Net;
 
 namespace STAYTRUST.Services
 {
@@ -38,9 +37,12 @@ namespace STAYTRUST.Services
             {
                 FullName = fullName,
                 Email = email,
-                PhoneNumber = phoneNumber,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                Role = role
+                UserName = email, // Use email as username for uniqueness
+                Phone = phoneNumber ?? "", // Ensure Phone is not null as per schema
+                Password = BCrypt.Net.BCrypt.HashPassword(password),
+                Role = role,
+                Status = true,
+                CreatedAt = DateTime.Now
             };
 
             _context.Users.Add(user);
@@ -52,7 +54,12 @@ namespace STAYTRUST.Services
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (user == null)
+            {
+                return null;
+            }
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
             {
                 return null;
             }
@@ -63,10 +70,10 @@ namespace STAYTRUST.Services
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("FullName", user.FullName),
-                new Claim("Role", user.Role),
+                new Claim("Role", user.Role ?? "Tenant"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

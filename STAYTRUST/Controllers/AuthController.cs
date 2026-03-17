@@ -25,11 +25,16 @@ namespace STAYTRUST.Controllers
 
         [HttpPost("login")]
         [Consumes("application/x-www-form-urlencoded")]
-        public async Task<IActionResult> Login([FromForm] string email, [FromForm] string password, [FromForm] string? rememberMe, [FromForm(Name = "g-recaptcha-response")] string recaptchaResponse)
+        public async Task<IActionResult> Login([FromForm] string email, [FromForm] string password, [FromForm] string? rememberMe, [FromForm(Name = "g-recaptcha-response")] string? recaptchaResponse)
         {
-            if (string.IsNullOrEmpty(recaptchaResponse) || !await _captchaService.VerifyRecaptchaAsync(recaptchaResponse))
+            bool isDev = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+            
+            if (!isDev)
             {
-                return Redirect("/login?error=captcha");
+                if (string.IsNullOrEmpty(recaptchaResponse) || !await _captchaService.VerifyRecaptchaAsync(recaptchaResponse))
+                {
+                    return Redirect("/login?error=captcha");
+                }
             }
 
             var token = await _authService.AuthenticateAsync(email, password);

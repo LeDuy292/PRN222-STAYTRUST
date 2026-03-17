@@ -291,6 +291,7 @@
         [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; set; } = string.Empty;
 
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Phone Number is required for identity verification.")]
         public string? PhoneNumber { get; set; }
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required.")]

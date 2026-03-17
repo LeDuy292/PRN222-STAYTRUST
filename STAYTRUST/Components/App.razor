@@ -58,6 +58,15 @@
                 });
             }
         };
+
+        window.getRecaptchaResponse = () => {
+            return window.grecaptcha ? grecaptcha.getResponse() : "";
+        };
+
+        window.submitForm = (formId) => {
+            const form = document.getElementById(formId);
+            if (form) form.submit();
+        };
     </script>
     <HeadOutlet />
 
