@@ -1,26 +1,25 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class MeterReading
 {
-    public class MeterReading
-    {
-        [Key]
-        public int ReadingId { get; set; }
+    public int ReadingId { get; set; }
 
-        public int RoomId { get; set; }
+    public int RoomId { get; set; }
 
-        [StringLength(7)]
-        public string? Month { get; set; } // YYYY-MM
+    public string? Month { get; set; }
 
-        public int? ElectricOld { get; set; }
-        public int? ElectricNew { get; set; }
-        public int? WaterOld { get; set; }
-        public int? WaterNew { get; set; }
+    public int? ElectricOld { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int? ElectricNew { get; set; }
 
-        [ForeignKey("RoomId")]
-        public virtual Room? Room { get; set; }
-    }
+    public int? WaterOld { get; set; }
+
+    public int? WaterNew { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual Room Room { get; set; } = null!;
 }

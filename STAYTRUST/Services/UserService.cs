@@ -1,54 +1,74 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using STAYTRUST.Data;
 using STAYTRUST.Models;
 
 namespace STAYTRUST.Services
 {
-    public interface IUserService
-    {
-        Task<List<User>> GetAllUsersAsync();
-        Task<User?> GetUserByIdAsync(int id);
-        Task<User?> GetUserByUsernameAsync(string username);
-        Task<bool> RegisterUserAsync(User user);
-        Task<User?> LoginAsync(string username, string password);
-    }
-
     public class UserService : IUserService
     {
-        private readonly StayTrustDbContext _context;
+        private readonly AppDbContext _context;
 
-        public UserService(StayTrustDbContext context)
+        public UserService(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<List<User>> GetAllUsersAsync()
+        public async Task<User?> GetUserWithProfileAsync(int userId)
         {
-            return await _context.Users.Include(u => u.UserProfile).ToListAsync();
-        }
-
-        public async Task<User?> GetUserByIdAsync(int id)
-        {
-            return await _context.Users.Include(u => u.UserProfile).FirstOrDefaultAsync(u => u.UserId == id);
-        }
-
-        public async Task<User?> GetUserByUsernameAsync(string username)
-        {
-            return await _context.Users.Include(u => u.UserProfile).FirstOrDefaultAsync(u => u.UserName == username);
-        }
-
-        public async Task<bool> RegisterUserAsync(User user)
-        {
-            // Note: In a real app, hash the password!
-            _context.Users.Add(user);
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task<User?> LoginAsync(string username, string password)
-        {
-            // Note: In a real app, compare hashed passwords!
             return await _context.Users
-                .FirstOrDefaultAsync(u => u.UserName == username && u.Password == password);
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
+
+        public async Task<bool> UpdateUserProfileAsync(int userId, string fullName, string phone, UserProfile profileUpdate)
+        {
+            var user = await _context.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null) return false;
+
+            // Update User fields
+            user.FullName = fullName;
+            user.Phone = phone;
+
+            // Update or Create UserProfile
+            if (user.UserProfile == null)
+            {
+                user.UserProfile = new UserProfile
+                {
+                    UserId = userId,
+                    DateOfBirth = profileUpdate.DateOfBirth,
+                    Gender = profileUpdate.Gender,
+                    IdentityNumber = profileUpdate.IdentityNumber,
+                    Address = profileUpdate.Address,
+                    AvatarUrl = profileUpdate.AvatarUrl,
+                    UpdatedAt = DateTime.Now
+                };
+                _context.UserProfiles.Add(user.UserProfile);
+            }
+            else
+            {
+                user.UserProfile.DateOfBirth = profileUpdate.DateOfBirth;
+                user.UserProfile.Gender = profileUpdate.Gender;
+                user.UserProfile.IdentityNumber = profileUpdate.IdentityNumber;
+                user.UserProfile.Address = profileUpdate.Address;
+                user.UserProfile.AvatarUrl = profileUpdate.AvatarUrl;
+                user.UserProfile.UpdatedAt = DateTime.Now;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating user profile: {ex.Message}");
+                return false;
+            }
         }
     }
 }

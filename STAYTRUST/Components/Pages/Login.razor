@@ -157,7 +157,7 @@
                         </div>
                     }
 
-                    <form method="post" action="api/auth/login">
+                    <form method="post" action="api/auth/login" id="loginForm">
                         <div class="space-y-6">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
@@ -198,7 +198,7 @@
                             </div>
 
                             
-                            <button class="w-full btn-primary-glow font-black py-4.5 rounded-2xl mt-4 flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.2em]" type="submit" disabled="@isSubmitting">
+                            <button class="w-full btn-primary-glow font-black py-4.5 rounded-2xl mt-4 flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.2em]" type="button" @onclick="HandleLoginClick" disabled="@isSubmitting">
                                 @if(isSubmitting)
                                 {
                                     <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
@@ -266,6 +266,40 @@
                 ErrorMessage = "Please verify that you are not a robot.";
             }
 
+        }
+    }
+
+    private async Task HandleLoginClick()
+    {
+        if (isSubmitting) return;
+
+        ErrorMessage = null;
+        
+        try 
+        {
+            /*
+            var response = await JS.InvokeAsync<string>("getRecaptchaResponse");
+            if (string.IsNullOrEmpty(response))
+            {
+                ErrorMessage = "Please verify that you are not a robot before signing in.";
+                return;
+            }
+            */
+
+            isSubmitting = true;
+            StateHasChanged();
+            
+            // Subtle delay to show the "Syncing" state
+            await Task.Delay(500);
+            
+            await JS.InvokeVoidAsync("submitForm", "loginForm");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking captcha: {ex.Message}");
+            // Fallback: if script is not loaded or fails, just submit to avoid blocking users
+            // but for this task, the user wants a notification.
+            ErrorMessage = "Security verification failed. Please refresh and try again.";
         }
     }
 

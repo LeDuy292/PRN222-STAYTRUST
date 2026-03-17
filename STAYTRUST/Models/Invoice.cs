@@ -1,38 +1,29 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class Invoice
 {
-    public class Invoice
-    {
-        [Key]
-        public int InvoiceId { get; set; }
+    public int InvoiceId { get; set; }
 
-        public int ContractId { get; set; }
+    public int ContractId { get; set; }
 
-        [StringLength(7)]
-        public string? Month { get; set; }
+    public string? Month { get; set; }
 
-        [Column(TypeName = "decimal(12, 2)")]
-        public decimal? RoomPrice { get; set; }
+    public decimal? RoomPrice { get; set; }
 
-        [Column(TypeName = "decimal(12, 2)")]
-        public decimal? ElectricFee { get; set; }
+    public decimal? ElectricFee { get; set; }
 
-        [Column(TypeName = "decimal(12, 2)")]
-        public decimal? WaterFee { get; set; }
+    public decimal? WaterFee { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public decimal? TotalAmount { get; private set; }
+    public decimal? TotalAmount { get; set; }
 
-        [StringLength(20)]
-        public string? Status { get; set; } // 'Unpaid', 'Paid'
+    public string? Status { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? CreatedAt { get; set; }
 
-        [ForeignKey("ContractId")]
-        public virtual RentalContract? RentalContract { get; set; }
+    public virtual RentalContract Contract { get; set; } = null!;
 
-        public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
-    }
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

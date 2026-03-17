@@ -1,21 +1,17 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class RoomImage
 {
-    public class RoomImage
-    {
-        [Key]
-        public int ImageId { get; set; }
+    public int ImageId { get; set; }
 
-        public int RoomId { get; set; }
+    public int RoomId { get; set; }
 
-        [StringLength(255)]
-        public string? ImageUrl { get; set; }
+    public string? ImageUrl { get; set; }
 
-        public bool Approved { get; set; } = false;
+    public bool? Approved { get; set; }
 
-        [ForeignKey("RoomId")]
-        public virtual Room? Room { get; set; }
-    }
+    public virtual Room Room { get; set; } = null!;
 }

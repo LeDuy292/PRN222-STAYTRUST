@@ -1,33 +1,25 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class UserProfile
 {
-    public class UserProfile
-    {
-        [Key]
-        public int ProfileId { get; set; }
+    public int ProfileId { get; set; }
 
-        public int UserId { get; set; }
+    public int UserId { get; set; }
 
-        [DataType(DataType.Date)]
-        public DateTime? DateOfBirth { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
 
-        [StringLength(10)]
-        public string? Gender { get; set; }
+    public string? Gender { get; set; }
 
-        [StringLength(20)]
-        public string? IdentityNumber { get; set; }
+    public string? IdentityNumber { get; set; }
 
-        [StringLength(255)]
-        public string? Address { get; set; }
+    public string? Address { get; set; }
 
-        [StringLength(255)]
-        public string? AvatarUrl { get; set; }
+    public string? AvatarUrl { get; set; }
 
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+    public DateTime? UpdatedAt { get; set; }
 
-        [ForeignKey("UserId")]
-        public virtual User? User { get; set; }
-    }
+    public virtual User User { get; set; } = null!;
 }

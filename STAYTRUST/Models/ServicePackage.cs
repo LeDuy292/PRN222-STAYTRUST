@@ -1,19 +1,15 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class ServicePackage
 {
-    public class ServicePackage
-    {
-        [Key]
-        public int PackageId { get; set; }
+    public int PackageId { get; set; }
 
-        [StringLength(100)]
-        public string? PackageName { get; set; }
+    public string? PackageName { get; set; }
 
-        [Column(TypeName = "decimal(12, 2)")]
-        public decimal? Price { get; set; }
+    public decimal? Price { get; set; }
 
-        public int? DurationDays { get; set; }
-    }
+    public int? DurationDays { get; set; }
 }

@@ -1,0 +1,78 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<div class="relative inline-block text-left" @onclick:stopPropagation>
+    <div @onclick="ToggleDropdown" class="flex items-center gap-4 bg-white/50 backdrop-blur-md rounded-full pl-2 pr-5 py-1.5 border border-white/20 shadow-sm hover:shadow-md transition-all cursor-pointer group">
+        <div class="size-8 rounded-full bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center text-white font-bold text-sm shadow-inner group-hover:scale-105 transition-transform">
+            @Initial
+        </div>
+        <div class="flex flex-col text-left">
+            <span class="text-[#0d141b] text-xs font-bold leading-none">@FullName</span>
+            <span class="text-blue-600 text-[10px] font-black uppercase tracking-wider leading-none mt-1">@Role</span>
+        </div>
+        <span class="material-symbols-outlined text-slate-400 text-sm transition-transform duration-200 @(isDropdownOpen ? "rotate-180" : "")">expand_more</span>
+    </div>
+
+    @if (isDropdownOpen)
+    {
+        <div class="absolute right-0 mt-3 w-56 origin-top-right rounded-2xl bg-[#101922] border border-white/10 shadow-2xl py-2 z-[100] animate-in fade-in zoom-in-95 duration-200">
+            <div class="px-4 py-3 border-b border-white/5">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Signed in as</p>
+                <p class="text-white text-sm font-bold truncate">@FullName</p>
+            </div>
+            
+            <div class="py-1">
+                <button @onclick="NavigateToProfile" class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors group">
+                    <span class="material-symbols-outlined text-teal-400 group-hover:scale-110 transition-transform">person</span>
+                    <span>Update Information</span>
+                </button>
+                <button @onclick="NavigateToRentals" class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors group">
+                    <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">description</span>
+                    <span>My Rentals</span>
+                </button>
+            </div>
+
+            <div class="py-1 border-t border-white/5">
+                <button @onclick="HandleLogout" class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors group">
+                    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">logout</span>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string FullName { get; set; } = "User";
+    [Parameter] public string Role { get; set; } = "Tenant";
+    [Parameter] public string Initial { get; set; } = "U";
+
+    private bool isDropdownOpen = false;
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private void NavigateToProfile()
+    {
+        isDropdownOpen = false;
+        NavigationManager.NavigateTo("/profile");
+    }
+
+    private void NavigateToRentals()
+    {
+        isDropdownOpen = false;
+        NavigationManager.NavigateTo("/my-rentals");
+    }
+
+    private async Task HandleLogout()
+    {
+        isDropdownOpen = false;
+        // Call the API logout
+        await JS.InvokeVoidAsync("fetch", "/api/auth/logout", new { method = "POST" });
+        // Redirect to login
+        NavigationManager.NavigateTo("/login", true);
+    }
+}

@@ -1,35 +1,27 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class RentalContract
 {
-    public class RentalContract
-    {
-        [Key]
-        public int ContractId { get; set; }
+    public int ContractId { get; set; }
 
-        public int RoomId { get; set; }
+    public int RoomId { get; set; }
 
-        public int TenantId { get; set; }
+    public int TenantId { get; set; }
 
-        [DataType(DataType.Date)]
-        public DateTime? StartDate { get; set; }
+    public DateOnly? StartDate { get; set; }
 
-        [DataType(DataType.Date)]
-        public DateTime? EndDate { get; set; }
+    public DateOnly? EndDate { get; set; }
 
-        [Column(TypeName = "decimal(12, 2)")]
-        public decimal? Deposit { get; set; }
+    public decimal? Deposit { get; set; }
 
-        [StringLength(20)]
-        public string? Status { get; set; } // 'Active', 'Expired', 'Cancelled'
+    public string? Status { get; set; }
 
-        [ForeignKey("RoomId")]
-        public virtual Room? Room { get; set; }
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
-        [ForeignKey("TenantId")]
-        public virtual User? Tenant { get; set; }
+    public virtual Room Room { get; set; } = null!;
 
-        public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
-    }
+    public virtual User Tenant { get; set; } = null!;
 }

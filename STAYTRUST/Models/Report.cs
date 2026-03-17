@@ -1,21 +1,17 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace STAYTRUST.Models
+namespace STAYTRUST.Models;
+
+public partial class Report
 {
-    public class Report
-    {
-        [Key]
-        public int ReportId { get; set; }
+    public int ReportId { get; set; }
 
-        [StringLength(50)]
-        public string? ReportType { get; set; }
+    public string? ReportType { get; set; }
 
-        public int? CreatedBy { get; set; }
+    public int? CreatedBy { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? CreatedAt { get; set; }
 
-        [ForeignKey("CreatedBy")]
-        public virtual User? Creator { get; set; }
-    }
+    public virtual User? CreatedByNavigation { get; set; }
 }
