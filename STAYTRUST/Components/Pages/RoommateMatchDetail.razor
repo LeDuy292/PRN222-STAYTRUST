@@ -1,0 +1,248 @@
+@page "/roommates/match/{Id:int}"
+@layout STAYTRUST.Components.Layout.RoommateMatchLayout
+@rendermode InteractiveServer
+
+<HeadContent>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec92",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#10221a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="css/roommates.css" />
+    <style>
+        body {
+            /* Override to darker background for this specific mode */
+            background-color: #0a110e !important; 
+        }
+    </style>
+</HeadContent>
+
+<div class="ai-network-bg flex-1 flex flex-col items-center py-10 w-full min-h-screen">
+    <div class="max-w-[1200px] w-full flex flex-col px-4 md:px-10">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 px-4 py-4 mb-8">
+            <div class="flex items-center gap-4 text-primary">
+                <a href="/roommates" class="flex items-center justify-center size-8 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors">
+                    <span class="material-symbols-outlined text-primary">arrow_back</span>
+                </a>
+                <div class="flex items-center justify-center size-8 rounded-lg bg-primary/10">
+                    <span class="material-symbols-outlined text-primary">hub</span>
+                </div>
+                <h2 class="text-slate-100 text-xl font-bold leading-tight tracking-tight">Staytrust AI Match</h2>
+            </div>
+            <div class="flex gap-3">
+                <button class="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all" title="Share Match">
+                    <span class="material-symbols-outlined">share</span>
+                </button>
+                <button class="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all" title="More Options">
+                    <span class="material-symbols-outlined">more_horiz</span>
+                </button>
+            </div>
+        </header>
+
+        @if (profile == null)
+        {
+            <div class="glass-card p-12 rounded-xl text-center max-w-lg mx-auto mt-20">
+                <span class="material-symbols-outlined text-6xl text-slate-500 mb-4">search_off</span>
+                <h2 class="text-2xl font-bold text-slate-100 mb-4">Match Profile Not Found</h2>
+                <p class="text-slate-400 mb-8">The detail profile for this roommate could not be loaded or doesn't exist.</p>
+                <a href="/roommates" class="px-6 py-3 bg-primary text-background-dark font-bold rounded-xl hover:brightness-110 transition-all">Return to Roommates</a>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Sidebar: Match summary -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <div class="glass-card p-6 rounded-xl flex flex-col items-center text-center">
+                        <div class="relative mb-4">
+                            <div class="absolute -inset-1 rounded-full bg-gradient-to-tr from-primary to-emerald-400 opacity-30 blur"></div>
+                            <div class="relative bg-center bg-no-repeat aspect-square bg-cover rounded-full h-32 w-32 border-2 border-primary" data-alt="@profile.ImageAlt" style="background-image: url('@profile.ImageUrl');"></div>
+                        </div>
+                        
+                        <h3 class="text-2xl font-bold text-slate-100">@profile.Name</h3>
+                        <p class="text-primary font-medium">@profile.CompatibilityScore% Compatibility</p>
+                        
+                        <div class="mt-6 flex flex-col w-full gap-3">
+                            <button class="flex w-full items-center justify-center gap-2 rounded-xl h-12 bg-primary text-background-dark font-bold hover:brightness-110 transition-all shadow-[0_0_15px_rgba(19,236,146,0.3)]">
+                                <span class="material-symbols-outlined">send</span>
+                                <span>Send Message</span>
+                            </button>
+                            <button class="flex w-full items-center justify-center gap-2 rounded-xl h-12 bg-primary/10 text-primary border border-primary/30 font-bold hover:bg-primary/20 transition-all">
+                                <span class="material-symbols-outlined">videocam</span>
+                                <span>Request Video Call</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card p-6 rounded-xl">
+                        <h4 class="text-slate-100 font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+                            AI Insights
+                        </h4>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            @profile.AiInsight
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Main Panel: Compatibility Details -->
+                <div class="lg:col-span-8 flex flex-col gap-6">
+                    
+                    <!-- Circular Graphs -->
+                    <div class="glass-card p-8 rounded-xl">
+                        <h2 class="text-2xl font-bold text-slate-100 mb-8">Compatibility Breakdown</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <STAYTRUST.Components.Roommate.CompatibilityCircle Percentage="@profile.LifestyleScore" Label="Lifestyle" />
+                            <STAYTRUST.Components.Roommate.CompatibilityCircle Percentage="@profile.ValuesScore" Label="Values" />
+                            <STAYTRUST.Components.Roommate.CompatibilityCircle Percentage="@profile.InterestsScore" Label="Interests" />
+                        </div>
+                    </div>
+
+                    <!-- Shared Interests -->
+                    <div class="glass-card p-8 rounded-xl">
+                        <h3 class="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">interests</span>
+                            Shared Interests
+                        </h3>
+                        <div class="flex flex-wrap gap-4">
+                            @foreach (var interest in profile.SharedInterests)
+                            {
+                                <STAYTRUST.Components.Roommate.SharedInterestTag Icon="@interest.Icon" Label="@interest.Label" />
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Values and Connections -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 rounded-xl">
+                            <h4 class="text-slate-100 font-bold mb-4">Matching Values</h4>
+                            <ul class="space-y-3">
+                                @foreach (var value in profile.MatchingValues)
+                                {
+                                    <li class="flex items-center gap-3 text-slate-400">
+                                        <span class="material-symbols-outlined text-primary">check_circle</span>
+                                        <span>@value</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                        
+                        <div class="glass-card p-6 rounded-xl">
+                            <h4 class="text-slate-100 font-bold mb-4">Mutual Connections</h4>
+                            <div class="flex -space-x-3">
+                                <div class="size-10 rounded-full border-2 border-background-dark bg-cover" data-alt="Mutual friend portrait 1" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCa_XeuL-FEpX7Ib1uWc11CGRjT_rvWXRh6J_jVxaf53cZC8u81fvyfUEiDyW2u9QoQi14fst1cJEuQD0qZKwgkevOE38IHo7uegO7pIBJIC1JgAt9IZnG7x4FBfIkMa9-R2th0oDOnDhvgNhGtsRqrg7AvVTZMgDHAGNVtYKTl5pFJ95rbnyftwwsCsdK9xEw60ECXDvu48mqzuJ-pHlf5CxXHtFcn8Lpsmj2vzw_E0sWiNJp4RNR_-I9tnCOl9mZJSCpzC-rm0Hes');"></div>
+                                <div class="size-10 rounded-full border-2 border-background-dark bg-cover" data-alt="Mutual friend portrait 2" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBSq1pxvScpL4_e2QoPGbX3udN-I-6gPNqfreR3RwiY9juWscenn1E5MTZKF8DCYp9DZj3akW4w4tHibU5FMfoIJoBL_8BL-f-6qBL318bvOhDMuDxPqBjQk4nRWilTM5vtLJ5OgMya0GVY-dnIt_qEboGy1eox907xXz6V-E_VJGR-AQjmqMkVo06YZ7NJ8DKW147d9bsBrSq-BeLtU58cFwHQghWTG_jhocp7WqbmWESMIcK_uQZTZhiW99lLEeMO7NhpByaCsd7a');"></div>
+                                <div class="size-10 rounded-full border-2 border-background-dark bg-cover" data-alt="Mutual friend portrait 3" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzBCjGT4_Ei1wN5Nwe7QeXmesltkLOXskiDqbRdVcw17HpO2nvlORG8IbG6Q4fv_L26FWTUu1N-ISInz4QCeio8Jxer0DcglKdScAgkeVfH2P2o2KtL7HAGEMK5BaxE8e2lvV3kh50wbFMdeuEbqKedXHDA7uLgS_7SrriafaFDXQJNOI5kiadFrl_jiUtQnxR5fclnGtkaR_Ce2pavlKAiGfiS1YFpXw0SVWRmAHZtEr7I9-0RAasdmvSUxxTfSjx-MAwZ_yA7Bmn');"></div>
+                                <div class="size-10 rounded-full border-2 border-background-dark bg-slate-800 flex items-center justify-center text-xs font-bold text-primary">
+                                    +@profile.MutualConnections
+                                </div>
+                            </div>
+                            <p class="mt-4 text-sm text-slate-400">@profile.ConnectionContext</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private RoommateProfile? profile;
+
+    protected override void OnParametersSet()
+    {
+        profile = GetDummyProfiles().FirstOrDefault(p => p.Id == Id);
+    }
+
+    private class RoommateProfile
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public string ImageAlt { get; set; } = "";
+        public int CompatibilityScore { get; set; }
+        public int LifestyleScore { get; set; }
+        public int ValuesScore { get; set; }
+        public int InterestsScore { get; set; }
+        public string AiInsight { get; set; } = "";
+        public List<(string Icon, string Label)> SharedInterests { get; set; } = new();
+        public List<string> MatchingValues { get; set; } = new();
+        public int MutualConnections { get; set; }
+        public string ConnectionContext { get; set; } = "";
+    }
+
+    private List<RoommateProfile> GetDummyProfiles()
+    {
+        return new List<RoommateProfile>
+        {
+            new RoommateProfile
+            {
+                Id = 1,
+                Name = "Phúc Hoàng",
+                ImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCNrXz0PQhhDH4WaoVQ5JbTU5RrA-bAHz5O6_Hr-082tx928Dt1XgF4gKWJJ62ocyFFIXcZo1kzOJqA4LVVeCz5Ny7HTFoSaW-wHAtXUrcexf2B5qJ9csXZoRrt_jxjbHYoFrKVGXAe3A8r37nKxlxLJRHDjYK-HKw_Cb8w6slQcQVGDQpJQH7plEPB9b5cUzOrCsSUrWxY4PdHqcZoPwZOQp7XeOM2s2wDyn5FbrMVknBmcQECO6uUxjtRb46xFKVFbe-eNFpnPQzg",
+                ImageAlt = "Young professional man smiling outdoors",
+                CompatibilityScore = 98,
+                LifestyleScore = 88,
+                ValuesScore = 95,
+                InterestsScore = 90,
+                AiInsight = "You both share an early-bird schedule and a preference for active mornings. Your values regarding health and outdoor activities are highly aligned.",
+                SharedInterests = new() { ("surfing", "Surfing"), ("fitness_center", "Fitness"), ("hiking", "Hiking") },
+                MatchingValues = new() { "Cleanliness Standards", "Health & Wellness", "Social Battery Alignment" },
+                MutualConnections = 12,
+                ConnectionContext = "You share 12 mutual connections in the Local Surfing community."
+            },
+            new RoommateProfile
+            {
+                Id = 2,
+                Name = "Linh Nguyễn",
+                ImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAfJKfeAr4-aa5zW0UJeRjw30jH3ul3m9H-nzhkoyUp53JZNsZJn5S8vbVV6-UtwXBesRuip-JcEDLYUl65d3W4vhq2nGdXuJ8yLD9KT236-WjRzeUQnNddxtj4vTBLc4LWs1JKj0ibtH075Hjb0SBwe_pDno89JbRmaA1m892-eEpa7061GC4ludq3obXz3xe0PH3eWLMH2pe204bgh8H1hGWe273Sass4Q-9w1On_sbRETxcQQfjHn8SsTIVvHlvdYBZOeOrB4tL5",
+                ImageAlt = "Young woman with glasses smiling",
+                CompatibilityScore = 89,
+                LifestyleScore = 92,
+                ValuesScore = 85,
+                InterestsScore = 80,
+                AiInsight = "You both share a night-owl schedule and love spending evenings reading or studying. Having pets around is a big mutual plus.",
+                SharedInterests = new() { ("pets", "Pet lovers"), ("menu_book", "Reading"), ("local_cafe", "Cafes") },
+                MatchingValues = new() { "Study Environment", "Pet Policies", "Quiet Hours Alignment" },
+                MutualConnections = 5,
+                ConnectionContext = "You share 5 mutual connections from your University network."
+            },
+            new RoommateProfile
+            {
+                Id = 3,
+                Name = "Minh Tran",
+                ImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBUmoveoZghmb7EsVCYBOfnmSm0ocy4WnTBBk3F0xL77iEbqCwkDF8rwBVq0IZFx-uZb7-ZZtSWdPeMrHt0AgYlnXD1orFuKtRVRzHdp9t2Hh7juFN3CrBoQRLl14KhIlx4fw_r_ZUsfnZmWBK_njkeeEsyXwGwtxTKdl67uM9873IZ0uXF68ccNV9I4nQ5HK9K5k68ubtaSapkjYvJ-cZl5Kr41GwTY3D9d8QTQuJ9a8QqGHjcf2728tsWH2lnvlNF7a0nTYpujgVY",
+                ImageAlt = "Portrait of a friendly young man",
+                CompatibilityScore = 82,
+                LifestyleScore = 80,
+                ValuesScore = 88,
+                InterestsScore = 75,
+                AiInsight = "You both work remotely, which means you need a quiet environment during the day. You share a passion for vegan cooking and fitness.",
+                SharedInterests = new() { ("laptop_mac", "Remote Work"), ("restaurant", "Vegan Cooking"), ("fitness_center", "Fitness") },
+                MatchingValues = new() { "Home Office Needs", "Dietary Preferences", "Eco-friendly Habits" },
+                MutualConnections = 2,
+                ConnectionContext = "You share 2 mutual connections in the Tech community."
+            }
+        };
+    }
+}
