@@ -1,26 +1,39 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using STAYTRUST.Components.Layout
 <PageTitle>Staytrust - Find Your Home</PageTitle>
 
 <nav class="absolute top-0 left-0 right-0 z-50 w-full px-4 lg:px-40 py-5">
 <div class="glass-panel rounded-xl px-6 py-3 flex items-center justify-between shadow-sm">
-<div class="flex items-center gap-4 text-[#0d141b]">
-<div class="text-primary size-8 flex items-center justify-center">
-<span class="material-symbols-outlined text-3xl">other_houses</span>
-</div>
-<h2 class="text-[#0d141b] text-xl font-extrabold leading-tight tracking-tight">Staytrust</h2>
-</div>
+<Logo />
+
 <div class="hidden lg:flex flex-1 justify-center gap-8">
-<a class="text-[#0d141b] text-sm font-semibold leading-normal hover:text-primary transition-colors" href="#">Listings</a>
+<a class="text-[#0d141b] text-sm font-semibold leading-normal hover:text-primary transition-colors" href="/search">Listings</a>
+<a class="text-[#0d141b] text-sm font-semibold leading-normal hover:text-primary transition-colors" href="/my-rentals">My Rentals</a>
 <a class="text-[#0d141b] text-sm font-semibold leading-normal hover:text-primary transition-colors" href="#">About</a>
 <a class="text-[#0d141b] text-sm font-semibold leading-normal hover:text-primary transition-colors" href="#">Contact</a>
 </div>
 <div class="hidden lg:flex gap-3">
-<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-transparent hover:bg-slate-100 text-[#0d141b] text-sm font-bold leading-normal transition-colors">
-                    Sign In
-                </button>
-<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal shadow-lg shadow-blue-500/30 transition-all">
-                    Sign Up
-                </button>
+    <AuthorizeView>
+        <Authorized>
+            @{
+                var user = context.User;
+                var fullName = user.FindFirst("FullName")?.Value ?? user.Identity?.Name ?? "User";
+                var role = user.FindFirst("Role")?.Value ?? "Node";
+                var initial = !string.IsNullOrEmpty(fullName) ? fullName.Substring(0, 1).ToUpper() : "U";
+            }
+            <UserMenu FullName="@fullName" Role="@role" Initial="@initial" />
+        </Authorized>
+        <NotAuthorized>
+            <a href="/login" class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-transparent hover:bg-slate-100 text-[#0d141b] text-sm font-bold leading-normal transition-colors">
+                Sign In
+            </a>
+            <a href="/register" class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal shadow-lg shadow-blue-500/30 transition-all">
+                Sign Up
+            </a>
+        </NotAuthorized>
+    </AuthorizeView>
 </div>
 <button class="lg:hidden text-[#0d141b]">
 <span class="material-symbols-outlined">menu</span>
@@ -47,22 +60,33 @@
                     </p>
 </div>
 <div class="glass-search-container p-3 rounded-2xl mt-8 relative z-30 max-w-2xl">
-<form class="flex flex-col lg:flex-row lg:items-center relative gap-4">
-<div class="flex-1 relative group search-input-group input-glow-focus px-4 py-2 transition-all duration-300 rounded-xl bg-white/5 border border-white/10">
-<label class="block text-[10px] font-bold text-emerald-300 mb-1 ml-9 uppercase tracking-widest opacity-90">Location</label>
-<div class="flex items-center pb-1">
-<div class="absolute left-3 text-slate-400 icon-glow transition-all duration-300">
-<span class="material-symbols-outlined text-[24px]">location_on</span>
-</div>
-<input class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-slate-400/70 text-lg font-medium pl-9 py-0 h-7" placeholder="Search by area, street name..." type="text"/>
-</div>
-</div>
-<div class="">
-<button class="w-full lg:w-auto h-full min-h-[64px] px-10 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-[#0b2530] rounded-xl font-bold shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:shadow-[0_0_35px_rgba(52,211,153,0.6)] flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-emerald-300/30" type="button">
-<span class="material-symbols-outlined text-[24px]">search</span>
-<span class="text-base font-extrabold tracking-wide">Find Home</span>
-</button>
-</div>
+<form @formname="search-home" class="flex flex-col lg:flex-row lg:items-center relative gap-4" @onsubmit="OnSearchSubmit">
+    <div class="flex-1 relative group search-input-group input-glow-focus px-4 py-2 transition-all duration-300 rounded-xl bg-white/5 border border-white/10">
+        <label class="block text-[10px] font-bold text-emerald-300 mb-1 ml-9 uppercase tracking-widest opacity-90">Location</label>
+        <div class="flex items-center pb-1">
+            <div class="absolute left-3 text-slate-400 icon-glow transition-all duration-300">
+                <span class="material-symbols-outlined text-[24px]">location_on</span>
+            </div>
+            <input @bind="SearchText" @bind:event="oninput" @onkeyup="HandleKeyUp" autocomplete="off" class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-slate-400/70 text-lg font-medium pl-9 py-0 h-7" placeholder="Search by area, street name..." type="text"/>
+        </div>
+        @if (suggestions.Any())
+        {
+            <div class="absolute left-0 right-0 top-full mt-2 bg-[#101922] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
+                @foreach (var suggestion in suggestions)
+                {
+                    <div @onclick="() => SelectSuggestion(suggestion)" class="px-6 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-none">
+                        <p class="text-white text-sm font-semibold">@suggestion.Description</p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div class="">
+        <button type="submit" class="w-full lg:w-auto h-full min-h-[64px] px-10 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-[#0b2530] rounded-xl font-bold shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:shadow-[0_0_35px_rgba(52,211,153,0.6)] flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-emerald-300/30">
+            <span class="material-symbols-outlined text-[24px]">search</span>
+            <span class="text-base font-extrabold tracking-wide">Find Home</span>
+        </button>
+    </div>
 </form>
 </div>
 <div class="flex items-center gap-6 text-slate-300 text-sm font-medium mt-2">
@@ -102,7 +126,7 @@
                         </p>
 <div class="flex items-center justify-between border-t border-slate-100 pt-3">
 <span class="text-primary font-bold text-lg">7.5M <span class="text-xs font-normal text-slate-500">VND/mo</span></span>
-<button class="text-xs font-bold text-slate-700 hover:text-primary transition-colors">View Details</button>
+<a href="/detail/102" class="text-xs font-bold text-slate-700 hover:text-primary transition-colors">View Details</a>
 </div>
 </div>
 </div>
@@ -136,7 +160,7 @@
 </div>
 <div class="flex items-center justify-between border-t border-slate-100 pt-3">
 <span class="text-primary font-bold text-xl">4.5M <span class="text-xs font-normal text-slate-500">VND/mo</span></span>
-<button class="h-8 px-4 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors">Book Now</button>
+<a href="/detail/101" class="h-8 px-4 bg-slate-900 text-white rounded-lg text-xs flex items-center justify-center font-bold hover:bg-slate-800 transition-colors">Book Now</a>
 </div>
 </div>
 </div>
@@ -208,13 +232,13 @@
 <h3 class="text-3xl lg:text-4xl font-bold text-white mb-3 drop-shadow-lg">The Heart of Central Vietnam</h3>
 <p class="text-slate-200 text-lg font-medium drop-shadow-md">From the dragon bridge to pristine beaches, find your perfect view.</p>
 </div>
-<button class="relative group/btn overflow-hidden rounded-xl bg-white/5 backdrop-blur-md border border-emerald-400/50 px-8 py-4 text-white shadow-[0_0_20px_rgba(52,211,153,0.3)] transition-all duration-300 hover:shadow-[0_0_40px_rgba(52,211,153,0.5)] hover:bg-emerald-500/10 hover:border-emerald-400">
+<a href="/search" class="relative group/btn overflow-hidden rounded-xl bg-white/5 backdrop-blur-md border border-emerald-400/50 px-8 py-4 text-white shadow-[0_0_20px_rgba(52,211,153,0.3)] transition-all duration-300 hover:shadow-[0_0_40px_rgba(52,211,153,0.5)] hover:bg-emerald-500/10 hover:border-emerald-400 flex items-center justify-center">
 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
 <span class="relative flex items-center gap-3 font-bold text-lg tracking-wide">
                         Discover All Districts
                         <span class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
 </span>
-</button>
+</a>
 </div>
 </div>
 </div>
@@ -331,17 +355,17 @@
 <span class="text-slate-400 text-xs font-medium uppercase">Monthly Rent</span>
 <span class="text-white font-bold text-lg">12.5M <span class="text-slate-400 text-sm font-normal">VND</span></span>
 </div>
-<button class="px-4 py-2 bg-gradient-to-r from-primary to-blue-600 hover:to-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all hover:shadow-blue-500/40">
+<a href="/detail/103" class="px-4 py-2 bg-gradient-to-r from-primary to-blue-600 hover:to-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all hover:shadow-blue-500/40 flex items-center justify-center">
                             Book Now
-                        </button>
+                        </a>
 </div>
 </div>
 </div>
 </div>
 <div class="mt-16 text-center">
-<button class="px-8 py-3 bg-transparent border border-teal-500/50 hover:bg-teal-500/10 text-teal-400 text-sm font-bold rounded-lg transition-all uppercase tracking-wider">
+<a href="/search" class="px-8 py-3 bg-transparent border border-teal-500/50 hover:bg-teal-500/10 text-teal-400 text-sm font-bold rounded-lg transition-all uppercase tracking-wider flex items-center justify-center w-fit mx-auto">
                 View All Properties
-            </button>
+            </a>
 </div>
 </div>
 </section>
@@ -357,3 +381,40 @@
 </div>
 </div>
 </footer>
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+@code {
+    private string SearchText { get; set; } = "";
+    private List<Suggestion> suggestions = new();
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (SearchText?.Length >= 2)
+        {
+            suggestions = await JSRuntime.InvokeAsync<List<Suggestion>>("goongMap.getSuggestions", SearchText);
+        }
+        else
+        {
+            suggestions.Clear();
+        }
+    }
+
+    private void SelectSuggestion(Suggestion suggestion)
+    {
+        SearchText = suggestion.Description;
+        suggestions.Clear();
+    }
+
+    private void OnSearchSubmit()
+    {
+        // Navigate to search page with the location as a query parameter (optional) or just navigate
+        NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(SearchText)}");
+    }
+
+    public class Suggestion
+    {
+        public string Description { get; set; }
+        public string Place_id { get; set; }
+    }
+}

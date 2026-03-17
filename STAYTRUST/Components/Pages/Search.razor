@@ -1,4 +1,5 @@
 @page "/search"
+@rendermode InteractiveServer
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
@@ -26,20 +27,20 @@
     .map-pin-glow {
         box-shadow: 0 0 15px rgba(19, 236, 218, 0.6);
     }
+    #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+    }
 </style>
 
 <div class="search-page-container bg-[#102220] text-white overflow-hidden h-screen w-screen flex flex-col absolute top-0 left-0 z-[100]">
     <!-- Top Navigation Bar -->
     <header class="z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#234845] px-6 py-3 bg-[#102220]/95 backdrop-blur-md">
         <div class="flex items-center gap-8">
-            <div class="flex items-center gap-3 text-[#13ecda]">
-                <div class="size-8">
-                    <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
-                    </svg>
-                </div>
-                <h1 class="text-xl font-bold leading-tight tracking-tight uppercase">Staytrust</h1>
-            </div>
+            <Logo />
             <!-- Search Bar Overlay Component -->
             <div class="hidden lg:flex items-center gap-2">
                 <div class="relative w-[400px]">
@@ -154,30 +155,9 @@
         </aside>
         <!-- Main Map Area -->
         <div class="flex-1 relative">
-            <!-- Map Simulation -->
-            <div class="absolute inset-0 bg-[#0d1a19]" data-location="Da Nang, Vietnam">
-                <div class="w-full h-full opacity-50 bg-[url('https://placeholder.pics/svg/1200x800')] bg-cover bg-center"></div>
-                <!-- Pulsing Map Pins -->
-                <div class="absolute top-[30%] left-[40%] group cursor-pointer">
-                    <div class="relative flex items-center justify-center">
-                        <div class="absolute animate-ping h-8 w-8 rounded-full bg-[#13ecda] opacity-40"></div>
-                        <div class="relative h-6 w-6 bg-[#13ecda] rounded-full flex items-center justify-center map-pin-glow">
-                            <span class="text-[10px] font-bold text-[#102220]">$650</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="absolute top-[55%] left-[60%] group cursor-pointer">
-                    <div class="relative flex items-center justify-center">
-                        <div class="absolute animate-ping h-8 w-8 rounded-full bg-[#13ecda] opacity-20"></div>
-                        <div class="relative h-6 w-6 bg-[#13ecda] rounded-full flex items-center justify-center map-pin-glow">
-                            <span class="text-[10px] font-bold text-[#102220]">$820</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="absolute top-[45%] left-[25%]">
-                    <div class="h-5 w-5 bg-white/20 rounded-full border border-white/40"></div>
-                </div>
-            </div>
+            <!-- Map Container -->
+            <div id="map" class="absolute inset-0 bg-[#0d1a19]"></div>
+            
             <!-- Quick Filter Chips Overlay -->
             <div class="absolute top-6 left-6 right-6 z-30 flex gap-2 overflow-x-auto hide-scrollbar">
                 <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#102220]/80 backdrop-blur px-4 border border-[rgba(19,236,218,0.2)]">
@@ -251,9 +231,9 @@
                                     <span class="text-[11px] text-[#92c9c5]">98% Match</span>
                                 </div>
                             </div>
-                            <button class="w-full py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
+                            <a href="/detail/101" class="w-full inline-block text-center py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
                                 View Details
-                            </button>
+                            </a>
                         </div>
                     </div>
                     <!-- Card 2 -->
@@ -292,9 +272,9 @@
                                     <span class="text-[11px] text-[#92c9c5]">92% Match</span>
                                 </div>
                             </div>
-                            <button class="w-full py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
+                            <a href="/detail/102" class="w-full inline-block text-center py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
                                 View Details
-                            </button>
+                            </a>
                         </div>
                     </div>
                     <!-- Card 3 -->
@@ -333,9 +313,9 @@
                                     <span class="text-[11px] text-[#92c9c5]">85% Match</span>
                                 </div>
                             </div>
-                            <button class="w-full py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
+                            <a href="/detail/103" class="w-full inline-block text-center py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
                                 View Details
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -355,10 +335,55 @@
     </footer>
 </div>
 
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
 @code {
+    private List<PropertyMarker> propertyMarkers = new()
+    {
+        new PropertyMarker { Lat = 16.0678, Lng = 108.2415, Price = 650 }, // Sơn Trà
+        new PropertyMarker { Lat = 16.0333, Lng = 108.2667, Price = 820 }, // Ngũ Hành Sơn
+        new PropertyMarker { Lat = 16.0544, Lng = 108.2022, Price = 480 }  // Hải Châu
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("goongMap.initSearchMap", "map", 16.0544, 108.2022, 13);
+            await JSRuntime.InvokeVoidAsync("goongMap.addMarkers", "map", propertyMarkers);
+            
+            // Check for search query
+            var uri = new Uri(NavigationManager.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("q", out var locationStr) && !string.IsNullOrEmpty(locationStr))
+            {
+                var coords = await JSRuntime.InvokeAsync<Coordinates>("goongMap.geocode", locationStr.ToString());
+                if (coords != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("goongMap.flyTo", "map", coords.Lat, coords.Lng, 15);
+                }
+            }
+        }
+    }
+
     private async Task Logout()
     {
         await Http.PostAsync("api/auth/logout", null);
         NavigationManager.NavigateTo("/search", forceLoad: true);
+    }
+
+    public class Coordinates
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+
+    public class PropertyMarker
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+        public int Price { get; set; }
     }
 }

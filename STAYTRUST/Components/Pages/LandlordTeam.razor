@@ -1,0 +1,221 @@
+@page "/landlord-team"
+@layout STAYTRUST.Components.Layout.LandlordLayout
+
+<div class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-background-dark/80 backdrop-blur-md border-b border-navy-muted">
+<div class="flex flex-col">
+<h2 class="text-2xl font-bold text-slate-100">Access Management</h2>
+<p class="text-slate-400 text-sm">Delegate property controls with high-security permissions.</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-lg text-slate-400 hover:bg-navy-muted transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-primary rounded-full"></span>
+</button>
+<button class="bg-primary text-navy-deep px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-sm">person_add</span>
+                        Add New Manager
+                    </button>
+</div>
+</header>
+<div class="p-8 max-w-6xl mx-auto space-y-8">
+<!-- Status Bar -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-navy-deep border border-navy-muted p-6 rounded-xl">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary">security</span>
+<span class="text-xs font-bold text-primary px-2 py-1 bg-primary/10 rounded">SECURE</span>
+</div>
+<p class="text-slate-400 text-sm">Active Delegates</p>
+<p class="text-2xl font-bold text-slate-100">04 Personnel</p>
+</div>
+<div class="bg-navy-deep border border-navy-muted p-6 rounded-xl">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary">key</span>
+</div>
+<p class="text-slate-400 text-sm">Access Logs</p>
+<p class="text-2xl font-bold text-slate-100">24h Health Check</p>
+</div>
+<div class="bg-navy-deep border border-navy-muted p-6 rounded-xl">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary">history</span>
+</div>
+<p class="text-slate-400 text-sm">Last Update</p>
+<p class="text-2xl font-bold text-slate-100">14 mins ago</p>
+</div>
+</div>
+<!-- Managers Table -->
+<div class="bg-navy-deep border border-navy-muted rounded-xl overflow-hidden shadow-2xl">
+<div class="px-6 py-4 border-b border-navy-muted flex items-center justify-between">
+<h3 class="font-bold text-lg text-slate-100">Authorized Managers</h3>
+<div class="flex items-center gap-2 bg-background-dark px-3 py-1.5 rounded-lg border border-navy-muted">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm text-slate-100 placeholder:text-slate-500 w-48" placeholder="Search team..." type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-navy-muted/30 text-slate-400 text-xs uppercase tracking-widest font-bold">
+<tr>
+<th class="px-6 py-4">Manager Profile</th>
+<th class="px-6 py-4">Permission Level</th>
+<th class="px-6 py-4">Scope</th>
+<th class="px-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-navy-muted">
+<!-- Manager Row 1 -->
+<tr class="hover:bg-navy-muted/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-full bg-navy-muted overflow-hidden border border-navy-muted" data-alt="Portrait of Alexander Sterling, property manager">
+<img alt="Alexander Sterling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC700Tlr7wi1wqPLuZ_MhpLdeoFlENlIGQm5QSKyoO65DYPHvsKcMk-CWA_yTIQE8pf58_XuhCdw9BVbNPlckuHnunqFEQ3I1rMGNkZGNJqN3EFcRGCIqRrSJ09hFW4XfQQMnG0I8sDMQZfyhV390e_314jLlPduNYrg5H_U90W2eOG0gUMfU1KT1Q6EM7Fn75VxA2RPMRE-NVH5hivnX8zTAxhYNgxd8ADfvH41jAURCcpgd4ltXJHslqOy-KHTaI1hYchF7RR7is"/>
+</div>
+<div>
+<p class="font-semibold text-slate-100">Alexander Sterling</p>
+<p class="text-xs text-slate-400">alex.s@staytrust.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/30">
+                                            Full Access
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-300">Global Portfolio</p>
+<p class="text-xs text-slate-500">12 Properties</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Manager Row 2 -->
+<tr class="hover:bg-navy-muted/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-full bg-navy-muted overflow-hidden border border-navy-muted" data-alt="Portrait of Sarah Jenkins, finance specialist">
+<img alt="Sarah Jenkins" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbKKM7FAt7qN-pK3OEX_I32rHQ0DbgWSwtx99W4XDhs60NCvlDGTBHTgvJTHIOG-ecx6reMB7pwfQSG9HuK8bz__Kv6I_TP-u7ViSDS828Kv3YhpHQuONGcBsLHYhxIqWEqZ78HdakOcWC9CMnTMqg_dzrSJvc2jCO2pT979HsltCwDVCu6jSG8oNopTLTIk-MTCZSKW63VTaYhjD0DZasxr9wG_Eq04Xc7boYJijYGMbpTgl9KqmHhsPGrZJ6UDPtMbRIXtRkeoE"/>
+</div>
+<div>
+<p class="font-semibold text-slate-100">Sarah Jenkins</p>
+<p class="text-xs text-slate-400">s.jenkins@accountancy.io</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/30">
+                                            Finance Only
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-300">London Portfolio</p>
+<p class="text-xs text-slate-500">5 Properties</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Manager Row 3 -->
+<tr class="hover:bg-navy-muted/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-full bg-navy-muted overflow-hidden border border-navy-muted" data-alt="Portrait of Marcus Vane, communications lead">
+<img alt="Marcus Vane" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU5Vf9SLM3hZZvW9NX0aciFWGDghnIt9V_TcShnqoo1Xv3Iyf2i6bcNemj1-0FPudE0KLNpcvZwfv0wBFhCg5RYRtMvomlsvYJUS02LBMqRK3hrf3ahGFT3FwVuKDJFnr4jaymLbc8el4eGC1vDU_nO21lSUSmUyhUv2BtFvfB3wCpBBY1UFQwXyUBrzxkrFswA1MvLFZu4fJpI5gQ30rfr0IMWik6-09-JW_1dIjZFnDgHZrZcpVbVNXGr7EuHxixPA_O-PqFtt4"/>
+</div>
+<div>
+<p class="font-semibold text-slate-100">Marcus Vane</p>
+<p class="text-xs text-slate-400">mvane@vane-mgmt.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/30">
+                                            Communication Only
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-300">Beachfront Condos</p>
+<p class="text-xs text-slate-500">2 Properties</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Add New Manager Popup Form Mockup -->
+<div class="bg-navy-deep border border-primary/20 p-8 rounded-2xl max-w-2xl mx-auto shadow-emerald-900/10 shadow-2xl relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+<div class="relative">
+<div class="flex items-center gap-3 mb-6">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">person_add_alt</span>
+</div>
+<div>
+<h3 class="text-xl font-bold text-slate-100">Invite New Manager</h3>
+<p class="text-sm text-slate-400">Grant secure access to your property data.</p>
+</div>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Email Address</label>
+<input class="w-full bg-background-dark border border-navy-muted rounded-lg px-4 py-3 text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all" placeholder="manager@company.com" type="email"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Full Name</label>
+<input class="w-full bg-background-dark border border-navy-muted rounded-lg px-4 py-3 text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all" placeholder="John Doe" type="text"/>
+</div>
+</div>
+<div class="space-y-3">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Permission Role</label>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<label class="cursor-pointer">
+<input checked="" class="peer hidden" name="role" type="radio"/>
+<div class="border border-navy-muted bg-background-dark p-4 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all text-center">
+<span class="material-symbols-outlined text-slate-500 peer-checked:text-primary mb-2 block">star</span>
+<p class="text-sm font-bold text-slate-200">Full Access</p>
+</div>
+</label>
+<label class="cursor-pointer">
+<input class="peer hidden" name="role" type="radio"/>
+<div class="border border-navy-muted bg-background-dark p-4 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all text-center">
+<span class="material-symbols-outlined text-slate-500 peer-checked:text-primary mb-2 block">payments</span>
+<p class="text-sm font-bold text-slate-200">Finance</p>
+</div>
+</label>
+<label class="cursor-pointer">
+<input class="peer hidden" name="role" type="radio"/>
+<div class="border border-navy-muted bg-background-dark p-4 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all text-center">
+<span class="material-symbols-outlined text-slate-500 peer-checked:text-primary mb-2 block">chat_bubble</span>
+<p class="text-sm font-bold text-slate-200">Communication</p>
+</div>
+</label>
+</div>
+</div>
+<div class="pt-4 flex justify-end gap-4 border-t border-navy-muted">
+<button class="px-6 py-2 rounded-lg font-bold text-sm text-slate-400 hover:text-slate-100 transition-colors" type="button">Cancel</button>
+<button class="bg-primary text-navy-deep px-8 py-2 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all" type="submit">Send Invitation</button>
+</div>
+</form>
+</div>
+</div>
+<!-- Security Notice -->
+<div class="flex items-center gap-4 bg-primary/5 border border-primary/10 p-4 rounded-xl">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="text-xs text-slate-400">
+<strong class="text-slate-200">Security Note:</strong> All management delegations require two-factor authentication (2FA) verification from the invited user before access is granted. You can revoke access at any time instantly.
+                    </p>
+</div>
+</div>
+</div>

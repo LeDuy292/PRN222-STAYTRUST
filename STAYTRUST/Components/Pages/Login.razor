@@ -1,4 +1,8 @@
 @page "/login"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
@@ -99,12 +103,8 @@
         <div class="glow-blob blob-1"></div>
         
         <div class="relative z-10">
-            <div class="flex items-center gap-4 group cursor-pointer mb-20" @onclick='() => NavigationManager.NavigateTo("/")'>
-                <div class="size-12 bg-[#13ecda] rounded-2xl flex items-center justify-center text-[#0c1117] shadow-[0_0_30px_rgba(19,236,218,0.3)] transition-all group-hover:scale-110 group-hover:rotate-6">
-                    <span class="material-symbols-outlined font-black text-2xl">verified_user</span>
-                </div>
-                <h2 class="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500">STAYTRUST</h2>
-            </div>
+            <Logo IconContainerSize="size-12" IconSize="text-2xl" TextSize="text-3xl" Class="mb-20" />
+
 
             <div class="max-w-2xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#13ecda] text-[10px] font-bold uppercase tracking-widest mb-8">
@@ -137,18 +137,14 @@
     <!-- Form Panel (Right) -->
     <section class="flex-1 flex flex-col justify-center p-6 md:p-12 lg:p-20 relative bg-[#0c1117]">
         <div class="lg:hidden absolute top-8 left-8">
-            <div class="flex items-center gap-3 cursor-pointer" @onclick='() => NavigationManager.NavigateTo("/")'>
-                <div class="size-8 bg-[#13ecda] rounded-lg flex items-center justify-center text-[#0c1117]">
-                    <span class="material-symbols-outlined text-sm font-bold">verified_user</span>
-                </div>
-                <h2 class="text-lg font-black tracking-tighter">STAYTRUST</h2>
-            </div>
+            <Logo IconContainerSize="size-8" IconSize="text-sm" TextSize="text-lg" />
         </div>
 
         <div class="w-full max-w-md mx-auto relative z-10">
             <div class="mb-12">
                 <h1 class="text-4xl font-black tracking-tight mb-3">Sign <span class="text-[#13ecda]">In</span></h1>
-                <p class="text-slate-500 font-medium">Access your decentralized property dashboard.</p>
+                <p class="text-slate-500 font-medium">Please enter your credentials to access your account.</p>
+
             </div>
 
             <div class="premium-card rounded-3xl overflow-hidden p-[1px]">
@@ -161,41 +157,48 @@
                         </div>
                     }
 
-                    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
-                        <DataAnnotationsValidator />
+                    <form method="post" action="api/auth/login" id="loginForm">
                         <div class="space-y-6">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Terminal</label>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
+
                                 <div class="relative group">
                                     <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xl transition-colors group-focus-within:text-[#13ecda]">alternate_email</span>
-                                    <InputText @bind-Value="loginModel.Email" type="email" class="w-full input-field rounded-2xl pl-12 pr-4 py-4 text-sm outline-none text-white transition-all" placeholder="user@staytrust.io" />
+                                    <input name="email" value="@loginModel.Email" type="email" class="w-full input-field rounded-2xl pl-12 pr-4 py-4 text-sm outline-none text-white transition-all" placeholder="user@staytrust.io" required />
                                 </div>
-                                <ValidationMessage For="@(() => loginModel.Email)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
                             </div>
                             
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center px-1">
-                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Secure Pin</label>
-                                    <a class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-[#13ecda] transition-colors" href="#">Reset Recovery</a>
+                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Password</label>
+                                    <a class="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-[#13ecda] transition-colors" href="#">Forgot Password?</a>
+
                                 </div>
                                 <div class="relative group">
                                     <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xl transition-colors group-focus-within:text-[#13ecda]">shield_lock</span>
-                                    <InputText @bind-Value="loginModel.Password" type="password" class="w-full input-field rounded-2xl pl-12 pr-4 py-4 text-sm outline-none text-white transition-all" placeholder="••••••••" />
+                                    <input name="password" type="password" class="w-full input-field rounded-2xl pl-12 pr-4 py-4 text-sm outline-none text-white transition-all" placeholder="••••••••" required />
                                 </div>
-                                <ValidationMessage For="@(() => loginModel.Password)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
                             </div>
                             
                             <div class="flex items-center justify-between py-1">
                                 <label class="flex items-center gap-3 cursor-pointer group">
                                     <div class="relative flex items-center justify-center size-5 rounded-md border border-white/10 bg-white/5 transition-all group-hover:border-[#13ecda]/30">
-                                        <input class="sr-only peer" id="remember" type="checkbox" />
+                                        <input class="sr-only peer" id="remember" name="rememberMe" type="checkbox" />
+
                                         <div class="size-2 rounded-sm bg-[#13ecda] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                                     </div>
-                                    <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Maintain Session</span>
+                                    <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Remember Me</span>
+
                                 </label>
                             </div>
+
+                            <!-- Google reCAPTCHA widget -->
+                            <div class="flex justify-center py-2">
+                                <div class="g-recaptcha" data-sitekey="6LfZ4ocsAAAAAIt3-13Q6BuaYl_DWDBjAs9crVg6" data-theme="dark"></div>
+                            </div>
+
                             
-                            <button class="w-full btn-primary-glow font-black py-4.5 rounded-2xl mt-4 flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.2em]" type="submit" disabled="@isSubmitting">
+                            <button class="w-full btn-primary-glow font-black py-4.5 rounded-2xl mt-4 flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.2em]" type="button" @onclick="HandleLoginClick" disabled="@isSubmitting">
                                 @if(isSubmitting)
                                 {
                                     <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
@@ -203,16 +206,18 @@
                                 }
                                 else
                                 {
-                                    <span>Initialize Access</span>
+                                    <span>Sign In</span>
+
                                     <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">bolt</span>
                                 }
                             </button>
                         </div>
-                    </EditForm>
+                    </form>
                     
                     <div class="mt-10 pt-8 border-t border-white/5">
                         <p class="text-xs text-slate-500 font-bold uppercase tracking-widest text-center leading-loose">
-                            No credentials? <a @onclick='() => NavigationManager.NavigateTo("/register")' class="text-[#13ecda] hover:text-white cursor-pointer transition-colors border-b-2 border-[#13ecda]/20 hover:border-[#13ecda]">Register Protocol</a>
+                            No account? <a @onclick='() => NavigationManager.NavigateTo("/register")' class="text-[#13ecda] hover:text-white cursor-pointer transition-colors border-b-2 border-[#13ecda]/20 hover:border-[#13ecda]">Create an Account</a>
+
                         </p>
                     </div>
                 </div>
@@ -249,35 +254,64 @@
                 SuccessMessage = "Registration successful! Please login to continue.";
             }
         }
-    }
-
-    private async Task HandleLogin()
-    {
-        ErrorMessage = null;
-        SuccessMessage = null;
-        isSubmitting = true;
-
-        try
+        
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var error))
         {
-            var response = await Http.PostAsJsonAsync("api/auth/login", loginModel);
-
-            if (response.IsSuccessStatusCode)
-            {
-                // Force a page refresh to update auth state context properly
-                NavigationManager.NavigateTo("/search", forceLoad: true);
-            }
-            else
+            if (error == "invalid")
             {
                 ErrorMessage = "Invalid email or password";
             }
+            else if (error == "captcha")
+            {
+                ErrorMessage = "Please verify that you are not a robot.";
+            }
+
         }
-        catch (Exception)
+    }
+
+    private async Task HandleLoginClick()
+    {
+        if (isSubmitting) return;
+
+        ErrorMessage = null;
+        
+        try 
         {
-            ErrorMessage = "An error occurred during login. Please ensure the server is running.";
+            /*
+            var response = await JS.InvokeAsync<string>("getRecaptchaResponse");
+            if (string.IsNullOrEmpty(response))
+            {
+                ErrorMessage = "Please verify that you are not a robot before signing in.";
+                return;
+            }
+            */
+
+            isSubmitting = true;
+            StateHasChanged();
+            
+            // Subtle delay to show the "Syncing" state
+            await Task.Delay(500);
+            
+            await JS.InvokeVoidAsync("submitForm", "loginForm");
         }
-        finally
+        catch (Exception ex)
         {
-            isSubmitting = false;
+            Console.WriteLine($"Error checking captcha: {ex.Message}");
+            // Fallback: if script is not loaded or fails, just submit to avoid blocking users
+            // but for this task, the user wants a notification.
+            ErrorMessage = "Security verification failed. Please refresh and try again.";
+        }
+    }
+
+    private Task HandleLogin() => Task.CompletedTask;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(500); // Give some time for the script to load if it's slow
+            await JS.InvokeVoidAsync("renderRecaptcha");
         }
     }
 }
+

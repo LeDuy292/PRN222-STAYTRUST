@@ -13,6 +13,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+@inject IConfiguration Configuration
+    <!-- Goong Map SDK -->
+    <link href="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.js"></script>
+    <script src="js/goong-map.js"></script>
+    <script>
+        goongMap.init('@Configuration["GoongSettings:MaptilesKey"]', '@Configuration["GoongSettings:RestApiKey"]');
+    </script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -32,7 +41,36 @@
         }
     </script>
     <link rel="stylesheet" href="home.css" />
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script>
+        window.renderRecaptcha = () => {
+            if (window.grecaptcha && window.grecaptcha.render) {
+                const elements = document.querySelectorAll('.g-recaptcha');
+                elements.forEach(el => {
+                    try {
+                        grecaptcha.render(el, {
+                            'sitekey': el.getAttribute('data-sitekey'),
+                            'theme': el.getAttribute('data-theme') || 'light'
+                        });
+                    } catch (e) {
+                        // Element might already be rendered
+                    }
+                });
+            }
+        };
+
+        window.getRecaptchaResponse = () => {
+            return window.grecaptcha ? grecaptcha.getResponse() : "";
+        };
+
+        window.submitForm = (formId) => {
+            const form = document.getElementById(formId);
+            if (form) form.submit();
+        };
+    </script>
     <HeadOutlet />
+
+
 </head>
 
 <body class="font-display bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-white overflow-x-hidden antialiased">

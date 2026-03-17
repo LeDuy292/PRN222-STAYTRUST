@@ -1,0 +1,163 @@
+@page "/roommates/setup"
+@layout STAYTRUST.Components.Layout.RoommateLayout
+
+<HeadContent>
+    <style>
+        body {
+            background-color: #0A1612 !important; /* Force darker background from Stitch for this page */
+        }
+    </style>
+</HeadContent>
+
+<div class="flex-1 flex flex-col items-center py-10 w-full">
+    <div class="max-w-3xl w-full flex flex-col gap-8">
+        
+        <!-- Progress Header -->
+        <div class="flex flex-col gap-4">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black tracking-tight text-white">Your Ideal Roommate Profile</h1>
+                    <p class="text-slate-400 mt-1">Refine your lifestyle preferences for high-accuracy matching.</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold uppercase tracking-widest text-primary">Matching Strength</span>
+                    <p class="text-2xl font-bold text-white">82%</p>
+                </div>
+            </div>
+            <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                <div class="h-full bg-primary rounded-full shadow-[0_0_15px_rgba(19,236,146,0.5)]" style="width: 82%;"></div>
+            </div>
+        </div>
+
+        <!-- Preferences Form -->
+        <div class="grid grid-cols-1 gap-6 text-white w-full">
+            
+            <!-- Lifestyle Sliders Section -->
+            <section class="glass-panel p-6 rounded-xl flex flex-col gap-8">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-primary">bolt</span>
+                    <h3 class="text-lg font-semibold">Lifestyle Dynamics</h3>
+                </div>
+
+                <!-- Cleanliness -->
+                <STAYTRUST.Components.Roommate.LifestyleSlider 
+                    Title="Cleanliness Level" 
+                    Value="@cleanLevel" 
+                    ValueChanged="(int val) => UpdateCleanLevel(val)"
+                    SelectedValue="@GetCleanLevelText(cleanLevel)" 
+                    LeftLabel="Relaxed" 
+                    CenterLabel="Moderate" 
+                    RightLabel="Sanitized" />
+
+                <!-- Noise Tolerance -->
+                <STAYTRUST.Components.Roommate.LifestyleSlider 
+                    Title="Noise Tolerance" 
+                    Value="@noiseLevel" 
+                    ValueChanged="(int val) => UpdateNoiseLevel(val)"
+                    SelectedValue="@GetNoiseLevelText(noiseLevel)" 
+                    LeftLabel="Library Quiet" 
+                    CenterLabel="Social" 
+                    RightLabel="Active/Loud" />
+
+                <!-- Work Schedule -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between">
+                        <label class="font-medium">Primary Work Schedule</label>
+                        <span class="text-primary text-sm bg-primary/10 px-2 py-1 rounded">@workSchedule</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-3">
+                        <button class="@(workSchedule == "In-Office" ? "p-3 rounded-lg border border-primary bg-primary/10 text-sm font-bold text-primary" : "p-3 rounded-lg border border-white/10 bg-white/5 text-sm hover:border-primary/50 transition-all")"
+                                @onclick="@(() => workSchedule = "In-Office")">
+                            9-5 In-Office
+                        </button>
+                        
+                        <button class="@(workSchedule == "Hybrid" ? "p-3 rounded-lg border border-primary bg-primary/10 text-sm font-bold text-primary" : "p-3 rounded-lg border border-white/10 bg-white/5 text-sm hover:border-primary/50 transition-all")"
+                                @onclick="@(() => workSchedule = "Hybrid")">
+                            Hybrid / Flex
+                        </button>
+                        
+                        <button class="@(workSchedule == "Remote" ? "p-3 rounded-lg border border-primary bg-primary/10 text-sm font-bold text-primary" : "p-3 rounded-lg border border-white/10 bg-white/5 text-sm hover:border-primary/50 transition-all")"
+                                @onclick="@(() => workSchedule = "Remote")">
+                            Fully Remote
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Toggle Section -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full text-white">
+                <STAYTRUST.Components.Roommate.ProfileToggle 
+                    Icon="group" 
+                    Title="Frequent Guests" 
+                    Description="Allow overnight stays" 
+                    IsChecked="true" />
+                    
+                <STAYTRUST.Components.Roommate.ProfileToggle 
+                    Icon="pets" 
+                    Title="Pet Friendly" 
+                    Description="Open to living with pets" 
+                    IsChecked="false" />
+                    
+                <STAYTRUST.Components.Roommate.ProfileToggle 
+                    Icon="smoking_rooms" 
+                    Title="Smoking Friendly" 
+                    Description="Outdoor smoking allowed" 
+                    IsChecked="false" />
+                    
+                <STAYTRUST.Components.Roommate.ProfileToggle 
+                    Icon="kitchen" 
+                    Title="Shared Supplies" 
+                    Description="Split costs for basics" 
+                    IsChecked="true" />
+            </section>
+            
+        </div>
+
+        <!-- Footer Action -->
+        <div class="flex flex-col md:flex-row gap-4 justify-between items-center py-6 border-t border-white/10 mt-4">
+            <p class="text-slate-400 text-sm">You can update these settings at any time from your profile.</p>
+            <button class="w-full md:w-auto flex items-center justify-center gap-2 px-12 py-4 bg-primary text-[#0A2540] font-bold rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined font-bold">auto_awesome</span>
+                Smart Match
+            </button>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Background Decor -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-20">
+    <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]"></div>
+    <div class="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-[#0A2540] blur-[120px]"></div>
+</div>
+
+@code {
+    private int cleanLevel = 90;
+    private int noiseLevel = 25;
+    private string workSchedule = "Hybrid";
+
+    private void UpdateCleanLevel(int newValue)
+    {
+        cleanLevel = newValue;
+    }
+
+    private void UpdateNoiseLevel(int newValue)
+    {
+        noiseLevel = newValue;
+    }
+
+    private string GetCleanLevelText(int val)
+    {
+        if (val < 33) return "Relaxed";
+        if (val < 66) return "Moderate";
+        return "Spotless";
+    }
+
+    private string GetNoiseLevelText(int val)
+    {
+        if (val < 33) return "Quiet Zone";
+        if (val < 66) return "Average";
+        return "Active";
+    }
+}
