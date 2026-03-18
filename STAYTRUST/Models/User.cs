@@ -29,6 +29,8 @@ namespace STAYTRUST.Models
 
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
     public virtual UserProfile? UserProfile { get; set; }
