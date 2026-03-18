@@ -1,0 +1,304 @@
+@page "/register"
+@rendermode InteractiveServer
+@inject STAYTRUST.Services.IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Staytrust - Register</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+    .register-wrapper {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #0c1117;
+        overflow-x: hidden;
+    }
+
+    .glow-blob {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(19, 236, 218, 0.12) 0%, rgba(19, 236, 218, 0) 70%);
+        filter: blur(100px);
+        z-index: 0;
+        pointer-events: none;
+        animation: float 25s infinite alternate;
+    }
+
+    .blob-1 { top: -10%; left: -5%; animation-delay: 0s; }
+    .blob-2 { bottom: -10%; right: -5%; animation-delay: -7s; background: radial-gradient(circle, rgba(23, 127, 236, 0.08) 0%, rgba(23, 127, 236, 0) 70%); }
+
+    @@keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(40px, -60px) scale(1.05); }
+        100% { transform: translate(0, 0) scale(1); }
+    }
+
+    .brand-side {
+        background: linear-gradient(135deg, #0c1117 0%, #111827 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .brand-grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(19, 236, 218, 0.03) 1px, transparent 1px), 
+                          linear-gradient(90deg, rgba(19, 236, 218, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        mask-image: radial-gradient(ellipse at center, black, transparent 80%);
+    }
+
+    .premium-card {
+        background: rgba(17, 25, 34, 0.4);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+    }
+
+    .input-field {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .input-field:focus {
+        border-color: #13ecda;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 0 4px rgba(19, 236, 218, 0.1);
+    }
+
+    .btn-primary-glow {
+        background: linear-gradient(135deg, #13ecda 0%, #11b8a9 100%);
+        color: #0c1117;
+        box-shadow: 0 8px 20px rgba(19, 236, 218, 0.25);
+    }
+
+    .btn-primary-glow:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(19, 236, 218, 0.4);
+        filter: brightness(1.1);
+    }
+
+    .role-btn {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .role-btn.active {
+        background: rgba(19, 236, 218, 0.08);
+        border-color: #13ecda;
+        color: white;
+        box-shadow: 0 0 20px rgba(19, 236, 218, 0.1);
+    }
+
+</style>
+
+<div class="register-wrapper text-white min-h-screen relative absolute top-0 left-0 w-screen z-[100] flex flex-col lg:flex-row">
+    <!-- Brand Panel (Left) -->
+    <section class="lg:w-[45%] xl:w-[50%] brand-side hidden lg:flex flex-col justify-between p-12 xl:p-20 overflow-hidden border-r border-white/5">
+        <div class="brand-grid opacity-30"></div>
+        <div class="glow-blob blob-1"></div>
+        
+        <div class="relative z-10">
+            <Logo IconContainerSize="size-11" IconSize="text-xl" TextSize="text-2xl" Class="mb-20" />
+
+
+            <div class="max-w-xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#13ecda] text-[10px] font-bold uppercase tracking-widest mb-8">
+                    V2.0 Digital Infrastructure
+                </div>
+                <h1 class="text-5xl xl:text-6xl font-black mb-8 tracking-tight leading-[0.95] text-white">Scale your property <span class="text-[#13ecda]">Portfolio.</span></h1>
+                <p class="text-slate-400 text-lg xl:text-xl leading-relaxed font-light max-w-md">
+                    Automate operations, secure tenant relationships, and maximize yield with our decentralized management platform.
+                </p>
+            </div>
+        </div>
+
+        <div class="relative z-10 flex items-center justify-between border-t border-white/5 pt-12">
+            <div class="flex gap-12 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                <a href="#" class="hover:text-slate-400 transition-colors">Privacy</a>
+                <a href="#" class="hover:text-slate-400 transition-colors">Safety</a>
+                <a href="#" class="hover:text-slate-400 transition-colors">Nodes</a>
+            </div>
+            <div class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-700">
+                Network Status: Operational
+            </div>
+        </div>
+    </section>
+
+    <!-- Form Panel (Right) -->
+    <section class="flex-1 flex flex-col justify-center p-6 md:p-12 lg:p-20 relative bg-[#0c1117] overflow-y-auto">
+        <div class="lg:hidden absolute top-8 left-8">
+            <Logo IconContainerSize="size-8" IconSize="text-sm" TextSize="text-lg" />
+        </div>
+
+        <div class="w-full max-w-xl mx-auto relative z-10 py-10">
+            <div class="mb-10">
+                <h1 class="text-4xl font-black tracking-tight mb-3">Create <span class="text-[#13ecda]">Account</span></h1>
+                <p class="text-slate-500 font-medium">Join the Staytrust community today.</p>
+
+            </div>
+
+            <div class="premium-card rounded-[32px] overflow-hidden p-[1px]">
+                <div class="bg-[#0c1117]/80 rounded-[31px] p-8 md:p-12">
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 text-red-100 p-4 rounded-xl mb-8 text-xs font-semibold animate-in fade-in slide-in-from-top-2">
+                            <span class="material-symbols-outlined text-lg text-red-500">warning</span>
+                            @ErrorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration" FormName="register-form">
+                        <DataAnnotationsValidator />
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Full Legal Name</label>
+                                <InputText @bind-Value="registerModel.FullName" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="John Wick" />
+                                <ValidationMessage For="@(() => registerModel.FullName)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
+
+                                    <InputText @bind-Value="registerModel.Email" type="email" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="john@wick.com" />
+                                    <ValidationMessage For="@(() => registerModel.Email)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Phone Number</label>
+
+                                    <InputText @bind-Value="registerModel.PhoneNumber" type="tel" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="+1..." />
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Password</label>
+
+                                <InputText @bind-Value="registerModel.Password" type="password" class="w-full input-field rounded-2xl px-6 py-4 text-sm outline-none text-white transition-all font-medium" placeholder="••••••••" />
+                                <ValidationMessage For="@(() => registerModel.Password)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
+                            </div>
+
+                            <div class="space-y-4 pt-2">
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Select Your Role</label>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <button type="button" @onclick='() => registerModel.Role = "Tenant"' 
+                                            class="role-btn p-5 rounded-2xl text-left transition-all @(registerModel.Role == "Tenant" ? "active" : "opacity-60")">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="size-10 rounded-xl bg-[#13ecda]/10 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[#13ecda]">person_search</span>
+                                            </div>
+                                            @if(registerModel.Role == "Tenant") {
+                                                <span class="material-symbols-outlined text-[#13ecda] text-lg">check_circle</span>
+                                            }
+                                        </div>
+                                        <div class="text-xs font-black uppercase tracking-widest text-white mb-1">Tenant</div>
+                                        <div class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Looking for homes</div>
+                                    </button>
+
+                                    <button type="button" @onclick='() => registerModel.Role = "Landlord"' 
+                                            class="role-btn p-5 rounded-2xl text-left transition-all @(registerModel.Role == "Landlord" ? "active" : "opacity-60")">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="size-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-blue-400">house_with_shield</span>
+                                            </div>
+                                            @if(registerModel.Role == "Landlord") {
+                                                <span class="material-symbols-outlined text-[#13ecda] text-lg">check_circle</span>
+                                            }
+                                        </div>
+                                        <div class="text-xs font-black uppercase tracking-widest text-white mb-1">Landlord</div>
+                                        <div class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Proprietor Node</div>
+                                    </button>
+                                </div>
+                                <ValidationMessage For="@(() => registerModel.Role)" class="text-[10px] font-bold text-red-400 mt-1 ml-1" />
+                            </div>
+
+                            <button class="w-full btn-primary-glow font-black py-4.5 rounded-2xl mt-6 flex items-center justify-center gap-3 transition-all text-xs uppercase tracking-[0.2em]" type="submit" disabled="@isSubmitting">
+                                @if(isSubmitting)
+                                {
+                                    <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                    <span>Allocating...</span>
+                                }
+                                else
+                                {
+                                    <span>Complete Registration</span>
+
+                                    <span class="material-symbols-outlined text-lg">rocket_launch</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+            
+            <p class="mt-8 text-center text-xs text-slate-600 font-bold uppercase tracking-widest">
+                Already have an account? <a @onclick='() => NavigationManager.NavigateTo("/login")' class="text-[#13ecda] hover:text-white cursor-pointer transition-colors px-2">Sign In</a>
+
+            </p>
+        </div>
+    </section>
+</div>
+
+
+@code {
+    private RegisterModel registerModel = new();
+    private bool isSubmitting = false;
+    private string? ErrorMessage;
+
+    private async Task HandleRegistration()
+    {
+        ErrorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var success = await AuthService.RegisterUserAsync(
+                registerModel.FullName, 
+                registerModel.Email, 
+                registerModel.Password, 
+                registerModel.PhoneNumber,
+                registerModel.Role);
+
+            if (success)
+            {
+                NavigationManager.NavigateTo("/login?registered=true");
+            }
+            else
+            {
+                ErrorMessage = "Quantum signature detected: This email is already registered.";
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Neural link failed: Please check your connection.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class RegisterModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Full Name is required.")]
+        public string FullName { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email is required.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Invalid email format.")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Phone Number is required for identity verification.")]
+        public string? PhoneNumber { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required.")]
+        [System.ComponentModel.DataAnnotations.MinLength(6, ErrorMessage = "Password must be at least 6 characters.")]
+        public string Password { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please select a role.")]
+        public string Role { get; set; } = "Tenant";
+    }
+}

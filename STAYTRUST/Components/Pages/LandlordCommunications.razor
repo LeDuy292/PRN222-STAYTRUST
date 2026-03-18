@@ -1,0 +1,229 @@
+@page "/landlord-communications"
+@layout STAYTRUST.Components.Layout.LandlordLayout
+
+<div class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-background-dark/80 backdrop-blur-md border-b border-navy-muted">
+<div class="flex flex-col">
+<h2 class="text-2xl font-bold text-slate-100">Communications Hub</h2>
+<p class="text-slate-400 text-sm">Central command for tenant outreach and announcements</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 rounded-xl border border-border-dark text-white font-semibold hover:bg-surface-dark transition-colors">
+                        Export Logs
+                    </button>
+<button class="px-6 py-2.5 rounded-xl bg-surface-dark text-primary border border-primary/30 font-semibold hover:bg-primary/10 transition-colors">
+                        View Templates
+                    </button>
+</div>
+</header>
+<div class="p-8 space-y-8">
+<!-- Hub Insights Cards -->
+<section>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">insights</span>
+<h3 class="text-xl font-bold text-white">Hub Insights</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-surface-dark p-6 rounded-xl border border-border-dark">
+<p class="text-slate-400 text-sm font-medium mb-1">Total Sent</p>
+<div class="flex items-baseline justify-between">
+<span class="text-3xl font-bold text-white tracking-tight">1,284</span>
+<span class="text-primary text-sm font-bold flex items-center">+12%<span class="material-symbols-outlined text-xs ml-1">trending_up</span></span>
+</div>
+</div>
+<div class="bg-surface-dark p-6 rounded-xl border border-border-dark">
+<p class="text-slate-400 text-sm font-medium mb-1">Open Rate</p>
+<div class="flex items-baseline justify-between">
+<span class="text-3xl font-bold text-white tracking-tight">92.4%</span>
+<span class="text-primary text-sm font-bold flex items-center">+3%<span class="material-symbols-outlined text-xs ml-1">trending_up</span></span>
+</div>
+</div>
+<div class="bg-surface-dark p-6 rounded-xl border border-border-dark">
+<p class="text-slate-400 text-sm font-medium mb-1">Response Rate</p>
+<div class="flex items-baseline justify-between">
+<span class="text-3xl font-bold text-white tracking-tight">76.1%</span>
+<span class="text-primary text-sm font-bold flex items-center">+5%<span class="material-symbols-outlined text-xs ml-1">trending_up</span></span>
+</div>
+</div>
+<div class="bg-surface-dark p-6 rounded-xl border border-border-dark">
+<p class="text-slate-400 text-sm font-medium mb-1">Unread Alerts</p>
+<div class="flex items-baseline justify-between">
+<span class="text-3xl font-bold text-white tracking-tight">14</span>
+<span class="text-rose-400 text-sm font-bold flex items-center">-8%<span class="material-symbols-outlined text-xs ml-1">trending_down</span></span>
+</div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Create New Notification Form -->
+<section class="lg:col-span-2 space-y-6">
+<div class="bg-surface-dark p-8 rounded-xl border border-border-dark h-full">
+<div class="flex items-center gap-3 mb-8">
+<span class="material-symbols-outlined text-primary">campaign</span>
+<h3 class="text-2xl font-bold text-white">Create New Notification</h3>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-300">Recipient Group</label>
+<select class="w-full bg-background-dark border-border-dark rounded-xl text-white focus:ring-primary focus:border-primary py-3">
+<option>All Properties</option>
+<option>Emerald Heights Complex</option>
+<option>Pineview Residences</option>
+<option>Oakwood Lofts</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-300">Delivery Method</label>
+<div class="flex gap-4">
+<label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border-dark bg-background-dark cursor-pointer hover:border-primary transition-all has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
+<input checked="" class="hidden" type="checkbox"/>
+<span class="material-symbols-outlined text-primary">mail</span>
+<span class="text-sm font-medium text-white">Email</span>
+</label>
+<label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border-dark bg-background-dark cursor-pointer hover:border-primary transition-all has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
+<input class="hidden" type="checkbox"/>
+<span class="material-symbols-outlined text-primary">sms</span>
+<span class="text-sm font-medium text-white">SMS</span>
+</label>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-300">Message Subject</label>
+<input class="w-full bg-background-dark border-border-dark rounded-xl text-white focus:ring-primary focus:border-primary py-3" placeholder="e.g. Scheduled Maintenance Notice" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-300">Message Content</label>
+<textarea class="w-full bg-background-dark border-border-dark rounded-xl text-white focus:ring-primary focus:border-primary p-4" placeholder="Draft your announcement here..." rows="6"></textarea>
+</div>
+<div class="flex items-center justify-between pt-4">
+<button class="flex items-center gap-2 text-slate-400 hover:text-white font-medium" type="button">
+<span class="material-symbols-outlined">attach_file</span>
+                                        Add Attachment
+                                    </button>
+<div class="flex gap-4">
+<button class="px-8 py-3 rounded-xl border border-border-dark text-white font-bold hover:bg-background-dark" type="button">Save Draft</button>
+<button class="px-10 py-3 rounded-xl bg-primary text-background-dark font-bold hover:bg-primary/90" type="submit">Send Now</button>
+</div>
+</div>
+</form>
+</div>
+</section>
+<!-- Quick Tools / Templates -->
+<section class="space-y-6">
+<div class="bg-surface-dark p-6 rounded-xl border border-border-dark">
+<h4 class="text-lg font-bold text-white mb-4">Urgent Templates</h4>
+<div class="space-y-3">
+<button class="w-full flex items-center justify-between p-4 rounded-xl border border-border-dark hover:border-primary/50 group transition-all text-left">
+<div>
+<p class="text-white font-semibold">Fire Alarm Testing</p>
+<p class="text-slate-500 text-xs">Standard safety notice</p>
+</div>
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary">arrow_forward_ios</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 rounded-xl border border-border-dark hover:border-primary/50 group transition-all text-left">
+<div>
+<p class="text-white font-semibold">Water Interruption</p>
+<p class="text-slate-500 text-xs">Emergency repair alert</p>
+</div>
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary">arrow_forward_ios</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 rounded-xl border border-border-dark hover:border-primary/50 group transition-all text-left">
+<div>
+<p class="text-white font-semibold">Late Rent Reminder</p>
+<p class="text-slate-500 text-xs">Automated collection</p>
+</div>
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+<div class="bg-primary/5 border border-primary/20 p-6 rounded-xl">
+<h4 class="text-lg font-bold text-primary mb-2">Automated Rules</h4>
+<p class="text-slate-400 text-sm mb-4">Configure automatic messages for move-ins, inspections, and lease renewals.</p>
+<button class="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
+                                Configure Automation <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</section>
+</div>
+<!-- Sent Notifications History Table -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+<h3 class="text-xl font-bold text-white">Sent Notifications History</h3>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm">search</span>
+<input class="bg-surface-dark border-border-dark rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-primary focus:border-primary w-64" placeholder="Filter history..." type="text"/>
+</div>
+</div>
+<div class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-background-dark/50 border-b border-border-dark">
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date Sent</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Notification Title</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Recipients</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Open Rate</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark/30">
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 text-sm text-slate-300">Oct 24, 2023 • 09:15 AM</td>
+<td class="px-6 py-4 font-semibold text-white">Scheduled HVAC Maintenance</td>
+<td class="px-6 py-4 text-sm text-slate-300">All Properties (42 units)</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Delivered</span>
+</td>
+<td class="px-6 py-4 text-sm font-bold text-primary">98%</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 text-sm text-slate-300">Oct 22, 2023 • 02:30 PM</td>
+<td class="px-6 py-4 font-semibold text-white">Holiday Weekend Garbage Pick-up</td>
+<td class="px-6 py-4 text-sm text-slate-300">Emerald Heights (12 units)</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Delivered</span>
+</td>
+<td class="px-6 py-4 text-sm font-bold text-primary">85%</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 text-sm text-slate-300">Oct 20, 2023 • 11:00 AM</td>
+<td class="px-6 py-4 font-semibold text-white">Lease Renewal Reminders</td>
+<td class="px-6 py-4 text-sm text-slate-300">Selected (5 units)</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Delivered</span>
+</td>
+<td class="px-6 py-4 text-sm font-bold text-primary">100%</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 text-sm text-slate-300">Oct 18, 2023 • 08:45 AM</td>
+<td class="px-6 py-4 font-semibold text-white">Roof Inspection Notice</td>
+<td class="px-6 py-4 text-sm text-slate-300">Pineview Residences (20 units)</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">Queued</span>
+</td>
+<td class="px-6 py-4 text-sm font-bold text-slate-500">--</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</div>

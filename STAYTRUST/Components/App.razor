@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="dark">
 
 <head>
     <meta charset="utf-8" />
@@ -11,10 +11,71 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/png" href="favicon.png" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+@inject IConfiguration Configuration
+    <!-- Goong Map SDK -->
+    <link href="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@@goongmaps/goong-js@1.0.9/dist/goong-js.js"></script>
+    <script src="js/goong-map.js"></script>
+    <script>
+        goongMap.init('@Configuration["GoongSettings:MaptilesKey"]', '@Configuration["GoongSettings:RestApiKey"]');
+    </script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="home.css" />
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script>
+        window.renderRecaptcha = () => {
+            if (window.grecaptcha && window.grecaptcha.render) {
+                const elements = document.querySelectorAll('.g-recaptcha');
+                elements.forEach(el => {
+                    try {
+                        grecaptcha.render(el, {
+                            'sitekey': el.getAttribute('data-sitekey'),
+                            'theme': el.getAttribute('data-theme') || 'light'
+                        });
+                    } catch (e) {
+                        // Element might already be rendered
+                    }
+                });
+            }
+        };
+
+        window.getRecaptchaResponse = () => {
+            return window.grecaptcha ? grecaptcha.getResponse() : "";
+        };
+
+        window.submitForm = (formId) => {
+            const form = document.getElementById(formId);
+            if (form) form.submit();
+        };
+    </script>
     <HeadOutlet />
+
+
 </head>
 
-<body>
+<body class="font-display bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-white overflow-x-hidden antialiased">
     <Routes />
     <script src="_framework/blazor.web.js"></script>
     <script src="js/scrollTracker.js"></script>

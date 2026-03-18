@@ -1,0 +1,389 @@
+@page "/search"
+@rendermode InteractiveServer
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Staytrust - Find Your Home Da Nang</PageTitle>
+
+<style>
+    /* Scoped font for search page */
+    @@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+    .search-page-container {
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .glass-panel {
+        background: rgba(16, 34, 32, 0.8);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(19, 236, 218, 0.1);
+    }
+    .glass-card {
+        background: rgba(25, 51, 49, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(19, 236, 218, 0.1);
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .map-pin-glow {
+        box-shadow: 0 0 15px rgba(19, 236, 218, 0.6);
+    }
+    #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<div class="search-page-container bg-[#102220] text-white overflow-hidden h-screen w-screen flex flex-col absolute top-0 left-0 z-[100]">
+    <!-- Top Navigation Bar -->
+    <header class="z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#234845] px-6 py-3 bg-[#102220]/95 backdrop-blur-md">
+        <div class="flex items-center gap-8">
+            <Logo />
+            <!-- Search Bar Overlay Component -->
+            <div class="hidden lg:flex items-center gap-2">
+                <div class="relative w-[400px]">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                        <span class="material-symbols-outlined text-[#13ecda] text-xl">search</span>
+                    </div>
+                    <input class="block w-full pl-11 pr-4 py-2 bg-[#193331] border-none rounded-xl text-sm focus:ring-1 focus:ring-[#13ecda] placeholder-[#92c9c5]" placeholder="Location: Sơn Trà, Đà Nẵng | 'Modern Studio'" type="text" />
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <nav class="hidden md:flex items-center gap-6">
+                <a class="text-white hover:text-[#13ecda] transition-colors text-sm font-medium" href="#">Discover</a>
+                <a class="text-white hover:text-[#13ecda] transition-colors text-sm font-medium" href="#">Listings</a>
+                <a class="text-[#13ecda] text-sm font-medium border-b-2 border-[#13ecda] pb-1" href="#">AI Match</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <AuthorizeView>
+                    <Authorized>
+                        <button class="flex items-center justify-center p-2 rounded-xl bg-[#234845] text-white">
+                            <span class="material-symbols-outlined">notifications</span>
+                        </button>
+                        <div class="h-10 w-10 rounded-full border-2 border-[#13ecda] p-0.5" title="Logged in as @context.User.Identity?.Name">
+                            <div class="h-full w-full bg-cover bg-center rounded-full" data-alt="User profile portrait placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBDiGxRqKt2XazEAyudliEMJFwkicIpMu1iPEF9572d4rJWeg0VTt7ToVgV1c2WSxrP4Sc2-17v0oPcorOpqVioMSdaL2hdUNBdQHZ-3qosQrx3ZtMSY1WBcxm5KZWi3jSgkQIimBnCLmDFyienur2nTYceUQ6iWk4DtzPN24iJCg1Z0uzispmvl76qWfCMbV-q5fK85BVokMl5QhuAUK7k4zLrIhrPIJ-cNcO6gOUsI_5DrsUg9qnYbKXYoaJh6e4F7LSr8tusT7ei");'></div>
+                        </div>
+                        <button @onclick="Logout" class="text-xs text-red-400 hover:text-red-300 ml-2 font-bold uppercase tracking-widest pl-4 border-l border-[#234845]">Logout</button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login" class="px-4 py-2 bg-[#13ecda]/10 text-[#13ecda] border border-[#13ecda]/30 rounded-xl text-sm font-bold hover:bg-[#13ecda]/20 transition-all">Login</a>
+                        <a href="/register" class="px-4 py-2 bg-[#13ecda] text-[#102220] rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(19,236,218,0.2)] hover:bg-[#10d4c4] transition-all">Sign Up</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </header>
+    <main class="flex-1 flex overflow-hidden relative text-white">
+        <!-- Left Side Bar Filters -->
+        <aside class="w-80 glass-panel h-full flex flex-col z-40 bg-[#102220]/80">
+            <div class="p-6 flex flex-col gap-8 overflow-y-auto hide-scrollbar">
+                <div>
+                    <h2 class="text-lg font-bold mb-1">Advanced Filters</h2>
+                    <p class="text-[#92c9c5] text-xs">Tailoring your AI search results</p>
+                </div>
+                <!-- AI Verified Toggle -->
+                <div class="p-4 rounded-xl bg-[#13ecda]/10 border border-[#13ecda]/20 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[#13ecda]">verified_user</span>
+                        <div>
+                            <p class="text-sm font-bold">AI-Verified</p>
+                            <p class="text-[10px] text-[#92c9c5]">Verified 2 days ago</p>
+                        </div>
+                    </div>
+                    <div class="w-10 h-5 bg-[#13ecda] rounded-full relative cursor-pointer">
+                        <div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                    </div>
+                </div>
+                <!-- Price Range -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm font-medium">Price Range</label>
+                        <span class="text-xs text-[#13ecda]">$400 - $1,200</span>
+                    </div>
+                    <div class="h-1 w-full bg-[#234845] rounded-full relative">
+                        <div class="absolute left-1/4 right-1/4 h-full bg-[#13ecda] rounded-full"></div>
+                        <div class="absolute left-1/4 -top-1.5 w-4 h-4 bg-white rounded-full shadow-lg border-2 border-[#13ecda]"></div>
+                        <div class="absolute right-1/4 -top-1.5 w-4 h-4 bg-white rounded-full shadow-lg border-2 border-[#13ecda]"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-[#92c9c5] mt-1">
+                        <span>10M VND</span>
+                        <span>30M VND</span>
+                    </div>
+                </div>
+                <!-- Room Type -->
+                <div class="flex flex-col gap-3">
+                    <label class="text-sm font-medium">Room Type</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="px-3 py-2 bg-[#13ecda] text-[#102220] text-xs font-bold rounded-lg">Studio</button>
+                        <button class="px-3 py-2 bg-[#234845] text-white text-xs font-bold rounded-lg">1 Bedroom</button>
+                        <button class="px-3 py-2 bg-[#234845] text-white text-xs font-bold rounded-lg">2 Bedrooms</button>
+                        <button class="px-3 py-2 bg-[#234845] text-white text-xs font-bold rounded-lg">Villa</button>
+                    </div>
+                </div>
+                <!-- Amenities -->
+                <div class="flex flex-col gap-3">
+                    <label class="text-sm font-medium">Top Amenities</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#234845] cursor-pointer group">
+                            <span class="material-symbols-outlined text-sm group-hover:text-[#13ecda]">wifi</span>
+                            <span class="text-xs">High-speed WiFi</span>
+                        </div>
+                        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#234845] cursor-pointer group">
+                            <span class="material-symbols-outlined text-sm group-hover:text-[#13ecda]">pool</span>
+                            <span class="text-xs">Infinity Pool</span>
+                        </div>
+                        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#234845] cursor-pointer group">
+                            <span class="material-symbols-outlined text-sm group-hover:text-[#13ecda]">fitness_center</span>
+                            <span class="text-xs">Gym Access</span>
+                        </div>
+                        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#234845] cursor-pointer group">
+                            <span class="material-symbols-outlined text-sm group-hover:text-[#13ecda]">pet_supplies</span>
+                            <span class="text-xs">Pet-friendly</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-[rgba(19,236,218,0.2)]">
+                <button class="w-full py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">filter_alt_off</span>
+                    Reset Filters
+                </button>
+            </div>
+        </aside>
+        <!-- Main Map Area -->
+        <div class="flex-1 relative">
+            <!-- Map Container -->
+            <div id="map" class="absolute inset-0 bg-[#0d1a19]"></div>
+            
+            <!-- Quick Filter Chips Overlay -->
+            <div class="absolute top-6 left-6 right-6 z-30 flex gap-2 overflow-x-auto hide-scrollbar">
+                <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#102220]/80 backdrop-blur px-4 border border-[rgba(19,236,218,0.2)]">
+                    <span class="material-symbols-outlined text-[#13ecda] text-sm">waves</span>
+                    <p class="text-white text-xs font-medium">Beachfront</p>
+                </button>
+                <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#102220]/80 backdrop-blur px-4 border border-[rgba(19,236,218,0.2)]">
+                    <span class="material-symbols-outlined text-[#13ecda] text-sm">workspace_premium</span>
+                    <p class="text-white text-xs font-medium">High-tech</p>
+                </button>
+                <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#102220]/80 backdrop-blur px-4 border border-[rgba(19,236,218,0.2)]">
+                    <span class="material-symbols-outlined text-[#13ecda] text-sm">home_work</span>
+                    <p class="text-white text-xs font-medium">Long-term</p>
+                </button>
+                <button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#102220]/80 backdrop-blur px-4 border border-[rgba(19,236,218,0.2)]">
+                    <span class="material-symbols-outlined text-[#13ecda] text-sm">percent</span>
+                    <p class="text-white text-xs font-medium">Monthly Discount</p>
+                </button>
+            </div>
+            <!-- Floating Map Controls -->
+            <div class="absolute right-6 bottom-32 z-30 flex flex-col gap-2">
+                <button class="w-10 h-10 bg-[#102220]/80 backdrop-blur rounded-xl border border-[rgba(19,236,218,0.2)] flex items-center justify-center hover:bg-[#13ecda]/20 text-white">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+                <button class="w-10 h-10 bg-[#102220]/80 backdrop-blur rounded-xl border border-[rgba(19,236,218,0.2)] flex items-center justify-center hover:bg-[#13ecda]/20 text-white">
+                    <span class="material-symbols-outlined">remove</span>
+                </button>
+                <button class="w-10 h-10 bg-[#102220]/80 backdrop-blur rounded-xl border border-[rgba(19,236,218,0.2)] flex items-center justify-center hover:bg-[#13ecda]/20 mt-2 text-white">
+                    <span class="material-symbols-outlined">my_location</span>
+                </button>
+            </div>
+            <!-- Scrollable Property Cards Overlay -->
+            <div class="absolute inset-y-0 right-0 w-[420px] z-20 pointer-events-none p-6">
+                <div class="h-full overflow-y-auto hide-scrollbar pointer-events-auto space-y-4 pr-2">
+                    <!-- Card 1 -->
+                    <div class="glass-card rounded-xl overflow-hidden group hover:shadow-[0_0_20px_rgba(19,236,218,0.2)] transition-all duration-300">
+                        <div class="relative h-48">
+                            <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Modern studio apartment with ocean view in Sơn Trà" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC2Ir2d5H1HPWsTAWpvbKRUzc5dEDA1pANjz931KAMb7V8cP81SN6ejHJhGTlud4Zy2ndH8otQ5llyfZtre6klq9SMESZasbYnDS9HSRpW54jxmIeoIcmspySeNotlnLdkpb1tPC8j5ZOzzD8INu3ljxg2pxM6Dt5ttQBLP4lMGlZpiC99lpUydwelO4AsqRffTFgem0cLWqr0iaGDN4dWpRvok3HBUAyEtXLdxC0x10slJbxXGLU8qt2_qD9Hqf5xa7CoBjk8aRQJn");'></div>
+                            <div class="absolute top-3 left-3 px-2 py-1 bg-[#13ecda]/20 backdrop-blur border border-[#13ecda]/40 rounded-lg flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px] text-[#13ecda] fill-[1]">verified</span>
+                                <span class="text-[10px] font-bold text-[#13ecda] uppercase tracking-wider">AI Verified</span>
+                            </div>
+                            <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#102220]/40 backdrop-blur flex items-center justify-center">
+                                <span class="material-symbols-outlined text-lg text-white">favorite</span>
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-base leading-tight">Ocean View Sky Loft</h3>
+                                    <p class="text-xs text-[#92c9c5] flex items-center gap-1 mt-0.5">
+                                        <span class="material-symbols-outlined text-xs">location_on</span> Sơn Trà District
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[#13ecda] font-bold text-lg leading-none">$650<span class="text-[10px] text-white/60 font-normal">/mo</span></p>
+                                    <p class="text-[10px] text-[#92c9c5]">~16.2M VND</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 mb-4 py-2 border-y border-[rgba(19,236,218,0.2)]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">bed</span>
+                                    <span class="text-[11px] text-[#92c9c5]">Studio</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">square_foot</span>
+                                    <span class="text-[11px] text-[#92c9c5]">45m²</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">bolt</span>
+                                    <span class="text-[11px] text-[#92c9c5]">98% Match</span>
+                                </div>
+                            </div>
+                            <a href="/detail/101" class="w-full inline-block text-center py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="glass-card rounded-xl overflow-hidden group hover:shadow-[0_0_20px_rgba(19,236,218,0.2)] transition-all duration-300">
+                        <div class="relative h-48">
+                            <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="High-tech 2 bedroom apartment in Ngũ Hành Sơn" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPGhCHbE6k-2R3Pynv6ajykbRn_baO3zp-21j436AF7w8WlcyLbGVj9s-gbJYZ-S8LC6LydEMfsSEFs8jB6zav_alF7svb46znKZ4rnsfjvNmheQ-Sv3K4Kun7wCw8uVO9c9kGIUM1Tn-9elQr0eC1PQc0Z_ZwFqxBs3fMcnKCQJC-opP_60p7BrsIArgX05sOqqWYDWAONhum-7suXyzS-zcWd8VJ3MOGn8-42ePDA2rLyqw2T1LLwBLIdMSAFO_O3mVbqsnF0fNm");'></div>
+                            <div class="absolute top-3 left-3 px-2 py-1 bg-[#13ecda]/20 backdrop-blur border border-[#13ecda]/40 rounded-lg flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px] text-[#13ecda] fill-[1]">verified</span>
+                                <span class="text-[10px] font-bold text-[#13ecda] uppercase tracking-wider">AI Verified</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-base leading-tight">Marble Mountain Suites</h3>
+                                    <p class="text-xs text-[#92c9c5] flex items-center gap-1 mt-0.5">
+                                        <span class="material-symbols-outlined text-xs">location_on</span> Ngũ Hành Sơn
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[#13ecda] font-bold text-lg leading-none">$1,100<span class="text-[10px] text-white/60 font-normal">/mo</span></p>
+                                    <p class="text-[10px] text-[#92c9c5]">~27.5M VND</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 mb-4 py-2 border-y border-[rgba(19,236,218,0.2)]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">bed</span>
+                                    <span class="text-[11px] text-[#92c9c5]">2 Beds</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">square_foot</span>
+                                    <span class="text-[11px] text-[#92c9c5]">90m²</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">bolt</span>
+                                    <span class="text-[11px] text-[#92c9c5]">92% Match</span>
+                                </div>
+                            </div>
+                            <a href="/detail/102" class="w-full inline-block text-center py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="glass-card rounded-xl overflow-hidden group hover:shadow-[0_0_20px_rgba(19,236,218,0.2)] transition-all duration-300">
+                        <div class="relative h-48">
+                            <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Boutique studio with garden balcony" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAb3NoUcOp71X0rIobWmurnqlcOijws5z03Th2rA2we1CPjMO6WpDNKvZ8gAWfEAvEuNIyJQ-vOVlpXudlyf7O-NVFr_Phrv6Y9SNJGwjgOPw_8lG_kafoT2Ggs6kXlxE5qfIcRHeyPc3A6gp2l2mAIoGbPEQ8dMxRXafNK5QJojx_c0kaC7RpAccB6nRGcrbLImWmbXZaV9cgdu6ZyRPMLN33FZBY-XG8WnupDmeGSDrJHOaF5sHSWmyBAhOQ5utiXS9pI0uz_y4eR");'></div>
+                            <div class="absolute top-3 left-3 px-2 py-1 bg-white/10 backdrop-blur border border-white/20 rounded-lg flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px] text-white">schedule</span>
+                                <span class="text-[10px] font-bold text-white uppercase tracking-wider">New Listing</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-base leading-tight">Green Terrace Studio</h3>
+                                    <p class="text-xs text-[#92c9c5] flex items-center gap-1 mt-0.5">
+                                        <span class="material-symbols-outlined text-xs">location_on</span> Hải Châu District
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[#13ecda] font-bold text-lg leading-none">$480<span class="text-[10px] text-white/60 font-normal">/mo</span></p>
+                                    <p class="text-[10px] text-[#92c9c5]">~12.0M VND</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 mb-4 py-2 border-y border-[rgba(19,236,218,0.2)]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">bed</span>
+                                    <span class="text-[11px] text-[#92c9c5]">Studio</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">square_foot</span>
+                                    <span class="text-[11px] text-[#92c9c5]">35m²</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-[#13ecda]">bolt</span>
+                                    <span class="text-[11px] text-[#92c9c5]">85% Match</span>
+                                </div>
+                            </div>
+                            <a href="/detail/103" class="w-full inline-block text-center py-2.5 bg-[#13ecda] text-[#102220] font-bold rounded-lg text-sm transition-colors hover:bg-[#10d4c4]">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer Stats Overlay -->
+    <footer class="z-50 bg-[#102220]/95 border-t border-[rgba(19,236,218,0.2)] px-6 py-2 flex justify-between items-center text-[10px] tracking-widest text-[#92c9c5] uppercase">
+        <div class="flex gap-6">
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 bg-[#13ecda] rounded-full animate-pulse"></span> 124 Rooms available in Da Nang</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 bg-[#13ecda] rounded-full"></span> 42 AI Verified Today</span>
+        </div>
+        <div class="flex gap-4">
+            <span>Exchange Rate: 1 USD = 25,000 VND</span>
+            <a class="hover:text-[#13ecda] transition-colors" href="#">Privacy &amp; Terms</a>
+        </div>
+    </footer>
+</div>
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+@code {
+    private List<PropertyMarker> propertyMarkers = new()
+    {
+        new PropertyMarker { Lat = 16.0678, Lng = 108.2415, Price = 650 }, // Sơn Trà
+        new PropertyMarker { Lat = 16.0333, Lng = 108.2667, Price = 820 }, // Ngũ Hành Sơn
+        new PropertyMarker { Lat = 16.0544, Lng = 108.2022, Price = 480 }  // Hải Châu
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("goongMap.initSearchMap", "map", 16.0544, 108.2022, 13);
+            await JSRuntime.InvokeVoidAsync("goongMap.addMarkers", "map", propertyMarkers);
+            
+            // Check for search query
+            var uri = new Uri(NavigationManager.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("q", out var locationStr) && !string.IsNullOrEmpty(locationStr))
+            {
+                var coords = await JSRuntime.InvokeAsync<Coordinates>("goongMap.geocode", locationStr.ToString());
+                if (coords != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("goongMap.flyTo", "map", coords.Lat, coords.Lng, 15);
+                }
+            }
+        }
+    }
+
+    private async Task Logout()
+    {
+        await Http.PostAsync("api/auth/logout", null);
+        NavigationManager.NavigateTo("/search", forceLoad: true);
+    }
+
+    public class Coordinates
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+
+    public class PropertyMarker
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+        public int Price { get; set; }
+    }
+}

@@ -1,0 +1,812 @@
+@page "/my-rentals"
+@using Microsoft.AspNetCore.Authorization
+@using STAYTRUST.Models
+@using STAYTRUST.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IRentalService RentalService
+@inject IPaymentService PaymentService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Staytrust - Resident Portal</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+    .my-rentals-container {
+        font-family: 'Space Grotesk', sans-serif;
+        background: radial-gradient(circle at 50% 0%, #111827 0%, #000000 100%);
+        min-height: 100vh;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(52, 211, 153, 0.2);
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, #34d399 0%, #2dd4bf 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card-glow {
+        position: relative;
+    }
+
+    .stat-card-glow::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), transparent);
+        border-radius: inherit;
+        z-index: -1;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(52, 211, 153, 0.2);
+        border-radius: 10px;
+    }
+
+    .action-tab-btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .action-tab-btn.active {
+        background: rgba(52, 211, 153, 0.1);
+        color: #34d399;
+        border-color: rgba(52, 211, 153, 0.2);
+    }
+</style>
+
+<div class="my-rentals-container text-white py-20 px-6 lg:px-32">
+    <div class="max-w-[1600px] mx-auto">
+        <header class="mb-20">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-12">
+                <div class="max-w-3xl">
+                    <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/5 border border-emerald-500/10 mb-8">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Resident Control Center</span>
+                    </div>
+                    <h1 class="text-6xl lg:text-8xl font-black tracking-tight leading-[0.9] mb-8">
+                        The Future of <br/><span class="gradient-text italic">Living.</span>
+                    </h1>
+                    <p class="text-slate-400 text-xl font-medium max-w-xl leading-relaxed">
+                        Orchestrate your residence with precision. Real-time telemetry, automated settlement, and verified protocols.
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <CascadingValue Value="this">
+            <AuthorizeView>
+                <Authorized>
+                    @if (isLoading)
+                    {
+                        <div class="flex flex-col items-center justify-center py-40">
+                            <div class="relative size-20">
+                                <div class="absolute inset-0 border-4 border-emerald-500/10 rounded-full"></div>
+                                <div class="absolute inset-0 border-t-4 border-emerald-400 rounded-full animate-spin"></div>
+                            </div>
+                            <p class="mt-8 text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">Synchronizing Infrastructure...</p>
+                        </div>
+                    }
+                    else if (rentals == null || !rentals.Any())
+                    {
+                        <div class="glass-card rounded-[40px] p-32 flex flex-col items-center text-center">
+                            <div class="size-32 rounded-[40px] bg-white/5 flex items-center justify-center mb-12 border border-white/10 group">
+                                <span class="material-symbols-outlined text-6xl text-white/10 group-hover:text-emerald-400/40 transition-colors duration-500">hub</span>
+                            </div>
+                            <h2 class="text-4xl font-black mb-6">No Active Protocols Detected</h2>
+                            <p class="text-slate-500 mb-12 max-w-md text-lg leading-relaxed">Your digital living profile is currently detached. Discover verified architectural nodes to initiate your first protocol.</p>
+                            <a href="/search" class="px-12 py-6 bg-emerald-500 hover:bg-emerald-400 text-[#000000] rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform hover:scale-105 shadow-[0_20px_40px_rgba(52,211,153,0.2)]">
+                                Scan Available Nodes
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="space-y-32">
+                            @foreach (var rental in rentals)
+                            {
+                                <div class="relative">
+                                    <!-- Property Spotlight Hero -->
+                                    <section class="relative rounded-[50px] overflow-hidden mb-12 h-[500px] group glass-card">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+                                        <img class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+                                             src="@(rental.Room?.RoomImages?.FirstOrDefault()?.ImageUrl ?? "https://images.unsplash.com/photo-1594904351111-a072f80b1a71?q=80&w=1935&auto=format&fit=crop")" 
+                                             alt="@rental.Room?.Title" />
+                                        
+                                        <div class="absolute bottom-0 left-0 p-12 z-20 w-full flex flex-col lg:flex-row lg:items-end justify-between gap-12">
+                                            <div>
+                                                <div class="flex items-center gap-3 mb-6">
+                                                    <span class="bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30 flex items-center gap-2">
+                                                        <span class="material-symbols-outlined text-sm">verified</span> Lease Protocol Active
+                                                    </span>
+                                                    <span class="bg-white/10 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
+                                                        #@(rental.ContractId.ToString("D4"))
+                                                    </span>
+                                                </div>
+                                                <h2 class="text-5xl lg:text-7xl font-black text-white mb-4 tracking-tighter">@rental.Room?.Title</h2>
+                                                <div class="flex items-center gap-2 text-slate-300">
+                                                    <span class="material-symbols-outlined text-emerald-400">location_on</span>
+                                                    <p class="text-lg font-bold">@rental.Room?.Address</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="glass-card p-6 rounded-3xl border border-white/10 flex items-center gap-6">
+                                                <div class="size-14 rounded-full border-2 border-emerald-500/50 overflow-hidden bg-white/5 flex items-center justify-center">
+                                                    <span class="material-symbols-outlined text-emerald-400">person</span>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Verified Host</p>
+                                                    <p class="text-lg font-black text-white">@rental.Room?.Landlord?.FullName</p>
+                                                </div>
+                                                <button @onclick='() => ChangeTab(rental.ContractId, "chat")' class="ml-4 bg-emerald-500 text-black font-black px-6 py-3 rounded-2xl text-xs uppercase tracking-widest hover:bg-emerald-400 transition-all">
+                                                    Message
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <!-- Key Intelligence Matrix -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+                                        <div class="glass-card p-8 rounded-[32px] flex items-center gap-6 stat-card-glow text-amber-400">
+                                            <div class="size-16 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                                                <span class="material-symbols-outlined text-3xl">event_repeat</span>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Contract Validity</p>
+                                                <p class="text-3xl font-black">142 Days <span class="text-xs font-medium text-slate-500">Remaining</span></p>
+                                            </div>
+                                        </div>
+                                        <div class="glass-card p-8 rounded-[32px] flex items-center gap-6 stat-card-glow text-emerald-400">
+                                            <div class="size-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+                                                <span class="material-symbols-outlined text-3xl">payments</span>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Monthly Valuation</p>
+                                                <p class="text-3xl font-black">@rental.Room?.Price.ToString("N0") <span class="text-xs font-medium text-slate-500">VND</span></p>
+                                            </div>
+                                        </div>
+                                        <div class="glass-card p-8 rounded-[32px] flex items-center gap-6 stat-card-glow text-blue-400">
+                                            <div class="size-16 bg-blue-500/10 rounded-2xl flex items-center justify-center border border-blue-500/20">
+                                                <span class="material-symbols-outlined text-3xl">calendar_month</span>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Next Settlement</p>
+                                                <p class="text-3xl font-black">Oct 01, 2023</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Split Interaction Core -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                                        <!-- Primary Telemetry (Left) -->
+                                        <div class="lg:col-span-7 space-y-12">
+                                            <!-- Utilities Analytics -->
+                                            <div class="glass-card rounded-[40px] p-10">
+                                                <div class="flex justify-between items-center mb-10">
+                                                    <h3 class="text-xl font-black flex items-center gap-3">
+                                                        <span class="material-symbols-outlined text-emerald-400">analytics</span> Resource Telemetry
+                                                    </h3>
+                                                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Cycle: Current</span>
+                                                </div>
+                                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                                    @if (roomReadings.ContainsKey(rental.RoomId))
+                                                    {
+                                                        @foreach (var reading in roomReadings[rental.RoomId].Take(1))
+                                                        {
+                                                            <div class="bg-white/[0.02] border border-white/5 p-6 rounded-3xl">
+                                                                <div class="flex justify-between items-start mb-6">
+                                                                    <span class="material-symbols-outlined text-amber-400 text-2xl">bolt</span>
+                                                                    <span class="text-[10px] text-red-400 flex items-center font-black">+4% <span class="material-symbols-outlined text-[10px]">trending_up</span></span>
+                                                                </div>
+                                                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Electricity</p>
+                                                                <p class="text-2xl font-black">@reading.ElectricNew <span class="text-xs font-medium">kWh</span></p>
+                                                                <div class="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-amber-400 w-[65%]"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="bg-white/[0.02] border border-white/5 p-6 rounded-3xl">
+                                                                <div class="flex justify-between items-start mb-6">
+                                                                    <span class="material-symbols-outlined text-blue-400 text-2xl">water_drop</span>
+                                                                    <span class="text-[10px] text-emerald-400 flex items-center font-black">-2% <span class="material-symbols-outlined text-[10px]">trending_down</span></span>
+                                                                </div>
+                                                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Water</p>
+                                                                <p class="text-2xl font-black">@reading.WaterNew <span class="text-xs font-medium">m³</span></p>
+                                                                <div class="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-blue-400 w-[30%]"></div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="bg-white/[0.02] border border-white/5 p-6 rounded-3xl">
+                                                                <div class="flex justify-between items-start mb-6">
+                                                                    <span class="material-symbols-outlined text-purple-400 text-2xl">wifi</span>
+                                                                    <span class="text-[10px] text-slate-500 font-black">FLAT RATE</span>
+                                                                </div>
+                                                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Fiber Network</p>
+                                                                <p class="text-2xl font-black">Gigabit</p>
+                                                                <div class="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-purple-400 w-full"></div>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="col-span-3 py-10 text-center text-slate-600 font-black italic uppercase text-xs tracking-widest">Awaiting Signal...</div>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Digital Repository -->
+                                            <div class="glass-card rounded-[40px] p-10">
+                                                <h3 class="text-xl font-black flex items-center gap-3 mb-8">
+                                                    <span class="material-symbols-outlined text-emerald-400">description</span> Digital Repository
+                                                </h3>
+                                                <div class="space-y-4">
+                                                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/[0.02] hover:bg-white/[0.04] transition-all border border-white/5 group">
+                                                        <div class="flex items-center gap-6">
+                                                            <div class="p-3 bg-red-500/10 text-red-500 rounded-2xl group-hover:scale-110 transition-transform">
+                                                                <span class="material-symbols-outlined">picture_as_pdf</span>
+                                                            </div>
+                                                            <div>
+                                                                <p class="text-sm font-black text-white/90">Lease Agreement - Protocol #@(rental.ContractId.ToString("D4"))</p>
+                                                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Signed @rental.StartDate?.ToString("MMM dd. yyyy") • 2.4 MB</p>
+                                                            </div>
+                                                        </div>
+                                                        <button class="p-3 text-slate-500 hover:text-emerald-400 transition-colors">
+                                                            <span class="material-symbols-outlined">download</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/[0.02] hover:bg-white/[0.04] transition-all border border-white/5 group">
+                                                        <div class="flex items-center gap-6">
+                                                            <div class="p-3 bg-blue-500/10 text-blue-500 rounded-2xl group-hover:scale-110 transition-transform">
+                                                                <span class="material-symbols-outlined">gavel</span>
+                                                            </div>
+                                                            <div>
+                                                                <p class="text-sm font-black text-white/90">House Rules & Architectural Integrity</p>
+                                                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Updated Jan 12, 2023 • 1.1 MB</p>
+                                                            </div>
+                                                        </div>
+                                                        <button class="p-3 text-slate-500 hover:text-emerald-400 transition-colors">
+                                                            <span class="material-symbols-outlined">download</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Secondary Intelligence (Right) -->
+                                        <div class="lg:col-span-5 space-y-12">
+                                            <!-- Financial Settlement -->
+                                            <div class="glass-card rounded-[40px] p-10 border-l-[6px] border-l-emerald-500 relative overflow-hidden">
+                                                <div class="absolute top-0 right-0 p-8 opacity-5">
+                                                    <span class="material-symbols-outlined text-9xl">account_balance_wallet</span>
+                                                </div>
+                                                <h3 class="text-xl font-black mb-8">Upcoming Settlement</h3>
+                                                <div class="space-y-4 mb-10">
+                                                    <div class="flex justify-between text-base">
+                                                        <span class="text-slate-400 font-medium">Core Rental Fee</span>
+                                                        <span class="font-black">@rental.Room?.Price.ToString("N0")</span>
+                                                    </div>
+                                                    <div class="flex justify-between text-base">
+                                                        <span class="text-slate-400 font-medium">Utility Surcharge</span>
+                                                        <span class="font-black">237,700</span>
+                                                    </div>
+                                                    <div class="pt-6 border-t border-white/10 flex justify-between items-end">
+                                                        <div>
+                                                            <p class="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">Total Due Oct 01</p>
+                                                            <p class="text-3xl font-black">@( (rental.Room?.Price + 237700)?.ToString("N0") ) <span class="text-sm font-medium text-slate-500">VND</span></p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex gap-4">
+                                                    <button @onclick="() => OpenPaymentModal(rental)" class="flex-1 bg-emerald-500 py-6 rounded-2xl font-black text-black hover:bg-emerald-400 transform hover:scale-[1.02] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3">
+                                                        <span class="material-symbols-outlined font-black">credit_card</span> AUTHORIZE PAYMENT
+                                                    </button>
+                                                    @if (rental.Status == "Active")
+                                                    {
+                                                        <button @onclick="() => HandleTermination(rental)" class="px-6 bg-red-500/10 border border-red-500/20 py-6 rounded-2xl font-black text-red-500 hover:bg-red-500 hover:text-white transform hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+                                                            <span class="material-symbols-outlined font-black">logout</span> CHECK OUT
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Maintenance & Protocols -->
+                                            <div class="glass-card rounded-[40px] p-10">
+                                                <h3 class="text-xl font-black mb-8">Operations & Feedback</h3>
+                                                <div class="grid grid-cols-2 gap-6">
+                                                    @if (rental.Status == "Terminated")
+                                                    {
+                                                        <button @onclick="() => OpenFeedbackModal(rental)" class="flex flex-col items-center gap-4 p-8 rounded-[32px] bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/50 transition-all group">
+                                                            <span class="material-symbols-outlined text-4xl text-emerald-400 group-hover:scale-110 transition-transform">star</span>
+                                                            <span class="text-xs font-black uppercase tracking-widest text-emerald-400">Leave Feedback</span>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="flex flex-col items-center gap-4 p-8 rounded-[32px] bg-white/[0.02] border border-white/5 hover:border-emerald-500/30 transition-all group">
+                                                            <span class="material-symbols-outlined text-4xl text-emerald-400 group-hover:scale-110 transition-transform">home_repair_service</span>
+                                                            <span class="text-xs font-black uppercase tracking-widest text-slate-400">Request Audit</span>
+                                                        </button>
+                                                    }
+                                                    <button @onclick='() => ChangeTab(rental.ContractId, "chat")' class="flex flex-col items-center gap-4 p-8 rounded-[32px] bg-white/[0.02] border border-white/5 hover:border-emerald-500/30 transition-all group">
+                                                        <span class="material-symbols-outlined text-4xl text-emerald-400 group-hover:scale-110 transition-transform">chat_bubble</span>
+                                                        <span class="text-xs font-black uppercase tracking-widest text-slate-400">Signal Host</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Structural Norms -->
+                                            <div class="glass-card rounded-[40px] p-10">
+                                                <h3 class="text-xl font-black mb-8">Structural Norms</h3>
+                                                <div class="max-h-[220px] overflow-y-auto pr-4 space-y-6 custom-scrollbar">
+                                                    <div class="flex gap-5">
+                                                        <span class="material-symbols-outlined text-emerald-400 text-xl font-black">check_circle</span>
+                                                        <div>
+                                                            <p class="text-sm font-black text-white/90">Quiet Matrix Hours</p>
+                                                            <p class="text-xs text-slate-500 font-medium leading-relaxed mt-1">22:00 - 07:00. Maintain acoustic silence for neighboring nodes.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-5">
+                                                        <span class="material-symbols-outlined text-emerald-400 text-xl font-black">check_circle</span>
+                                                        <div>
+                                                            <p class="text-sm font-black text-white/90">Fauna Protocol</p>
+                                                            <p class="text-xs text-slate-500 font-medium leading-relaxed mt-1">Domestic animals authorized with prior architectural scanning.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-5">
+                                                        <span class="material-symbols-outlined text-red-500 text-xl font-black">cancel</span>
+                                                        <div>
+                                                            <p class="text-sm font-black text-white/90">Combustion Prohibition</p>
+                                                            <p class="text-xs text-slate-500 font-medium leading-relaxed mt-1">Strictly zero-combustion policy within internal spatial dimensions.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-5">
+                                                        <span class="material-symbols-outlined text-emerald-400 text-xl font-black">check_circle</span>
+                                                        <div>
+                                                            <p class="text-sm font-black text-white/90">Waste Management</p>
+                                                            <p class="text-xs text-slate-500 font-medium leading-relaxed mt-1">Resource disposal synchronized on Tuesdays and Fridays (AM).</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Drawer (Utility Tables / Chat) -->
+                                    <div class="mt-12 glass-card rounded-[40px] overflow-hidden">
+                                        <div class="px-8 lg:px-12 border-b border-white/5 bg-white/[0.01] flex overflow-x-auto no-scrollbar">
+                                            <button @onclick='() => ChangeTab(rental.ContractId, "bills")' class='action-tab-btn py-6 px-10 text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent @(GetActiveTab(rental.ContractId) == "bills" ? "active" : "text-slate-500")'>Detailed Ledger</button>
+                                            <button @onclick='() => ChangeTab(rental.ContractId, "chat")' class='action-tab-btn py-6 px-10 text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent @(GetActiveTab(rental.ContractId) == "chat" ? "active" : "text-slate-500")'>Secure Comms</button>
+                                        </div>
+
+                                        <div class="p-10 animate-in fade-in duration-700">
+                                            @if (GetActiveTab(rental.ContractId) == "bills")
+                                            {
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-left">
+                                                        <thead>
+                                                            <tr class="text-[10px] font-black uppercase tracking-widest text-slate-600 border-b border-white/5">
+                                                                <th class="pb-6 px-4">Temporal Period</th>
+                                                                <th class="pb-6 px-4">Base Valuation</th>
+                                                                <th class="pb-6 px-4">Resource Impact</th>
+                                                                <th class="pb-6 px-4">Settlement Total</th>
+                                                                <th class="pb-6 px-4 text-center">Status</th>
+                                                                <th class="pb-6 px-4 text-right">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="divide-y divide-white/[0.02]">
+                                                            @if (contractInvoices.ContainsKey(rental.ContractId))
+                                                            {
+                                                                @foreach (var invoice in contractInvoices[rental.ContractId])
+                                                                {
+                                                                    <tr class="hover:bg-white/[0.01] transition-colors">
+                                                                        <td class="py-8 px-4 font-black">@invoice.Month</td>
+                                                                        <td class="py-8 px-4 text-slate-400">@invoice.RoomPrice?.ToString("N0")</td>
+                                                                        <td class="py-8 px-4 text-slate-500">@((invoice.ElectricFee + invoice.WaterFee)?.ToString("N0"))</td>
+                                                                        <td class="py-8 px-4 font-black text-emerald-400 text-lg">@invoice.TotalAmount?.ToString("N0")</td>
+                                                                        <td class="py-8 px-4 text-center">
+                                                                            <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest @(invoice.Status == "Paid" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/20 text-amber-400 border border-amber-500/20")">
+                                                                                @invoice.Status
+                                                                            </span>
+                                                                        </td>
+                                                                        <td class="py-8 px-4 text-right">
+                                                                            @if (invoice.Status != "Paid")
+                                                                            {
+                                                                                <button @onclick="() => OpenPaymentModalFromInvoice(invoice)" class="px-6 py-2 bg-emerald-500 text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-110 transition-transform">Authorize</button>
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <button class="px-6 py-2 bg-white/5 text-slate-500 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest">Audit</button>
+                                                                            }
+                                                                        </td>
+                                                                    </tr>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <tr><td colspan="6" class="py-20 text-center text-slate-600 font-black tracking-widest uppercase italic text-xs">Synchronizing Ledger Data...</td></tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                            else if (GetActiveTab(rental.ContractId) == "chat")
+                                            {
+                                                <div class="max-w-4xl mx-auto h-[500px] flex flex-col glass-card rounded-[32px] overflow-hidden border border-white/5">
+                                                    <div class="px-8 py-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                                                        <div class="flex items-center gap-4">
+                                                            <div class="size-12 rounded-full border-2 border-emerald-500/30 bg-white/5 flex items-center justify-center">
+                                                                <span class="material-symbols-outlined text-emerald-400">encrypted</span>
+                                                            </div>
+                                                            <div>
+                                                                <p class="text-sm font-black">@rental.Room?.Landlord?.FullName</p>
+                                                                <p class="text-[9px] text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                                                                    <span class="size-1.5 bg-emerald-400 rounded-full"></span> Secure Node established
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-1 p-12 flex flex-col justify-center items-center text-center opacity-40">
+                                                        <span class="material-symbols-outlined text-7xl mb-6">lock_reset</span>
+                                                        <h5 class="text-xs font-black uppercase tracking-[0.4em] mb-4">Neural Link Detached</h5>
+                                                        <p class="text-[11px] font-bold max-w-[280px] leading-relaxed uppercase tracking-widest">
+                                                            Signal Terminated • End-to-End Encrypted Protocols Active
+                                                        </p>
+                                                    </div>
+                                                    <div class="p-8 bg-white/[0.01] border-t border-white/5">
+                                                        <div class="relative">
+                                                            <input type="text" placeholder="Initiate verified message sequence..." class="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-8 text-sm outline-none font-medium focus:border-emerald-500/30 transition-all placeholder:text-slate-700" />
+                                                            <button class="absolute right-4 top-1/2 -translate-y-1/2 size-12 bg-emerald-500 text-black rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
+                                                                <span class="material-symbols-outlined font-black">arrow_forward</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </Authorized>
+            </AuthorizeView>
+        </CascadingValue>
+    </div>
+</div>
+
+<!-- Payment Detail Modal -->
+@if (showPaymentModal && selectedInvoice != null)
+{
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div class="glass-card w-full max-w-xl rounded-[40px] p-12 border border-white/10 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500">
+            <div class="absolute -top-24 -right-24 size-64 bg-emerald-500/10 blur-[100px] rounded-full"></div>
+            
+            <div class="flex items-center justify-between mb-10">
+                <h3 class="text-2xl font-black tracking-tighter">Settlement Protocol Details</h3>
+                <button @onclick="() => showPaymentModal = false" class="size-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-8">
+                <div class="p-8 rounded-3xl bg-white/[0.02] border border-white/5 space-y-6">
+                    <div class="flex justify-between items-center pb-6 border-b border-white/5">
+                        <span class="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Temporal Period</span>
+                        <span class="font-black">@selectedInvoice.Month</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between text-base">
+                            <span class="text-slate-400">Core Space Allocation</span>
+                            <span class="font-black">@selectedInvoice.RoomPrice?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+                        </div>
+                        <div class="flex justify-between text-base">
+                            <span class="text-slate-400">Energy Consumption</span>
+                            <span class="font-black">@selectedInvoice.ElectricFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+                        </div>
+                        <div class="flex justify-between text-base">
+                            <span class="text-slate-400">Hydration Resources</span>
+                            <span class="font-black">@selectedInvoice.WaterFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/10 flex justify-between items-end">
+                        <p class="text-sm font-black text-emerald-400 uppercase tracking-widest">Aggregate Total</p>
+                        <p class="text-4xl font-black">@selectedInvoice.TotalAmount?.ToString("N0") <span class="text-lg font-normal text-slate-500">VND</span></p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button @onclick="() => HandlePayment(selectedInvoice)" class="flex-1 bg-emerald-500 py-6 rounded-2xl font-black text-black hover:bg-emerald-400 transform hover:scale-[1.02] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3">
+                        <span class="material-symbols-outlined font-black">lock_open</span> INITIALIZE SECURE PAYMENT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Feedback Modal -->
+@if (showFeedbackModal && selectedRentalForFeedback != null)
+{
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div class="glass-card w-full max-w-xl rounded-[40px] p-12 border border-white/10 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500">
+            <div class="absolute -top-24 -right-24 size-64 bg-emerald-500/10 blur-[100px] rounded-full"></div>
+            
+            <div class="flex items-center justify-between mb-10">
+                <h3 class="text-2xl font-black tracking-tighter">Tenant Experience Feedback</h3>
+                <button @onclick="() => showFeedbackModal = false" class="size-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-8">
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Satisfaction Metric</p>
+                    <div class="flex gap-4 justify-between">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            int rating = i;
+                            <button @onclick="() => feedbackRating = rating" class="size-16 rounded-2xl flex items-center justify-center border transition-all @(feedbackRating >= rating ? "bg-emerald-500 border-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "bg-white/5 border-white/10 text-slate-500 hover:border-emerald-500/50")">
+                                <span class="material-symbols-outlined font-black text-2xl">@(feedbackRating >= rating ? "star" : "star_outline")</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Qualitative Insights</p>
+                    <textarea @bind="feedbackComment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[150px] focus:border-emerald-500/50 focus:ring-0 transition-all text-white font-medium" placeholder="Describe your residential experience..."></textarea>
+                </div>
+
+                <button @onclick="HandleSubmitFeedback" class="w-full bg-emerald-500 py-6 rounded-2xl font-black text-black hover:bg-emerald-400 transform hover:scale-[1.02] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3">
+                    <span class="material-symbols-outlined font-black">send</span> SUBMIT PROTOCOL
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private List<RentalContract>? rentals;
+    private bool isLoading = true;
+
+    // Dictionary to track active tab for each contract
+    private Dictionary<int, string> activeTabs = new();
+    private Dictionary<int, List<Invoice>> contractInvoices = new();
+    private Dictionary<int, List<MeterReading>> roomReadings = new();
+
+    private bool showPaymentModal = false;
+    private Invoice? selectedInvoice;
+    private bool showFeedbackModal = false;
+    private RentalContract? selectedRentalForFeedback;
+    private int feedbackRating = 5;
+    private string feedbackComment = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask == null) return;
+
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                          ?? user.FindFirst("sub")?.Value 
+                          ?? user.FindFirst("Id")?.Value;
+
+            if (int.TryParse(userIdStr, out var userId))
+            {
+                rentals = await RentalService.GetUserRentalsAsync(userId);
+            }
+
+            if (rentals != null)
+            {
+                foreach (var r in rentals)
+                {
+                    activeTabs[r.ContractId] = "overview";
+                }
+            }
+        }
+        
+        isLoading = false;
+    }
+
+    private string GetActiveTab(int contractId)
+    {
+        return activeTabs.ContainsKey(contractId) ? activeTabs[contractId] : "overview";
+    }
+
+    private async Task ChangeTab(int contractId, string tab)
+    {
+        activeTabs[contractId] = tab;
+        
+        var rental = rentals?.FirstOrDefault(r => r.ContractId == contractId);
+        if (rental == null) return;
+
+        if (tab == "bills" && !contractInvoices.ContainsKey(contractId))
+        {
+            contractInvoices[contractId] = await RentalService.GetInvoicesByContractIdAsync(contractId);
+        }
+        else if (tab == "utilities" && !roomReadings.ContainsKey(rental.RoomId))
+        {
+            roomReadings[rental.RoomId] = await RentalService.GetMeterReadingsByRoomIdAsync(rental.RoomId);
+        }
+    }
+
+    private async Task HandlePayment(Invoice invoice)
+    {
+        try
+        {
+            var amount = invoice.TotalAmount ?? 0;
+            if (amount <= 0) return;
+
+            var description = $"Thanh toan hoa don {invoice.Month}";
+            var baseUrl = NavigationManager.BaseUri.TrimEnd('/');
+            var returnUrl = $"{baseUrl}/my-rentals";
+            var cancelUrl = $"{baseUrl}/my-rentals";
+
+            var result = await PaymentService.CreatePaymentLinkAsync(invoice.InvoiceId, amount, description, returnUrl, cancelUrl);
+            
+            if (result != null && !string.IsNullOrEmpty(result.CheckoutUrl))
+            {
+                NavigationManager.NavigateTo(result.CheckoutUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log or show error
+            Console.WriteLine($"Payment error: {ex.Message}");
+        }
+    }
+
+    private async Task HandleUpcomingPayment(RentalContract rental)
+    {
+        // Try to find the latest unpaid invoice from the ledger if already loaded
+        if (contractInvoices.ContainsKey(rental.ContractId))
+        {
+            var latestUnpaid = contractInvoices[rental.ContractId].FirstOrDefault(i => i.Status != "Paid");
+            if (latestUnpaid != null)
+            {
+                await HandlePayment(latestUnpaid);
+                return;
+            }
+        }
+
+        // Fallback or generic payment if no specific invoice is found
+        try
+        {
+            var amount = (rental.Room?.Price ?? 0) + 237700;
+            if (amount <= 0) return;
+
+            var description = $"Thanh toan thue phong {rental.Room?.RoomId}";
+            var baseUrl = NavigationManager.BaseUri.TrimEnd('/');
+            var result = await PaymentService.CreatePaymentLinkAsync(0, amount, description, $"{baseUrl}/my-rentals", $"{baseUrl}/my-rentals");
+            
+            if (result != null && !string.IsNullOrEmpty(result.CheckoutUrl))
+            {
+                NavigationManager.NavigateTo(result.CheckoutUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upcoming payment error: {ex.Message}");
+        }
+    }
+
+    private async Task HandleTermination(RentalContract rental)
+    {
+        if (rental == null) return;
+        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn kết thúc hợp đồng này và trả phòng?");
+        if (!confirmed) return;
+
+        var success = await RentalService.TerminateRentalContractAsync(rental.ContractId);
+        if (success)
+        {
+            // Refresh the list
+            var authState = await AuthStateTask;
+            var user = authState.User;
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                          ?? user.FindFirst("sub")?.Value 
+                          ?? user.FindFirst("Id")?.Value;
+
+            if (int.TryParse(userIdStr, out var userId))
+            {
+                rentals = await RentalService.GetUserRentalsAsync(userId);
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenPaymentModal(RentalContract rental)
+    {
+        if (contractInvoices.ContainsKey(rental.ContractId))
+        {
+            selectedInvoice = contractInvoices[rental.ContractId].FirstOrDefault(i => i.Status != "Paid");
+        }
+        
+        if (selectedInvoice == null)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Không tìm thấy hóa đơn cho kỳ thanh toán này.");
+            return;
+        }
+
+        showPaymentModal = true;
+    }
+
+    private void OpenPaymentModalFromInvoice(Invoice invoice)
+    {
+        selectedInvoice = invoice;
+        showPaymentModal = true;
+    }
+
+    private void OpenFeedbackModal(RentalContract rental)
+    {
+        selectedRentalForFeedback = rental;
+        feedbackRating = 5;
+        feedbackComment = "";
+        showFeedbackModal = true;
+    }
+
+    private async Task HandleSubmitFeedback()
+    {
+        if (selectedRentalForFeedback == null) return;
+        if (AuthStateTask == null) return;
+
+        var authState = await AuthStateTask;
+        var user = authState.User;
+        var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                      ?? user.FindFirst("sub")?.Value;
+
+        if (int.TryParse(userIdStr, out var userId))
+        {
+            var feedback = new Feedback
+            {
+                RoomId = selectedRentalForFeedback.RoomId,
+                UserId = userId,
+                Rating = feedbackRating,
+                Comment = feedbackComment,
+                CreatedAt = DateTime.Now
+            };
+
+            var success = await RentalService.SubmitFeedbackAsync(feedback);
+            if (success)
+            {
+                showFeedbackModal = false;
+                await JSRuntime.InvokeVoidAsync("alert", "Cảm ơn bạn đã gửi đánh giá!");
+            }
+        }
+    }
+}

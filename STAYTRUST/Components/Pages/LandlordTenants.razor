@@ -1,0 +1,226 @@
+@page "/landlord-tenants"
+@layout STAYTRUST.Components.Layout.LandlordLayout
+
+<div class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-background-dark/80 backdrop-blur-md border-b border-navy-muted">
+<div class="flex flex-col">
+<h2 class="text-2xl font-bold text-slate-100">Residents Overview</h2>
+<p class="text-slate-400 text-sm">Manage and track your active residents</p>
+</div>
+<div class="flex flex-1 max-w-xl justify-center ml-8">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full bg-forest-accent border-none rounded-xl pl-12 pr-4 py-2.5 text-slate-100 focus:ring-2 focus:ring-primary/50 placeholder:text-slate-400 text-sm" placeholder="Search by tenant, property, or unit..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary hover:bg-primary/90 text-background-dark font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+<span>Add New Tenant</span>
+</button>
+</div>
+</header>
+<div class="p-8 max-w-7xl mx-auto space-y-8">
+<!-- Top Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="glass-card rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-10 text-primary transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-8xl">group</span>
+</div>
+<p class="text-slate-400 text-sm font-medium mb-1">Total Tenants</p>
+<div class="flex items-end gap-3">
+<h3 class="text-3xl font-bold text-slate-100">1,284</h3>
+<span class="text-primary text-sm font-semibold mb-1 flex items-center">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                                +5.2%
+                            </span>
+</div>
+</div>
+<div class="glass-card rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-10 text-primary transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-8xl">logout</span>
+</div>
+<p class="text-slate-400 text-sm font-medium mb-1">Upcoming Move-outs</p>
+<h3 class="text-3xl font-bold text-slate-100">24</h3>
+</div>
+<div class="glass-card rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-10 text-primary transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-8xl">history_edu</span>
+</div>
+<p class="text-slate-400 text-sm font-medium mb-1">Pending Renewals</p>
+<h3 class="text-3xl font-bold text-slate-100">12</h3>
+</div>
+</div>
+<!-- Main Content Table -->
+<div class="glass-card rounded-xl overflow-hidden border border-forest-accent">
+<div class="p-6 border-b border-forest-accent flex items-center justify-between">
+<h4 class="font-bold text-slate-100">Active Lease Agreements</h4>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-forest-accent rounded-lg text-slate-400 transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-2 hover:bg-forest-accent rounded-lg text-slate-400 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-forest-light/50">
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Tenant Profile</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Property &amp; Unit</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Lease Period</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-forest-accent">
+<!-- Row 1 -->
+<tr class="hover:bg-forest-accent/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full border border-primary/20 bg-cover bg-center" data-alt="Profile photo of Alexander Wright" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBqYEUFTUfBewD8pwHnb6VLTV4ZloiKviKfQ10iPkLaiJbJaJP6S7uJe1k_p3KQe0bVTs3wq9UK-JcAzz1swcCHRpukVemhbspQq7765fYDGk10-JGMQXSp-cAjJI40lcnprTR3_bHH8Q348RMwqMKO3itVfNse22gxUJruY0hMhmSz1hAmGiCrj0AZ7ITgGHAbPihNOkQdQCkiZII6LhvQf8LaYhpPzKquZMmu0NsSIYHOp6AVG5o578dnzNXC6vOXTcmJtkdz0s4')"></div>
+<div>
+<p class="text-sm font-semibold text-slate-100">Alexander Wright</p>
+<p class="text-xs text-slate-400">alex.wright@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-medium text-slate-100">Skyline Heights</p>
+<p class="text-xs text-slate-400">Unit 14B</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm text-slate-300">Jun 12, 2023 - Jun 11, 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                            Paid
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-forest-accent/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full border border-primary/20 bg-cover bg-center" data-alt="Profile photo of Sarah Jenkins" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAN45sEllJGi57F4Y5sDBiC1bz_FnxhKMjmzG78Q0s_vzmRiRXhsxoXMDyjC7UKTb4LEeQ8F9c-NLnMsT02sWYxbu6zcENs_MizPBSnfjNMIjlnINm_xtwnl07dZkQAM-iwJdLQszg748lP_HynJJPWLdvY8GfCynk3In9ZPAISdNFS_cbfwes8kXORcRowROImYulKjfLQKEoNsNWQTZoYQZYxu5FDmSDk6725NE2BNB-6fKiYkMcIglaFNh36vcQAxFjerpbh_II')"></div>
+<div>
+<p class="text-sm font-semibold text-slate-100">Sarah Jenkins</p>
+<p class="text-xs text-slate-400">sarah.j@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-medium text-slate-100">Emerald Tower</p>
+<p class="text-xs text-slate-400">Unit 302</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm text-slate-300">Aug 01, 2023 - Jul 31, 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                            Pending
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-forest-accent/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full border border-primary/20 bg-cover bg-center" data-alt="Profile photo of Michael Chen" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDS46rcA2zSrQEjbH22614wLLFWkU4zICII0iZfnUZg9uEVDpnYaNt8r1wxcOow8FOEvo4qgSPBkYMRvQxFED9iTuf241CP4_Pp2cl1XnfzQKDVSUEcVNOqKf9Dd_VSA_kXBXpZMuvyMEU7kCEP_6sHsmudwLGGXvdg_euI9PDIqcVusYtH_0fbhVsevp_9FvOqKqF9ZTZnTjZ9tL7JbOd1DNx4Zs1WhOGWUKPqWO3NMOevHMEo-YLKEBMXgxHLFXJBkLVUevEdx-w')"></div>
+<div>
+<p class="text-sm font-semibold text-slate-100">Michael Chen</p>
+<p class="text-xs text-slate-400">m.chen@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-medium text-slate-100">Skyline Heights</p>
+<p class="text-xs text-slate-400">Unit 08A</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm text-slate-300">Jan 15, 2023 - Jan 14, 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                                            Overdue
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-forest-accent/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full border border-primary/20 bg-cover bg-center" data-alt="Profile photo of Elena Rodriguez" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBGKn1j8jV6FPnG_Gqmos5zgcMBaLT9ZzeOJY6mhfFNKHcvqJru40rrc4itXoQHf1CKAP5FUaowZ6yesioETEEBZHWfeQRHyg6689tzsgqHi-keZjnBMZIj4SUuI7gmFk3w-TXEggSZXJtviJ-ItNhVwXkNVSurzkf1NqcONzhJ9QqYDA99AXEKcs7TZ_FVAQWGKWjfwOQgB7Hg3sodCN0r4xB9LX8mCNqfA3A8JfG5F1vHnyNujnndl7Y09Rxrtuk6kdqIvL2Dm4o')"></div>
+<div>
+<p class="text-sm font-semibold text-slate-100">Elena Rodriguez</p>
+<p class="text-xs text-slate-400">elena.r@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-medium text-slate-100">Riverview Apt</p>
+<p class="text-xs text-slate-400">Unit 112</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-sm text-slate-300">Mar 10, 2023 - Mar 09, 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                            Paid
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-100">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-6 border-t border-forest-accent flex items-center justify-between">
+<p class="text-sm text-slate-400">Showing <span class="text-slate-100 font-medium">1-10</span> of <span class="text-slate-100 font-medium">1,284</span> tenants</p>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-forest-accent rounded-lg text-slate-400 disabled:opacity-30">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="size-9 bg-primary text-background-dark font-bold rounded-lg text-sm">1</button>
+<button class="size-9 hover:bg-forest-accent text-slate-100 font-medium rounded-lg text-sm transition-colors">2</button>
+<button class="size-9 hover:bg-forest-accent text-slate-100 font-medium rounded-lg text-sm transition-colors">3</button>
+<span class="text-slate-400 px-2">...</span>
+<button class="size-9 hover:bg-forest-accent text-slate-100 font-medium rounded-lg text-sm transition-colors">129</button>
+<button class="p-2 hover:bg-forest-accent rounded-lg text-slate-400">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
