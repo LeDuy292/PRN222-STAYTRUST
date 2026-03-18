@@ -1,0 +1,414 @@
+@page "/landlord/properties"
+@layout LandlordLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<PageTitle>Properties - STAYTRUST</PageTitle>
+
+<HeadContent>
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .prop-card { animation: fadeInUp 0.5s ease-out both; }
+    </style>
+</HeadContent>
+
+<div class="min-h-screen text-white" style="background-color:#0a0a0a">
+
+    <!-- Mesh Gradient Background -->
+    <div class="fixed inset-0 -z-10">
+        <div class="absolute inset-0"
+             style="background:radial-gradient(at 0% 0%,rgba(19,91,236,.15) 0,transparent 50%),radial-gradient(at 100% 100%,rgba(19,91,236,.1) 0,transparent 50%),radial-gradient(at 50% 50%,rgba(10,10,10,1) 0,transparent 100%)">
+        </div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+
+                <a href="/landlord/home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                         style="box-shadow:0 0 15px rgba(6,182,212,.3)">
+                        <i class="fas fa-home text-xl text-white"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
+                        <div class="text-xs text-cyan-500 font-bold uppercase tracking-widest">Elite Portal</div>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/landlord/dashboard" class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Dashboard</a>
+                    <a href="/landlord/properties" class="text-cyan-400 font-semibold border-b-2 border-cyan-400 pb-1">Properties</a>
+                    <a href="/landlord/prime"      class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Prime Plans</a>
+                    <a href="/landlord/features"   class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Features</a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
+                        <i class="fas fa-bell text-xl text-gray-400"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    </button>
+                    <div class="relative">
+                        <button @onclick="() => showUserMenu = !showUserMenu"
+                                class="flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-xl transition-all border border-white/10"
+                                style="background:rgba(255,255,255,.05)">
+                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">AP</div>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold">Alexander Pierce</div>
+                                <div class="text-xs text-cyan-400">Elite Landlord</div>
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden z-50">
+                                <a href="/landlord/dashboard" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                                    <i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span>
+                                </a>
+                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors" style="background:rgba(255,255,255,.05)">
+                                    <i class="fas fa-home text-cyan-400"></i><span>My Properties</span>
+                                </a>
+                                <a href="/landlord/settings" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                                    <i class="fas fa-cog text-gray-400"></i><span>Settings</span>
+                                </a>
+                                <div class="border-t border-gray-700/50"></div>
+                                <button @onclick='() => Nav.NavigateTo("/auth")'
+                                        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-red-400">
+                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    Properties Management
+                </h1>
+                <p class="text-gray-400 text-lg">Manage and monitor all your rental properties</p>
+            </div>
+
+            <!-- ========== STATS CARDS ========== -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                @foreach (var stat in summaryStats)
+                {
+                    <div class="relative backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/[0.05] transition-all duration-300 hover:-translate-y-1 group overflow-hidden"
+                         style="background:rgba(255,255,255,.03)">
+                        <div class="absolute top-0 right-0 w-20 h-20 rounded-full blur-3xl group-hover:w-32 group-hover:h-32 transition-all duration-500"
+                             style="background:@(stat.GlowColor)"></div>
+                        <div class="relative z-10">
+                            <div class="text-gray-400 text-sm mb-2">@stat.Label</div>
+                            <div class="flex items-end justify-between">
+                                <div class="text-3xl font-bold" style="color:@(stat.ValueColor)">@stat.Value</div>
+                                <div class="text-sm font-semibold @(stat.Change.StartsWith("+") ? "text-green-400" : "text-gray-400")">@stat.Change</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- ========== SEARCH & FILTER BAR ========== -->
+            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-8"
+                 style="background:rgba(255,255,255,.03);box-shadow:0 8px 32px 0 rgba(0,0,0,.37)">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+
+                    <!-- Search -->
+                    <div class="relative flex-1 w-full">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                        <input type="text"
+                               placeholder="Search properties by name or location..."
+                               @bind="searchTerm" @bind:event="oninput"
+                               class="w-full border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                               style="background:rgba(255,255,255,.05);color:white" />
+                    </div>
+
+                    <div class="flex gap-3 items-center">
+
+                        <!-- Status Filter -->
+                        <div class="relative">
+                            <button @onclick="() => showFilterMenu = !showFilterMenu"
+                                    class="flex items-center gap-2 px-4 py-3 border border-white/10 rounded-xl transition-colors hover:bg-white/10"
+                                    style="background:rgba(255,255,255,.05)">
+                                <i class="fas fa-filter text-cyan-400"></i>
+                                <span class="hidden md:inline">Filter</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            @if (showFilterMenu)
+                            {
+                                <div class="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden z-10">
+                                    @foreach (var s in new[] { "all", "available", "occupied", "maintenance" })
+                                    {
+                                        <button @onclick="() => { selectedStatus = s; showFilterMenu = false; }"
+                                                class="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors capitalize @(selectedStatus == s ? "text-cyan-400" : "")"
+                                                style="@(selectedStatus == s ? "background:rgba(255,255,255,.05)" : "")">
+                                            @s
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- View Mode Toggle -->
+                        <div class="flex gap-2 rounded-xl p-1 border border-white/10" style="background:rgba(255,255,255,.05)">
+                            <button @onclick='() => viewMode = "grid"'
+                                    class="p-2 rounded-lg transition-all @(viewMode == "grid" ? "text-cyan-400" : "text-gray-400 hover:text-white")"
+                                    style="@(viewMode == "grid" ? "background:rgba(6,182,212,.2)" : "")">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button @onclick='() => viewMode = "list"'
+                                    class="p-2 rounded-lg transition-all @(viewMode == "list" ? "text-cyan-400" : "text-gray-400 hover:text-white")"
+                                    style="@(viewMode == "list" ? "background:rgba(6,182,212,.2)" : "")">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+
+                        <!-- Add Property -->
+                        <button class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-semibold transition-all hover:scale-105"
+                                style="box-shadow:0 0 20px rgba(6,182,212,.3)">
+                            <i class="fas fa-plus"></i>
+                            <span class="hidden md:inline">Add Property</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== PROPERTIES GRID / LIST ========== -->
+            @{
+                var filtered = FilteredProperties();
+            }
+
+            @if (filtered.Count == 0)
+            {
+                <!-- Empty State -->
+                <div class="text-center py-20">
+                    <div class="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style="background:rgba(255,255,255,.05)">
+                        <i class="fas fa-home text-5xl text-gray-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2 text-gray-400">No properties found</h3>
+                    <p class="text-gray-500 mb-6">Try adjusting your search or filters</p>
+                    <button class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:scale-105 transition-all">
+                        Add Your First Property
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="@(viewMode == "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6")">
+                    @foreach (var (prop, idx) in filtered.Select((p, i) => (p, i)))
+                    {
+                        <div class="prop-card group relative backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-white/[0.05] transition-all duration-500 hover:-translate-y-2 @(viewMode == "list" ? "flex gap-0" : "")"
+                             style="background:rgba(255,255,255,.03);animation-delay:@(idx * 0.1)s;box-shadow:0 0 0 0 rgba(6,182,212,0)">
+
+                            <!-- Featured Badge -->
+                            @if (prop.Featured)
+                            {
+                                <div class="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-yellow-500/90 to-orange-500/90 backdrop-blur-sm rounded-full text-xs font-bold">
+                                    <i class="fas fa-star text-white"></i>
+                                    <span>FEATURED</span>
+                                </div>
+                            }
+
+                            <!-- Image -->
+                            <div class="relative @(viewMode == "list" ? "w-72 flex-shrink-0" : "h-64") overflow-hidden">
+                                <img src="@prop.Images[0]" alt="@prop.Title"
+                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+
+                                <!-- Hover Overlay -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                                        <button class="p-2 backdrop-blur-md hover:bg-white/30 rounded-lg transition-colors" style="background:rgba(255,255,255,.2)">
+                                            <i class="fas fa-heart text-white"></i>
+                                        </button>
+                                        <button class="p-2 backdrop-blur-md hover:bg-white/30 rounded-lg transition-colors" style="background:rgba(255,255,255,.2)">
+                                            <i class="fas fa-share text-white"></i>
+                                        </button>
+                                    </div>
+                                    <div class="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1 rounded-lg text-sm" style="background:rgba(0,0,0,.6)">
+                                        <i class="fas fa-camera"></i>
+                                        <span>@prop.Images.Count photos</span>
+                                    </div>
+                                </div>
+
+                                <!-- Status Badge -->
+                                <div class="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 backdrop-blur-md rounded-full text-xs font-semibold border"
+                                     style="@GetStatusStyle(prop.Status)">
+                                    <i class="fas fa-@(GetStatusIcon(prop.Status))"></i>
+                                    <span class="capitalize">@prop.Status</span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-6 flex-1">
+                                <!-- Title & Rating -->
+                                <div class="mb-3">
+                                    <h3 class="text-xl font-bold mb-2 text-white group-hover:text-cyan-400 transition-colors">@prop.Title</h3>
+                                    <div class="flex items-center gap-4 text-sm text-gray-400">
+                                        <div class="flex items-center gap-1">
+                                            <i class="fas fa-star text-yellow-400"></i>
+                                            <span class="font-semibold text-white">@prop.Rating</span>
+                                            <span>(@prop.Reviews)</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <i class="fas fa-eye text-cyan-400"></i>
+                                            <span>@prop.Views views</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Address -->
+                                <div class="flex items-start gap-2 mb-4 text-gray-400 text-sm">
+                                    <i class="fas fa-map-marker-alt mt-1 flex-shrink-0 text-cyan-400"></i>
+                                    <span>@prop.Address</span>
+                                </div>
+
+                                <!-- Property Details -->
+                                <div class="flex items-center gap-6 mb-4 text-sm">
+                                    <div class="flex items-center gap-2 text-gray-400">
+                                        <i class="fas fa-bed text-cyan-400"></i>
+                                        <span>@prop.Bedrooms beds</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-gray-400">
+                                        <i class="fas fa-bath text-cyan-400"></i>
+                                        <span>@prop.Bathrooms baths</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-gray-400">
+                                        <i class="fas fa-ruler-combined text-cyan-400"></i>
+                                        <span>@(prop.Area)m²</span>
+                                    </div>
+                                </div>
+
+                                <!-- Price -->
+                                <div class="mb-4">
+                                    <div class="text-2xl font-bold text-cyan-400">
+                                        ₫@((prop.Price / 1_000_000.0).ToString("F1"))M
+                                        <span class="text-sm text-gray-400 font-normal">/month</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">@prop.Inquiries inquiries this month</div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex gap-2 pt-4 border-t border-white/10">
+                                    <a href="/landlord/properties/@prop.Id"
+                                       class="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105 font-semibold text-cyan-400"
+                                       style="background:rgba(6,182,212,.2)">
+                                        <i class="fas fa-eye"></i><span>View</span>
+                                    </a>
+                                    <button class="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105 font-semibold text-blue-400"
+                                            style="background:rgba(59,130,246,.2)">
+                                        <i class="fas fa-edit"></i><span>Edit</span>
+                                    </button>
+                                    <button @onclick="() => DeleteProperty(prop.Id)"
+                                            class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105 text-red-400"
+                                            style="background:rgba(239,68,68,.2)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Hover Glow -->
+                            <div class="absolute -inset-1 blur-xl transition-all duration-500 -z-10 opacity-0 group-hover:opacity-100"
+                                 style="background:linear-gradient(to right,rgba(6,182,212,.15),rgba(59,130,246,.15))"></div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-10 right-10 w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-full flex items-center justify-center text-2xl hover:scale-110 transition-all duration-300 z-40 group"
+            style="box-shadow:0 20px 40px rgba(6,182,212,.3)">
+        <i class="fas fa-plus group-hover:rotate-90 transition-transform duration-300"></i>
+    </button>
+
+</div>
+
+@code {
+    private bool showUserMenu = false;
+    private bool showFilterMenu = false;
+    private string viewMode = "grid";
+    private string searchTerm = "";
+    private string selectedStatus = "all";
+
+    private List<PropertyItem> properties = new()
+    {
+        new(1, "Luxury Penthouse Suite",    "123 Nguyen Hue, District 1, HCMC",          25_000_000, 3, 2, 120, "available",   4.8, 24, true,  1234, 45,
+            new() { "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop&q=90" }),
+        new(2, "Modern Studio Apartment",   "456 Le Loi, District 3, HCMC",               8_500_000, 1, 1,  45, "occupied",    4.6, 18, false,  892, 32,
+            new() { "https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop&q=90" }),
+        new(3, "Spacious Family House",     "789 Tran Hung Dao, District 5, HCMC",       35_000_000, 4, 3, 180, "available",   4.9, 31, true,  2156, 67,
+            new() { "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&h=600&fit=crop&q=90" }),
+        new(4, "Cozy Downtown Loft",        "321 Pasteur, District 1, HCMC",             15_000_000, 2, 1,  75, "maintenance", 4.5, 15, false,  654, 21,
+            new() { "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=800&h=600&fit=crop&q=90" }),
+        new(5, "Beachfront Villa",          "555 Vo Nguyen Giap, Son Tra, Da Nang",      45_000_000, 5, 4, 250, "available",   5.0, 42, true,  3421, 89,
+            new() { "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop&q=90" }),
+        new(6, "Executive Apartment",       "888 Hai Ba Trung, District 3, HCMC",        18_000_000, 2, 2,  90, "occupied",    4.7, 27, false, 1045, 38,
+            new() { "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&h=600&fit=crop&q=90",
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop&q=90" }),
+    };
+
+    private List<PropertyItem> FilteredProperties() =>
+        properties.Where(p =>
+            (string.IsNullOrEmpty(searchTerm) ||
+             p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+             p.Address.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            && (selectedStatus == "all" || p.Status == selectedStatus))
+        .ToList();
+
+    private IEnumerable<SummaryStatItem> summaryStats => new[]
+    {
+        new SummaryStatItem("Total Properties", properties.Count.ToString(),                                    "rgba(6,182,212,.1)",   "#22d3ee", "+2"),
+        new SummaryStatItem("Available",        properties.Count(p => p.Status == "available").ToString(),     "rgba(34,197,94,.1)",   "#4ade80", "+1"),
+        new SummaryStatItem("Occupied",         properties.Count(p => p.Status == "occupied").ToString(),      "rgba(59,130,246,.1)",  "#60a5fa", "0"),
+        new SummaryStatItem("Total Views",      "9.4K",                                                        "rgba(168,85,247,.1)",  "#c084fc", "+12%"),
+    };
+
+    private static string GetStatusStyle(string status) => status switch
+    {
+        "available"   => "color:#4ade80;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3)",
+        "occupied"    => "color:#60a5fa;background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3)",
+        "maintenance" => "color:#fb923c;background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3)",
+        _             => "color:#9ca3af;background:rgba(107,114,128,.1);border-color:rgba(107,114,128,.3)",
+    };
+
+    private static string GetStatusIcon(string status) => status switch
+    {
+        "available"   => "check-circle",
+        "occupied"    => "clock",
+        "maintenance" => "ban",
+        _             => "clock",
+    };
+
+    private void DeleteProperty(int id) => properties.RemoveAll(p => p.Id == id);
+
+    // ── Data Models ────────────────────────────────────────────────────────────
+    private record PropertyItem(
+        int Id, string Title, string Address, long Price,
+        int Bedrooms, int Bathrooms, int Area, string Status,
+        double Rating, int Reviews, bool Featured,
+        int Views, int Inquiries, List<string> Images);
+
+    private record SummaryStatItem(string Label, string Value, string GlowColor, string ValueColor, string Change);
+}
