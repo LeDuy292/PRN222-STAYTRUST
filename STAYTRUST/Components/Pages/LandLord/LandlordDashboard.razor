@@ -1,0 +1,327 @@
+@page "/landlord/dashboard"
+@layout LandlordLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<PageTitle>Dashboard - STAYTRUST</PageTitle>
+
+<div class="min-h-screen text-white" style="background-color:#0a0a0a">
+
+    <!-- Mesh Gradient Background -->
+    <div class="fixed inset-0 -z-10">
+        <div class="absolute inset-0" style="background: radial-gradient(at 0% 0%, rgba(19,91,236,0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(19,91,236,0.1) 0px, transparent 50%), radial-gradient(at 50% 50%, rgba(10,10,10,1) 0px, transparent 100%)"></div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+
+                <!-- Logo -->
+                <a href="/landlord/home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg" style="box-shadow:0 0 15px rgba(6,182,212,0.3)">
+                        <i class="fas fa-home text-xl text-white"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
+                        <div class="text-xs text-cyan-500 font-bold uppercase tracking-widest">Elite Portal</div>
+                    </div>
+                </a>
+
+                <!-- Nav Links -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/landlord/dashboard" class="text-cyan-400 font-semibold border-b-2 border-cyan-400 pb-1">Dashboard</a>
+                    <a href="/landlord/properties" class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Properties</a>
+                    <a href="/landlord/prime" class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Prime Plans</a>
+                    <a href="/landlord/features" class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Features</a>
+                </div>
+
+                <!-- User Area -->
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <i class="fas fa-bell text-xl text-gray-300"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
+                    </button>
+                    <div class="relative">
+                        <button @onclick="() => showUserMenu = !showUserMenu"
+                                class="flex items-center gap-3 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl transition-colors border border-gray-700/50">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border border-white/20 flex items-center justify-center font-semibold text-sm">AP</div>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold">Alexander Pierce</div>
+                                <div class="text-xs text-gray-400">Elite Landlord</div>
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
+                                <a href="/landlord/dashboard" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span>
+                                </a>
+                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-home text-blue-400"></i><span>My Properties</span>
+                                </a>
+                                <a href="/landlord/settings" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-cog text-gray-400"></i><span>Settings</span>
+                                </a>
+                                <div class="border-t border-gray-700"></div>
+                                <button @onclick='() => Nav.NavigateTo("/auth")'
+                                        class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors w-full text-left text-red-400">
+                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="pt-24 px-6 pb-10 max-w-7xl mx-auto flex flex-col gap-6">
+
+        <!-- Search Header -->
+        <header class="w-full h-16 backdrop-blur-xl border border-white/10 rounded-xl px-6 flex items-center justify-between"
+                style="background:rgba(255,255,255,0.03); box-shadow:0 8px 32px 0 rgba(0,0,0,0.37)">
+            <div class="flex items-center gap-4 flex-1">
+                <i class="fas fa-search text-slate-400 text-lg"></i>
+                <input class="bg-transparent border-none text-sm text-slate-300 w-full max-w-md outline-none"
+                       placeholder="Search portfolio, residents, or payments..."
+                       style="color:#cbd5e1"
+                       @bind="searchTerm"
+                       @bind:event="oninput" />
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="w-10 h-10 rounded-lg flex items-center justify-center hover:scale-110 transition-all relative"
+                        style="background:rgba(255,255,255,0.05)">
+                    <i class="fas fa-bell text-slate-300"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-cyan-500 rounded-full border border-[#0a0a0a]"></span>
+                </button>
+                <button class="w-10 h-10 rounded-lg flex items-center justify-center hover:scale-110 transition-all"
+                        style="background:rgba(255,255,255,0.05)">
+                    <i class="fas fa-calendar-alt text-slate-300"></i>
+                </button>
+                <div class="h-6 w-px mx-2" style="background:rgba(255,255,255,0.1)"></div>
+                <p class="text-xs font-medium text-slate-400">Monday, Mar 9</p>
+            </div>
+        </header>
+
+        <!-- ========== KPI CARDS ========== -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <!-- Total Rooms -->
+            <div class="backdrop-blur-xl border border-white/10 p-6 rounded-xl flex flex-col gap-1 relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+                 style="background:rgba(255,255,255,0.05)">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-wider">Total Rooms</p>
+                <div class="flex items-end justify-between mt-2">
+                    <h3 class="text-3xl font-bold text-white">@stats.TotalRooms</h3>
+                    <span class="text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1"
+                          style="background:rgba(52,211,153,0.1)">
+                        <i class="fas fa-arrow-up text-xs"></i> 2%
+                    </span>
+                </div>
+            </div>
+
+            <!-- Occupied Rooms -->
+            <div class="backdrop-blur-xl border border-white/10 p-6 rounded-xl flex flex-col gap-1 relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+                 style="background:rgba(255,255,255,0.05)">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-wider">Occupied Rooms</p>
+                <div class="flex items-end justify-between mt-2">
+                    <h3 class="text-3xl font-bold text-white">@stats.OccupiedRooms</h3>
+                    <span class="text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1"
+                          style="background:rgba(52,211,153,0.1)">
+                        <i class="fas fa-arrow-up text-xs"></i> 1%
+                    </span>
+                </div>
+            </div>
+
+            <!-- Monthly Revenue -->
+            <div class="backdrop-blur-xl border border-white/10 p-6 rounded-xl flex flex-col gap-1 relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+                 style="background:rgba(255,255,255,0.05)">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-wider">Monthly Revenue</p>
+                <div class="flex items-end justify-between mt-2">
+                    <h3 class="text-3xl font-bold text-white">₫@(stats.MonthlyRevenue)k</h3>
+                    <span class="text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1"
+                          style="background:rgba(52,211,153,0.1)">
+                        <i class="fas fa-arrow-up text-xs"></i> 8%
+                    </span>
+                </div>
+            </div>
+
+            <!-- Occupancy Rate -->
+            <div class="backdrop-blur-xl border border-white/10 p-6 rounded-xl flex flex-col gap-1 relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+                 style="background:rgba(255,255,255,0.05)">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-wider">Occupancy Rate</p>
+                <div class="flex items-end justify-between mt-2">
+                    <h3 class="text-3xl font-bold text-white">@(stats.OccupancyRate)%</h3>
+                    <span class="text-orange-400 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1"
+                          style="background:rgba(251,146,60,0.1)">
+                        <i class="fas fa-arrow-down text-xs"></i> 0.5%
+                    </span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========== CHARTS ROW ========== -->
+        <div class="flex flex-col lg:flex-row gap-6" style="min-height:400px">
+
+            <!-- Revenue Line Chart -->
+            <div class="flex-[2] backdrop-blur-xl border border-white/10 rounded-xl p-8 relative flex flex-col"
+                 style="background:rgba(255,255,255,0.03); box-shadow:0 8px 32px 0 rgba(0,0,0,0.37)">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Revenue Trends</h2>
+                        <p class="text-sm text-slate-400">Yearly performance overview</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/10 transition-colors"
+                                style="background:rgba(255,255,255,0.05)">1M</button>
+                        <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+                                style="background:#135bec; box-shadow:0 0 10px rgba(19,91,236,0.2)">6M</button>
+                        <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-white/10 transition-colors"
+                                style="background:rgba(255,255,255,0.05)">1Y</button>
+                    </div>
+                </div>
+
+                <!-- SVG Chart -->
+                <div class="flex-1 relative flex items-end w-full pb-4">
+                    <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 200"
+                         style="filter: drop-shadow(0 0 15px rgba(19,91,236,0.3))">
+                        <defs>
+                            <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#135bec" stop-opacity="0.3"></stop>
+                                <stop offset="100%" stop-color="#135bec" stop-opacity="0"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path d="M0,150 Q100,140 200,170 T400,100 T600,80 T800,120 L800,200 L0,200 Z"
+                              fill="url(#chartGradient)"></path>
+                        <path d="M0,150 Q100,140 200,170 T400,100 T600,80 T800,120"
+                              fill="none" stroke="#135bec" stroke-linecap="round" stroke-width="3"></path>
+                        <circle cx="400" cy="100" fill="#135bec" r="4" stroke="white" stroke-width="2"></circle>
+                    </svg>
+                    <!-- Tooltip -->
+                    <div class="absolute left-1/2 top-12 -translate-x-1/2 backdrop-blur-xl border rounded-lg px-4 py-2 flex flex-col items-center pointer-events-none shadow-2xl"
+                         style="background:rgba(255,255,255,0.03); border-color:rgba(19,91,236,0.5)">
+                        <span class="text-slate-400 font-bold uppercase" style="font-size:10px">August</span>
+                        <span class="text-sm font-bold text-white">₫48,200.000</span>
+                    </div>
+                    <!-- X Axis Labels -->
+                    <div class="absolute bottom-0 w-full flex justify-between px-2" style="font-size:10px; color:#64748b; font-weight:700">
+                        <span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>SEP</span><span>NOV</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donut Chart -->
+            <div class="flex-1 backdrop-blur-xl border border-white/10 rounded-xl p-8 flex flex-col"
+                 style="background:rgba(255,255,255,0.03); box-shadow:0 8px 32px 0 rgba(0,0,0,0.37)">
+                <h2 class="text-xl font-bold text-white mb-1">Room Status</h2>
+                <p class="text-sm text-slate-400 mb-8">Current inventory health</p>
+                <div class="flex-1 flex items-center justify-center relative">
+                    <div class="w-48 h-48 rounded-full flex items-center justify-center relative"
+                         style="border: 18px solid rgba(30,41,59,0.5); filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5))">
+                        <svg class="absolute" style="inset:-18px; width:calc(100% + 36px); height:calc(100% + 36px); transform:rotate(-90deg)">
+                            <circle cx="50%" cy="50%" fill="none" r="96"
+                                    stroke="#135bec" stroke-dasharray="450 600"
+                                    stroke-linecap="round" stroke-width="18"></circle>
+                            <circle cx="50%" cy="50%" fill="none" opacity="0.6" r="96"
+                                    stroke="#3b82f6" stroke-dasharray="100 600"
+                                    stroke-dashoffset="-460" stroke-linecap="round" stroke-width="18"></circle>
+                        </svg>
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-white leading-none">@stats.TotalRooms</p>
+                            <p class="text-slate-500 font-bold uppercase mt-1 tracking-widest" style="font-size:10px">Total</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-8">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" style="background:#135bec; box-shadow:0 0 8px rgba(19,91,236,0.6)"></div>
+                        <span class="text-xs text-slate-300 font-medium">Occupied (@stats.OccupiedRooms)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-slate-700"></div>
+                        <span class="text-xs text-slate-300 font-medium">Vacant (4)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-blue-400 opacity-60"></div>
+                        <span class="text-xs text-slate-300 font-medium">Maintenance (2)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-slate-500"></div>
+                        <span class="text-xs text-slate-300 font-medium">Reserved (0)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== PRIORITY ISSUES ========== -->
+        <section class="backdrop-blur-xl border border-white/10 rounded-xl p-6 mb-4"
+                 style="background:rgba(255,255,255,0.03); box-shadow:0 8px 32px 0 rgba(0,0,0,0.37)">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-white">Priority Issues</h3>
+                <button class="text-xs font-bold hover:underline flex items-center gap-2" style="color:#135bec">
+                    View All Tickets <i class="fas fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+            <div class="flex flex-col gap-3">
+                @foreach (var issue in priorityIssues)
+                {
+                    <div class="flex items-center justify-between p-4 rounded-xl border border-white/5 hover:bg-white/[0.08] transition-all cursor-pointer group"
+                         style="background:rgba(255,255,255,0.05)">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                                 style="background: @(issue.BgStyle); color: @(issue.TextStyle)">
+                                <i class="fas fa-@(issue.IconClass) text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-white">@issue.Title</p>
+                                <p class="text-xs text-slate-500">Reported by @issue.Reporter • @issue.Time</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
+                                  style="background: @(issue.BadgeBg); color: @(issue.TextStyle); border-color: @(issue.BorderStyle)">
+                                @issue.Priority
+                            </span>
+                            <i class="fas fa-chevron-right text-slate-500 group-hover:text-white transition-colors"></i>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-10 right-10 w-16 h-16 rounded-full flex items-center justify-center text-white z-20 group hover:scale-110 transition-transform"
+            style="background:#135bec; box-shadow:0 20px 40px rgba(19,91,236,0.4)">
+        <i class="fas fa-plus text-3xl group-hover:rotate-90 transition-transform duration-300"></i>
+    </button>
+
+</div>
+
+@code {
+    private bool showUserMenu = false;
+    private string searchTerm = "";
+
+    private readonly DashboardStats stats = new(124, 118, 42.5, 95.1);
+
+    private readonly List<IssueItem> priorityIssues = new()
+    {
+        new(1, "Water Leak - Suite 402",     "Sarah Jenkins", "2 hours ago", "High Priority",
+            "tools",   "rgba(249,115,22,0.2)", "#f97316", "rgba(249,115,22,0.2)"),
+        new(2, "AC Malfunction - Penthouse B","Marcus Thorne", "5 hours ago", "Medium",
+            "bolt",    "rgba(59,130,246,0.2)", "#3b82f6", "rgba(59,130,246,0.2)"),
+    };
+
+    private record DashboardStats(int TotalRooms, int OccupiedRooms, double MonthlyRevenue, double OccupancyRate);
+
+    private record IssueItem(
+        int Id, string Title, string Reporter, string Time, string Priority,
+        string IconClass, string BgStyle, string TextStyle, string BadgeBg, string BorderStyle = "transparent");
+}

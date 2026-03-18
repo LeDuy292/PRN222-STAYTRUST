@@ -1,0 +1,591 @@
+@page "/landlord/prime"
+@layout LandlordLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<PageTitle>Prime Plans - STAYTRUST</PageTitle>
+
+<HeadContent>
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeInUp 0.6s ease-out both; }
+        @@keyframes pulse2 {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .5; }
+        }
+        .pulse2 { animation: pulse2 3s ease-in-out infinite; }
+        .pulse2-delay { animation: pulse2 3s ease-in-out 2s infinite; }
+    </style>
+</HeadContent>
+
+<div class="min-h-screen text-white" style="background-color:#0a0a0a">
+
+    <!-- Mesh Gradient Background -->
+    <div class="fixed inset-0 -z-10">
+        <div class="absolute inset-0"
+             style="background:radial-gradient(at 0% 0%,rgba(19,91,236,.15) 0,transparent 50%),radial-gradient(at 100% 100%,rgba(19,91,236,.1) 0,transparent 50%),radial-gradient(at 50% 50%,rgba(10,10,10,1) 0,transparent 100%)">
+        </div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+
+                <a href="/landlord/home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                         style="box-shadow:0 0 15px rgba(6,182,212,.3)">
+                        <i class="fas fa-home text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
+                        <div class="text-xs text-cyan-500 font-bold uppercase tracking-widest">Elite Portal</div>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/landlord/dashboard"  class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Dashboard</a>
+                    <a href="/landlord/properties" class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Properties</a>
+                    <a href="/landlord/prime"      class="text-cyan-400 font-semibold border-b-2 border-cyan-400 pb-1">Prime Plans</a>
+                    <a href="/landlord/features"   class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Features</a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
+                        <i class="fas fa-bell text-xl text-gray-400"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    </button>
+                    <div class="relative">
+                        <button @onclick="() => showUserMenu = !showUserMenu"
+                                class="flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-xl transition-all border border-white/10"
+                                style="background:rgba(255,255,255,.05)">
+                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">AP</div>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold">Alexander Pierce</div>
+                                <div class="text-xs text-cyan-400">Elite Landlord</div>
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden z-50">
+                                <a href="/landlord/dashboard"  class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span></a>
+                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-building text-cyan-400"></i><span>My Properties</span></a>
+                                <a href="/landlord/settings"   class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-cog text-gray-400"></i><span>Settings</span></a>
+                                <div class="border-t border-gray-700/50"></div>
+                                <button @onclick='() => Nav.NavigateTo("/auth")'
+                                        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-red-400">
+                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 pb-12">
+
+        <!-- ===== HERO ===== -->
+        <div class="relative px-6 py-20 overflow-hidden">
+            <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute top-20 left-10 w-64 h-64 rounded-full blur-3xl pulse2"  style="background:rgba(6,182,212,.1)"></div>
+                <div class="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl pulse2-delay" style="background:rgba(168,85,247,.1)"></div>
+            </div>
+
+            <div class="max-w-7xl mx-auto text-center relative z-10">
+                <div class="inline-flex items-center gap-2 px-4 py-2 border border-cyan-500/30 rounded-full mb-6 fade-up" style="background:rgba(6,182,212,.1)">
+                    <i class="fas fa-crown text-cyan-400"></i>
+                    <span class="text-sm font-semibold text-cyan-400">UPGRADE TO PRIME</span>
+                </div>
+
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 fade-up" style="animation-delay:.1s">
+                    Supercharge Your&nbsp;
+                    <span class="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">Property Business</span>
+                </h1>
+
+                <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto fade-up" style="animation-delay:.2s">
+                    Get unlimited listings, AI-powered features, and priority placement. Join 10,000+ successful landlords.
+                </p>
+
+                <!-- Billing Toggle -->
+                <div class="flex items-center justify-center gap-4 mb-12 fade-up" style="animation-delay:.3s">
+                    <span class="font-semibold @(billingCycle == "monthly" ? "text-white" : "text-gray-500")">Monthly</span>
+                    <button @onclick="ToggleBilling"
+                            class="relative w-16 h-8 rounded-full transition-colors"
+                            style="@(billingCycle == "yearly" ? "background:linear-gradient(to right,#06b6d4,#2563eb)" : "background:#374151")">
+                        <div class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform @(billingCycle == "yearly" ? "translate-x-8" : "")"></div>
+                    </button>
+                    <span class="font-semibold @(billingCycle == "yearly" ? "text-white" : "text-gray-500")">
+                        Yearly
+                        <span class="ml-2 px-2 py-1 text-purple-400 text-xs rounded-full" style="background:rgba(168,85,247,.2)">Save 17%</span>
+                    </span>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto fade-up" style="animation-delay:.4s">
+                    @foreach (var s in heroStats)
+                    {
+                        <div class="backdrop-blur-xl border border-white/10 rounded-xl p-4 hover:bg-white/[0.05] transition-all text-center" style="background:rgba(255,255,255,.03)">
+                            <i class="fas fa-@(s.Icon) text-3xl text-cyan-400 mb-2"></i>
+                            <div class="text-2xl font-bold mb-1">@s.Value</div>
+                            <div class="text-sm text-gray-400">@s.Label</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PRICING CARDS ===== -->
+        <div class="max-w-7xl mx-auto px-6 mb-20">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                @foreach (var (plan, idx) in pricingPlans.Select((p, i) => (p, i)))
+                {
+                    <div class="relative backdrop-blur-xl border-2 rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-4 fade-up @(plan.Popular ? "scale-105" : "")"
+                         style="background:rgba(255,255,255,.03);border-color:@(plan.Popular ? "rgba(6,182,212,.5)" : "rgba(255,255,255,.1)");animation-delay:@(idx * 0.2)s;@(plan.Popular ? "box-shadow:0 25px 50px rgba(6,182,212,.2)" : "")">
+
+                        @if (plan.Popular)
+                        {
+                            <div class="absolute top-0 left-0 right-0 bg-gradient-to-r from-cyan-500 to-blue-600 py-2 text-center font-bold text-sm z-10">
+                                ⭐ MOST POPULAR
+                            </div>
+                        }
+
+                        <!-- Image Header -->
+                        <div class="relative @(plan.Popular ? "mt-8" : "") h-48 overflow-hidden">
+                            <img src="@plan.Image" alt="@plan.Name" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent"></div>
+                            @if (plan.Badge != null)
+                            {
+                                <div class="absolute top-4 right-4 px-3 py-1 backdrop-blur-sm rounded-full text-xs font-bold" style="background:@(plan.BadgeBg)">
+                                    @plan.Badge
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Content -->
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold mb-2">@plan.Name</h3>
+                            <p class="text-sm text-gray-400 mb-6">@plan.Subtitle</p>
+
+                            <!-- Price -->
+                            <div class="mb-6">
+                                @if (plan.OriginalPriceYearly.HasValue && billingCycle == "yearly")
+                                {
+                                    <div class="text-gray-500 line-through text-lg mb-1">₫@FormatPrice(plan.OriginalPriceYearly.Value)/year</div>
+                                }
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl font-bold text-cyan-400">
+                                        ₫@FormatPrice(billingCycle == "monthly" ? plan.PriceMonthly : plan.PriceYearly)
+                                    </span>
+                                    <span class="text-gray-400">/@(billingCycle == "monthly" ? "month" : "year")</span>
+                                </div>
+                                @if (billingCycle == "yearly" && plan.Id == "yearly")
+                                {
+                                    <div class="text-sm text-green-400 mt-1">≈ ₫@FormatPrice(plan.PriceMonthly)/month</div>
+                                }
+                            </div>
+
+                            <p class="text-gray-300 mb-6 text-sm">@plan.Description</p>
+
+                            <!-- CTA -->
+                            <button class="w-full py-4 rounded-xl font-bold transition-all duration-300 mb-6 @(plan.Popular ? "hover:scale-105" : "")"
+                                    style="@(plan.Popular ? "background:linear-gradient(to right,#06b6d4,#2563eb);box-shadow:0 0 20px rgba(6,182,212,.3)" : "background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2)")">
+                                @plan.Cta <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+
+                            <!-- Features -->
+                            <div class="space-y-3">
+                                @foreach (var feat in plan.Features)
+                                {
+                                    <div class="flex items-start gap-3 text-sm @(feat.Included ? "text-gray-300" : "text-gray-600") @(feat.Highlight ? "rounded-lg -mx-4 px-4 py-2" : "")"
+                                         style="@(feat.Highlight ? "background:rgba(34,197,94,.1)" : "")">
+                                        @if (feat.Included)
+                                        {
+                                            <i class="fas fa-check-circle mt-0.5 flex-shrink-0" style="color:@plan.FeatureCheckColor"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times mt-0.5 flex-shrink-0 text-gray-600"></i>
+                                        }
+                                        <span class="@(feat.Highlight ? "font-semibold text-green-400" : "")">@feat.Text</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (plan.Popular)
+                        {
+                            <div class="absolute -inset-1 blur-xl -z-10" style="background:linear-gradient(to right,rgba(6,182,212,.2),rgba(37,99,235,.2))"></div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ===== PRIME FEATURES GRID ===== -->
+        <div class="max-w-7xl mx-auto px-6 mb-20">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                    Unlock Powerful <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Prime Features</span>
+                </h2>
+                <p class="text-xl text-gray-400">Everything you need to dominate the rental market</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach (var (feat, idx) in primeFeatures.Select((f, i) => (f, i)))
+                {
+                    <div class="group relative backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-white/[0.05] transition-all duration-500 hover:-translate-y-2 fade-up"
+                         style="background:rgba(255,255,255,.03);animation-delay:@(idx * 0.15)s">
+                        <div class="relative h-48 overflow-hidden">
+                            <img src="@feat.Image" alt="@feat.Title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent"></div>
+                            <div class="absolute top-4 left-4 w-12 h-12 backdrop-blur-md rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                                 style="background:@feat.IconBg;border:1px solid @feat.IconBorder">
+                                <i class="fas fa-@(feat.Icon) text-2xl" style="color:@feat.IconColor"></i>
+                            </div>
+                            <div class="absolute bottom-4 right-4 px-3 py-1 rounded-lg text-sm" style="background:rgba(0,0,0,.6)">
+                                <div class="text-xs text-gray-400">@feat.StatsLabel</div>
+                                <div class="font-bold" style="color:@feat.IconColor">@feat.StatsValue</div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-cyan-400 transition-colors">@feat.Title</h3>
+                            <p class="text-gray-400 text-sm">@feat.Description</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ===== TESTIMONIALS ===== -->
+        <div class="max-w-7xl mx-auto px-6 mb-20">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                    Success <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Stories</span>
+                </h2>
+                <p class="text-xl text-gray-400">See how Prime transformed their businesses</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                @foreach (var (t, idx) in testimonials.Select((x, i) => (x, i)))
+                {
+                    <div class="group relative backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-white/[0.05] transition-all duration-500 hover:-translate-y-2 fade-up"
+                         style="background:rgba(255,255,255,.03);animation-delay:@(idx * 0.2)s">
+                        <div class="relative h-40 overflow-hidden">
+                            <img src="@t.Image" alt="@t.Name" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+                        </div>
+                        <div class="p-6">
+                            <i class="fas fa-quote-left text-3xl mb-4" style="color:rgba(6,182,212,.3)"></i>
+                            <div class="flex gap-1 mb-4">
+                                @for (int i = 0; i < t.Rating; i++) { <i class="fas fa-star text-yellow-400"></i> }
+                            </div>
+                            <p class="text-gray-300 mb-6 italic">"@t.Text"</p>
+                            <div class="flex items-center gap-4 pt-4 border-t border-white/10">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg" style="background:@t.AvatarBg">@t.Avatar</div>
+                                <div class="flex-1">
+                                    <div class="font-bold">@t.Name</div>
+                                    <div class="text-sm text-gray-400">@t.Role</div>
+                                    <div class="text-xs text-cyan-400">@(t.Properties) properties</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 px-4 py-2 border border-green-500/30 rounded-lg text-center" style="background:rgba(34,197,94,.1)">
+                                <div class="text-xs text-gray-400">Extra Revenue</div>
+                                <div class="text-lg font-bold text-green-400">@t.Savings</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ===== COMPARISON TABLE ===== -->
+        <div class="max-w-6xl mx-auto px-6 mb-20">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                    Detailed <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Comparison</span>
+                </h2>
+                <p class="text-xl text-gray-400">Compare all features across plans</p>
+            </div>
+
+            <div class="backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden" style="background:rgba(255,255,255,.03)">
+                <!-- Header -->
+                <div class="grid grid-cols-4 gap-4 p-6 border-b border-white/10" style="background:rgba(255,255,255,.03)">
+                    <div class="font-bold">Feature</div>
+                    <div class="text-center font-bold">Free</div>
+                    <div class="text-center font-bold text-cyan-400">Prime Monthly</div>
+                    <div class="text-center font-bold text-purple-400">Prime Yearly</div>
+                </div>
+                @foreach (var (row, idx) in comparisonRows.Select((r, i) => (r, i)))
+                {
+                    <div class="grid grid-cols-4 gap-4 p-6 hover:bg-white/[0.03] transition-colors @(idx < comparisonRows.Count - 1 ? "border-b border-white/5" : "")">
+                        <div class="text-sm text-gray-300">@row.Feature</div>
+                        <div class="text-center text-sm">@((MarkupString)RenderCell(row.Free, "text-green-400"))</div>
+                        <div class="text-center text-sm">@((MarkupString)RenderCell(row.Monthly, "text-cyan-400"))</div>
+                        <div class="text-center text-sm">@((MarkupString)RenderCell(row.Yearly, "text-purple-400"))</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ===== FAQ ===== -->
+        <div class="max-w-4xl mx-auto px-6 mb-20">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                    Frequently Asked <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Questions</span>
+                </h2>
+                <p class="text-xl text-gray-400">Everything you need to know about Prime</p>
+            </div>
+
+            <div class="space-y-4">
+                @foreach (var (faq, idx) in faqs.Select((f, i) => (f, i)))
+                {
+                    <div class="backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden hover:bg-white/[0.05] transition-all" style="background:rgba(255,255,255,.03)">
+                        <button @onclick="() => ToggleFaq(idx)" class="w-full flex items-center justify-between p-6 text-left">
+                            <span class="font-semibold text-lg">@faq.Question</span>
+                            <i class="fas fa-chevron-down text-cyan-400 transition-transform @(openFaq == idx ? "rotate-180" : "")"></i>
+                        </button>
+                        @if (openFaq == idx)
+                        {
+                            <div class="px-6 pb-6 text-gray-400">@faq.Answer</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ===== FINAL CTA ===== -->
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="relative border border-cyan-500/30 rounded-3xl p-12 text-center overflow-hidden"
+                 style="background:linear-gradient(135deg,rgba(6,182,212,.1),rgba(168,85,247,.1))">
+                <div class="absolute inset-0 opacity-10">
+                    <div class="absolute top-0 left-0 w-40 h-40 bg-cyan-500 rounded-full blur-3xl"></div>
+                    <div class="absolute bottom-0 right-0 w-40 h-40 bg-purple-500 rounded-full blur-3xl"></div>
+                </div>
+                <div class="relative z-10">
+                    <i class="fas fa-crown text-6xl text-cyan-400 mb-6 block animate-pulse"></i>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-4">Ready to Go Prime?</h2>
+                    <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                        Join thousands of successful landlords. Start your 15-day free trial today, no credit card required.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <button class="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-bold text-lg transition-all hover:scale-105"
+                                style="box-shadow:0 0 30px rgba(6,182,212,.3)">
+                            Start Free Trial <i class="fas fa-rocket ml-2"></i>
+                        </button>
+                        <button class="px-8 py-4 hover:bg-white/10 border border-white/20 rounded-xl font-bold text-lg transition-all" style="background:rgba(255,255,255,.05)">
+                            Compare Plans
+                        </button>
+                    </div>
+                    <div class="mt-8 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-400">
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>No credit card required</span></div>
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>Cancel anytime</span></div>
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>30-day money back</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /pt-24 -->
+</div><!-- /min-h-screen -->
+
+@code {
+    private bool showUserMenu = false;
+    private string billingCycle = "monthly";
+    private int? openFaq = null;
+
+    private void ToggleBilling() => billingCycle = billingCycle == "monthly" ? "yearly" : "monthly";
+    private void ToggleFaq(int idx) => openFaq = openFaq == idx ? null : idx;
+
+    private static string FormatPrice(long price) =>
+        price.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+
+    // ── Hero Stats ──────────────────────────────────────────────────────────
+    private readonly List<(string Icon, string Value, string Label)> heroStats = new()
+    {
+        ("users",    "10,000+", "Active Users"),
+        ("building", "45,000+", "Properties"),
+        ("dollar-sign", "₫850M+", "Revenue/Month"),
+        ("award",    "4.9/5",   "Rating"),
+    };
+
+    // ── Pricing Plans ───────────────────────────────────────────────────────
+    private readonly List<PricingPlan> pricingPlans = new()
+    {
+        new("free", "Free Trial", "Get started with basics",
+            0, 0, null, null,
+            null, "rgba(107,114,128,.8)",
+            "Perfect for testing the platform",
+            "#9ca3af",
+            false,
+            "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop&q=90",
+            "Start Free Trial",
+            new()
+            {
+                new("Up to 5 property listings", true, false),
+                new("Basic analytics dashboard", true, false),
+                new("Email support (48h response)", true, false),
+                new("Manual payment tracking", true, false),
+                new("Standard listing visibility", true, false),
+                new("Priority map placement", false, false),
+                new("AI Chatbot support", false, false),
+                new("Verified badge", false, false),
+                new("Unlimited photos", false, false),
+                new("Advanced analytics", false, false),
+            }),
+        new("monthly", "Prime Monthly", "Most flexible option",
+            299_000, 299_000, null, null,
+            "POPULAR", "rgba(6,182,212,.9)",
+            "Ideal for individual landlords",
+            "#22d3ee",
+            true,
+            "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop&q=90",
+            "Choose Monthly",
+            new()
+            {
+                new("Unlimited property listings", true, false),
+                new("Priority map placement", true, false),
+                new("AI Chatbot included", true, false),
+                new("Advanced analytics & reports", true, false),
+                new("Automated billing system", true, false),
+                new("Verified landlord badge", true, false),
+                new("Unlimited HD photos & videos", true, false),
+                new("24/7 priority support", true, false),
+                new("Featured listing boost", true, false),
+                new("Mobile app access", true, false),
+            }),
+        new("yearly", "Prime Yearly", "Best value - Save 17%",
+            249_000, 2_990_000, 299_000, 3_588_000,
+            "SAVE ₫598K", "rgba(168,85,247,.9)",
+            "Maximum savings for committed landlords",
+            "#c084fc",
+            false,
+            "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop&q=90",
+            "Choose Yearly",
+            new()
+            {
+                new("All Monthly Prime features", true, false),
+                new("Save ₫598,000 per year", true, true),
+                new("Free professional photography", true, false),
+                new("Dedicated account manager", true, false),
+                new("Custom branding options", true, false),
+                new("API access for integrations", true, false),
+                new("Early access to new features", true, false),
+                new("Priority listing in search", true, false),
+                new("Quarterly business review", true, false),
+                new("White-label reports", true, false),
+            }),
+    };
+
+    // ── Prime Features ──────────────────────────────────────────────────────
+    private readonly List<PrimeFeature> primeFeatures = new()
+    {
+        new("star",         "Featured Listings",    "Stand out with premium badge and top placement in search results",
+            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&q=90",
+            "rgba(234,179,8,.2)", "rgba(234,179,8,.3)", "#eab308", "Visibility Increase", "+320%"),
+        new("map-marked-alt","Priority Map Display","Appear first in location-based searches with highlighted pins",
+            "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=400&h=300&fit=crop&q=90",
+            "rgba(6,182,212,.2)", "rgba(6,182,212,.3)", "#22d3ee", "More Contacts", "+250%"),
+        new("robot",        "AI Chatbot",           "Automated 24/7 responses to common tenant questions",
+            "https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=400&h=300&fit=crop&q=90",
+            "rgba(168,85,247,.2)", "rgba(168,85,247,.3)", "#c084fc", "Time Saved", "15hrs/week"),
+        new("chart-bar",    "Advanced Analytics",   "Detailed insights on views, contacts, and occupancy rates",
+            "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=90",
+            "rgba(34,197,94,.2)", "rgba(34,197,94,.3)", "#4ade80", "Better Decisions", "+180%"),
+        new("images",       "Unlimited Media",      "Upload unlimited HD photos and videos of your properties",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=90",
+            "rgba(59,130,246,.2)", "rgba(59,130,246,.3)", "#60a5fa", "More Bookings", "+210%"),
+        new("shield-alt",   "Verified Badge",       "Build trust with \"Verified by STAYTRUST\" indicator",
+            "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop&q=90",
+            "rgba(249,115,22,.2)", "rgba(249,115,22,.3)", "#fb923c", "Trust Score", "+95%"),
+    };
+
+    // ── Testimonials ────────────────────────────────────────────────────────
+    private readonly List<Testimonial> testimonials = new()
+    {
+        new("Michael Chen", "Property Owner", 12, "MC", 5,
+            "Since upgrading to Prime, my occupancy rate increased from 75% to 95%. The AI chatbot alone saves me 10+ hours per week!",
+            "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop&q=90",
+            "₫2.4M/month", "linear-gradient(135deg,#06b6d4,#2563eb)"),
+        new("Sarah Johnson", "Real Estate Manager", 28, "SJ", 5,
+            "The analytics dashboard helped me optimize pricing. I increased revenue by 35% in just 3 months. Best investment ever!",
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop&q=90",
+            "₫8.1M/month", "linear-gradient(135deg,#a855f7,#7c3aed)"),
+        new("David Nguyen", "Landlord", 8, "DN", 5,
+            "Priority map placement is a game-changer. My properties get 3x more inquiries compared to standard listings. Worth every penny!",
+            "https://images.unsplash.com/photo-1600585154084-4e5fe7c39198?w=400&h=300&fit=crop&q=90",
+            "₫1.8M/month", "linear-gradient(135deg,#22c55e,#16a34a)"),
+    };
+
+    // ── Comparison Table ────────────────────────────────────────────────────
+    private readonly List<CompRow> comparisonRows = new()
+    {
+        new("Number of properties",    "5 max",            "Unlimited",  "Unlimited"),
+        new("Featured badge",          "false",            "true",       "true"),
+        new("Priority placement",      "false",            "true",       "true"),
+        new("Photo uploads",           "10 per listing",   "Unlimited",  "Unlimited"),
+        new("Video uploads",           "false",            "true",       "true"),
+        new("Professional photography","false",            "false",      "true"),
+        new("Basic dashboard",         "true",             "true",       "true"),
+        new("Advanced reports",        "false",            "true",       "true"),
+        new("Revenue forecasting",     "false",            "true",       "true"),
+        new("AI Chatbot",              "false",            "true",       "true"),
+        new("Priority support",        "false",            "true",       "true"),
+        new("Account manager",         "false",            "false",      "true"),
+        new("API access",              "false",            "false",      "true"),
+        new("Custom branding",         "false",            "false",      "true"),
+        new("White-label reports",     "false",            "false",      "true"),
+    };
+
+    private static string RenderCell(string val, string colorClass)
+    {
+        if (val == "true")  return $"<i class='fas fa-check {colorClass} mx-auto block text-center'></i>";
+        if (val == "false") return "<i class='fas fa-times text-gray-600 mx-auto block text-center'></i>";
+        return $"<span class='{colorClass} font-semibold'>{val}</span>";
+    }
+
+    // ── FAQ ─────────────────────────────────────────────────────────────────
+    private readonly List<(string Question, string Answer)> faqs = new()
+    {
+        ("Can I switch plans anytime?",
+         "Yes! You can upgrade, downgrade, or cancel your plan at any time. If you upgrade mid-cycle, you'll only pay the prorated difference."),
+        ("What happens after the free trial?",
+         "Your account will revert to basic free features. You can continue using the platform with limited features or upgrade to a Prime plan anytime."),
+        ("Is there a refund policy?",
+         "Yes, we offer a 30-day money-back guarantee. If you're not satisfied with Prime, we'll refund your payment, no questions asked."),
+        ("How does the AI Chatbot work?",
+         "Our AI chatbot is trained on thousands of property inquiries. It can answer common questions about your listings 24/7, schedule viewings, and forward complex queries to you."),
+        ("Can I manage multiple properties?",
+         "Absolutely! Prime plans support unlimited properties. You can manage apartments, houses, commercial spaces, and more from a single dashboard."),
+        ("What payment methods are accepted?",
+         "We accept all major credit cards, bank transfers, and popular e-wallets including Momo, ZaloPay, and VNPay."),
+    };
+
+    // ── Data Models ─────────────────────────────────────────────────────────
+    private record PlanFeature(string Text, bool Included, bool Highlight);
+
+    private record PricingPlan(
+        string Id, string Name, string Subtitle,
+        long PriceMonthly, long PriceYearly,
+        long? OriginalPriceMonthly, long? OriginalPriceYearly,
+        string? Badge, string BadgeBg,
+        string Description, string FeatureCheckColor,
+        bool Popular, string Image, string Cta,
+        List<PlanFeature> Features);
+
+    private record PrimeFeature(
+        string Icon, string Title, string Description, string Image,
+        string IconBg, string IconBorder, string IconColor,
+        string StatsLabel, string StatsValue);
+
+    private record Testimonial(
+        string Name, string Role, int Properties, string Avatar, int Rating,
+        string Text, string Image, string Savings, string AvatarBg);
+
+    private record CompRow(string Feature, string Free, string Monthly, string Yearly);
+}

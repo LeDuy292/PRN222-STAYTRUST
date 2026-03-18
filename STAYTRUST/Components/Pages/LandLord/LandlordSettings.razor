@@ -1,0 +1,525 @@
+@page "/landlord/settings"
+@layout LandlordLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<PageTitle>Settings - STAYTRUST</PageTitle>
+
+<div class="min-h-screen text-white" style="background-color:#0a0a0a">
+
+    <!-- Mesh Gradient Background -->
+    <div class="fixed inset-0 -z-10">
+        <div class="absolute inset-0"
+             style="background:radial-gradient(at 0% 0%,rgba(19,91,236,.15) 0,transparent 50%),radial-gradient(at 100% 100%,rgba(19,91,236,.1) 0,transparent 50%)">
+        </div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+
+                <a href="/landlord/home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                         style="box-shadow:0 0 15px rgba(6,182,212,.3)">
+                        <i class="fas fa-home text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
+                        <div class="text-xs text-cyan-500 font-bold uppercase tracking-widest">Elite Portal</div>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/landlord/dashboard"  class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Dashboard</a>
+                    <a href="/landlord/properties" class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Properties</a>
+                    <a href="/landlord/prime"      class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Prime Plans</a>
+                    <a href="/landlord/features"   class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Features</a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
+                        <i class="fas fa-bell text-xl text-gray-400"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    </button>
+                    <div class="relative">
+                        <button @onclick="() => showUserMenu = !showUserMenu"
+                                class="flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-xl transition-all border border-white/10"
+                                style="background:rgba(255,255,255,.05)">
+                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">AP</div>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold">Alexander Pierce</div>
+                                <div class="text-xs text-cyan-400">Elite Landlord</div>
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden z-50">
+                                <a href="/landlord/dashboard"  class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span></a>
+                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-building text-cyan-400"></i><span>My Properties</span></a>
+                                <a href="/landlord/settings"   class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors" style="background:rgba(255,255,255,.05)"><i class="fas fa-cog text-cyan-400"></i><span>Settings</span></a>
+                                <div class="border-t border-gray-700/50"></div>
+                                <button @onclick='() => Nav.NavigateTo("/auth")'
+                                        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-red-400">
+                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    Settings
+                </h1>
+                <p class="text-gray-400 text-lg">Manage your account preferences and security</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+                <!-- ===== SIDEBAR TABS ===== -->
+                <div class="lg:col-span-1">
+                    <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-4 sticky top-24" style="background:rgba(31,41,55,.3)">
+                        @foreach (var tab in settingsTabs)
+                        {
+                            <button @onclick="() => activeTab = tab.Id"
+                                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-2 font-medium"
+                                    style="@(activeTab == tab.Id
+                                        ? "background:rgba(6,182,212,.2);color:#22d3ee;border:1px solid rgba(6,182,212,.3)"
+                                        : "color:#9ca3af")">
+                                <i class="fas fa-@(tab.Icon) text-lg"></i>
+                                <span>@tab.Label</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- ===== CONTENT AREA ===== -->
+                <div class="lg:col-span-3">
+
+                    <!-- ── PROFILE TAB ── -->
+                    @if (activeTab == "profile")
+                    {
+                        <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-8" style="background:rgba(31,41,55,.3)">
+                            <!-- Avatar Header -->
+                            <div class="flex items-center gap-6 mb-8">
+                                <div class="relative">
+                                    <div class="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-3xl font-bold">AP</div>
+                                    <button class="absolute bottom-0 right-0 p-2 rounded-full transition-colors" style="background:#06b6d4">
+                                        <i class="fas fa-user text-sm text-white"></i>
+                                    </button>
+                                </div>
+                                <div>
+                                    <h2 class="text-2xl font-bold mb-1">@profileData.FullName</h2>
+                                    <p class="text-cyan-400 flex items-center gap-2">
+                                        <i class="fas fa-check-circle"></i> Elite Landlord
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Full Name</label>
+                                        <input type="text" @bind="profileData.FullName"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
+                                        <input type="email" @bind="profileData.Email"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Phone</label>
+                                        <input type="tel" @bind="profileData.Phone"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Company</label>
+                                        <input type="text" @bind="profileData.Company"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Address</label>
+                                    <input type="text" @bind="profileData.Address"
+                                           class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                           style="background:rgba(17,24,39,.5)" />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Bio</label>
+                                    <textarea @bind="profileData.Bio" rows="4"
+                                              class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                              style="background:rgba(17,24,39,.5)"></textarea>
+                                </div>
+
+                                <button @onclick="SaveProfile"
+                                        class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                                    <i class="fas fa-save"></i> @saveMessage
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- ── SECURITY TAB ── -->
+                    @if (activeTab == "security")
+                    {
+                        <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-8" style="background:rgba(31,41,55,.3)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <i class="fas fa-lock text-cyan-400"></i> Security Settings
+                            </h2>
+
+                            <div class="space-y-6">
+                                <!-- Change Password -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-4">Change Password</h3>
+                                    <div class="space-y-4">
+                                        <input type="password" @bind="currentPassword" placeholder="Current Password"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                        <input type="password" @bind="newPassword" placeholder="New Password"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                        <input type="password" @bind="confirmPassword" placeholder="Confirm New Password"
+                                               class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                               style="background:rgba(17,24,39,.5)" />
+                                        <button class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 px-8 rounded-xl transition-colors">
+                                            Update Password
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 2FA -->
+                                <div class="border-t border-gray-700/50 pt-6">
+                                    <h3 class="text-lg font-semibold mb-4">Two-Factor Authentication</h3>
+                                    <p class="text-gray-400 mb-4">Add an extra layer of security to your account</p>
+                                    <button class="text-white font-semibold py-3 px-8 rounded-xl transition-colors" style="background:#22c55e">
+                                        Enable 2FA
+                                    </button>
+                                </div>
+
+                                <!-- Sessions -->
+                                <div class="border-t border-gray-700/50 pt-6">
+                                    <h3 class="text-lg font-semibold mb-4">Active Sessions</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                            <div class="flex items-center gap-3">
+                                                <i class="fas fa-globe text-cyan-400 text-xl"></i>
+                                                <div>
+                                                    <p class="font-medium">MacBook Pro</p>
+                                                    <p class="text-sm text-gray-400">Ho Chi Minh City</p>
+                                                </div>
+                                            </div>
+                                            <span class="px-3 py-1 rounded-full text-sm" style="background:rgba(34,197,94,.2);color:#4ade80">Active</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                            <div class="flex items-center gap-3">
+                                                <i class="fas fa-globe text-cyan-400 text-xl"></i>
+                                                <div>
+                                                    <p class="font-medium">iPhone 14</p>
+                                                    <p class="text-sm text-gray-400">Ho Chi Minh City</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- ── NOTIFICATIONS TAB ── -->
+                    @if (activeTab == "notifications")
+                    {
+                        <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-8" style="background:rgba(31,41,55,.3)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <i class="fas fa-bell text-cyan-400"></i> Notification Preferences
+                            </h2>
+                            <div class="space-y-4">
+                                @foreach (var notif in notifItems)
+                                {
+                                    bool isOn = GetNotif(notif.Key);
+                                    <div class="flex items-center justify-between p-4 rounded-xl border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                        <div>
+                                            <p class="font-medium">@notif.Label</p>
+                                            <p class="text-sm text-gray-400">@notif.Desc</p>
+                                        </div>
+                                        <!-- Toggle Switch -->
+                                        <button @onclick="() => ToggleNotif(notif.Key)"
+                                                class="relative h-7 rounded-full transition-colors flex-shrink-0"
+                                                style="width:3.5rem;background:@(isOn ? "#06b6d4" : "#4b5563")">
+                                            <div class="absolute top-1 w-5 h-5 bg-white rounded-full transition-all"
+                                                 style="left:@(isOn ? "1.75rem" : "0.25rem")"></div>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- ── PREFERENCES TAB ── -->
+                    @if (activeTab == "preferences")
+                    {
+                        <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-8" style="background:rgba(31,41,55,.3)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <i class="fas fa-palette text-cyan-400"></i> Preferences
+                            </h2>
+
+                            <div class="space-y-6">
+                                <!-- Appearance -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-4">Appearance</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <button @onclick="() => isDarkMode = true"
+                                                class="p-6 rounded-xl border-2 transition-all text-center"
+                                                style="@(isDarkMode ? "border-color:#06b6d4;background:rgba(6,182,212,.1)" : "border-color:rgba(55,65,81,.5);background:rgba(17,24,39,.5)")">
+                                            <i class="fas fa-moon text-3xl block mb-3 mx-auto"></i>
+                                            <p class="font-medium">Dark Mode</p>
+                                            @if (isDarkMode)
+                                            {
+                                                <i class="fas fa-check text-cyan-400 mt-2 block mx-auto"></i>
+                                            }
+                                        </button>
+                                        <button @onclick="() => isDarkMode = false"
+                                                class="p-6 rounded-xl border-2 transition-all text-center"
+                                                style="@(!isDarkMode ? "border-color:#06b6d4;background:rgba(6,182,212,.1)" : "border-color:rgba(55,65,81,.5);background:rgba(17,24,39,.5)")">
+                                            <i class="fas fa-sun text-3xl block mb-3 mx-auto"></i>
+                                            <p class="font-medium">Light Mode</p>
+                                            @if (!isDarkMode)
+                                            {
+                                                <i class="fas fa-check text-cyan-400 mt-2 block mx-auto"></i>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Language -->
+                                <div class="border-t border-gray-700/50 pt-6">
+                                    <h3 class="text-lg font-semibold mb-4">Language</h3>
+                                    <select @bind="language"
+                                            class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                            style="background:rgba(17,24,39,.5)">
+                                        <option value="vi">Tiếng Việt</option>
+                                        <option value="en">English</option>
+                                        <option value="ja">日本語</option>
+                                        <option value="ko">한국어</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- ── BILLING TAB ── -->
+                    @if (activeTab == "billing")
+                    {
+                        <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-8" style="background:rgba(31,41,55,.3)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <i class="fas fa-credit-card text-cyan-400"></i> Billing &amp; Subscription
+                            </h2>
+
+                            <div class="space-y-6">
+                                <!-- Current Plan -->
+                                <div class="border border-cyan-500/30 rounded-xl p-6" style="background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(59,130,246,.2))">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h3 class="text-xl font-bold">Prime Yearly Plan</h3>
+                                            <p class="text-gray-400">Active until Dec 31, 2024</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-3xl font-bold text-cyan-400">₫2.99M</p>
+                                            <p class="text-sm text-gray-400">per year</p>
+                                        </div>
+                                    </div>
+                                    <button class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 rounded-xl transition-colors">
+                                        Manage Subscription
+                                    </button>
+                                </div>
+
+                                <!-- Payment Method -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-4">Payment Method</h3>
+                                    <div class="rounded-xl p-4 flex items-center justify-between border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                        <div class="flex items-center gap-3">
+                                            <i class="fas fa-credit-card text-2xl text-cyan-400"></i>
+                                            <div>
+                                                <p class="font-medium">**** **** **** 4242</p>
+                                                <p class="text-sm text-gray-400">Expires 12/25</p>
+                                            </div>
+                                        </div>
+                                        <button class="text-cyan-400 hover:text-cyan-300 font-medium">Change</button>
+                                    </div>
+                                </div>
+
+                                <!-- Billing History -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-4">Billing History</h3>
+                                    <div class="space-y-2">
+                                        @foreach (var inv in invoices)
+                                        {
+                                            <div class="flex items-center justify-between p-4 rounded-xl border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                                <div>
+                                                    <p class="font-medium">@inv.Date</p>
+                                                    <p class="text-sm text-gray-400">@inv.Amount</p>
+                                                </div>
+                                                <span class="px-3 py-1 rounded-full text-sm" style="background:rgba(34,197,94,.2);color:#4ade80">@inv.Status</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- ── PRIVACY TAB ── -->
+                    @if (activeTab == "privacy")
+                    {
+                        <div class="backdrop-blur-xl rounded-2xl border border-gray-700/50 p-8" style="background:rgba(31,41,55,.3)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <i class="fas fa-shield-alt text-cyan-400"></i> Privacy &amp; Data
+                            </h2>
+
+                            <div class="space-y-6">
+                                <!-- Profile Visibility -->
+                                <div class="rounded-xl p-6 border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                    <h3 class="text-lg font-semibold mb-3">Profile Visibility</h3>
+                                    <p class="text-gray-400 mb-4">Control who can see your profile information</p>
+                                    <select @bind="profileVisibility"
+                                            class="w-full rounded-xl px-4 py-3 text-white border border-gray-700/50 focus:outline-none transition-colors"
+                                            style="background:rgba(17,24,39,.5)">
+                                        <option value="public">Public</option>
+                                        <option value="tenants">Tenants Only</option>
+                                        <option value="private">Private</option>
+                                    </select>
+                                </div>
+
+                                <!-- Data Export -->
+                                <div class="rounded-xl p-6 border border-gray-700/50" style="background:rgba(17,24,39,.5)">
+                                    <h3 class="text-lg font-semibold mb-3">Data Export</h3>
+                                    <p class="text-gray-400 mb-4">Download all your data in a portable format</p>
+                                    <button class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 px-8 rounded-xl transition-colors">
+                                        Request Data Export
+                                    </button>
+                                </div>
+
+                                <!-- Danger Zone -->
+                                <div class="rounded-xl p-6 border border-red-500/30" style="background:rgba(239,68,68,.1)">
+                                    <h3 class="text-lg font-semibold mb-3 text-red-400">Danger Zone</h3>
+                                    <p class="text-gray-400 mb-4">Permanently delete your account and all data</p>
+                                    <button class="font-semibold py-3 px-8 rounded-xl transition-colors border border-red-500/50"
+                                            style="background:rgba(239,68,68,.2);color:#f87171">
+                                        Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool showUserMenu = false;
+    private string activeTab = "profile";
+    private bool isDarkMode = true;
+    private string language = "vi";
+    private string profileVisibility = "public";
+    private string saveMessage = "Save Changes";
+
+    // Password fields
+    private string currentPassword = "";
+    private string newPassword = "";
+    private string confirmPassword = "";
+
+    // Profile
+    private ProfileForm profileData = new()
+    {
+        FullName = "Alexander Pierce",
+        Email    = "alexander.pierce@staytrust.vn",
+        Phone    = "+84 901 234 567",
+        Address  = "123 Nguyen Hue, District 1, Ho Chi Minh City",
+        Bio      = "Elite landlord with 10+ years of experience in property management",
+        Company  = "Pierce Properties Ltd.",
+    };
+
+    // Notifications
+    private Dictionary<string, bool> notifications = new()
+    {
+        ["email"]     = true,
+        ["push"]      = true,
+        ["sms"]       = false,
+        ["marketing"] = false,
+    };
+
+    private bool GetNotif(string key) => notifications.TryGetValue(key, out var v) && v;
+    private void ToggleNotif(string key)
+    {
+        if (notifications.ContainsKey(key))
+            notifications[key] = !notifications[key];
+    }
+
+    private async Task SaveProfile()
+    {
+        saveMessage = "Saved!";
+        await Task.Delay(2000);
+        saveMessage = "Save Changes";
+    }
+
+    // ── Static Data ───────────────────────────────────────────────────────────
+    private readonly List<TabDef> settingsTabs = new()
+    {
+        new("profile",       "Profile",       "user"),
+        new("security",      "Security",      "lock"),
+        new("notifications", "Notifications", "bell"),
+        new("billing",       "Billing",       "credit-card"),
+        new("privacy",       "Privacy",       "shield-alt"),
+        new("preferences",   "Preferences",   "palette"),
+    };
+
+    private readonly List<NotifItem> notifItems = new()
+    {
+        new("email",     "Email Notifications",  "Receive updates via email"),
+        new("push",      "Push Notifications",   "Get browser push notifications"),
+        new("sms",       "SMS Notifications",    "Receive text messages for important updates"),
+        new("marketing", "Marketing Emails",     "Receive promotional content and news"),
+    };
+
+    private readonly List<Invoice> invoices = new()
+    {
+        new("Jan 1, 2024", "₫2.99M", "Paid"),
+        new("Jan 1, 2023", "₫2.99M", "Paid"),
+    };
+
+    // ── Data Models ───────────────────────────────────────────────────────────
+    private record TabDef(string Id, string Label, string Icon);
+    private record NotifItem(string Key, string Label, string Desc);
+    private record Invoice(string Date, string Amount, string Status);
+
+    private class ProfileForm
+    {
+        public string FullName { get; set; } = "";
+        public string Email    { get; set; } = "";
+        public string Phone    { get; set; } = "";
+        public string Address  { get; set; } = "";
+        public string Bio      { get; set; } = "";
+        public string Company  { get; set; } = "";
+    }
+}

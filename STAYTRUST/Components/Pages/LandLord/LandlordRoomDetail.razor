@@ -1,0 +1,818 @@
+@page "/landlord/properties/{Id:int}"
+@layout LandlordLayout
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<PageTitle>@property.Title - STAYTRUST</PageTitle>
+
+<HeadContent>
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeInUp 0.6s ease-out both; }
+    </style>
+</HeadContent>
+
+<div class="min-h-screen text-white" style="background-color:#0a0a0a">
+
+    <!-- Mesh Gradient Background -->
+    <div class="fixed inset-0 -z-10">
+        <div class="absolute inset-0"
+             style="background:radial-gradient(at 0% 0%,rgba(19,91,236,.15) 0,transparent 50%),radial-gradient(at 100% 100%,rgba(19,91,236,.1) 0,transparent 50%)">
+        </div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+
+                <a href="/landlord/home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                         style="box-shadow:0 0 15px rgba(6,182,212,.3)">
+                        <i class="fas fa-home text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
+                        <div class="text-xs text-cyan-500 font-bold uppercase tracking-widest">Elite Portal</div>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/landlord/dashboard"  class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Dashboard</a>
+                    <a href="/landlord/properties" class="text-cyan-400 font-semibold border-b-2 border-cyan-400 pb-1">Properties</a>
+                    <a href="/landlord/prime"      class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Prime Plans</a>
+                    <a href="/landlord/features"   class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Features</a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
+                        <i class="fas fa-bell text-xl text-gray-400"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    </button>
+                    <div class="relative">
+                        <button @onclick="() => showUserMenu = !showUserMenu"
+                                class="flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-xl transition-all border border-white/10"
+                                style="background:rgba(255,255,255,.05)">
+                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">AP</div>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold">Alexander Pierce</div>
+                                <div class="text-xs text-cyan-400">Elite Landlord</div>
+                            </div>
+                        </button>
+                        @if (showUserMenu)
+                        {
+                            <div class="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden z-50">
+                                <a href="/landlord/dashboard"  class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span></a>
+                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors" style="background:rgba(255,255,255,.05)"><i class="fas fa-building text-cyan-400"></i><span>My Properties</span></a>
+                                <a href="/landlord/settings"   class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-cog text-gray-400"></i><span>Settings</span></a>
+                                <div class="border-t border-gray-700/50"></div>
+                                <button @onclick='() => Nav.NavigateTo("/auth")'
+                                        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-red-400">
+                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Back Button & Action Bar -->
+            <div class="flex items-center justify-between mb-6">
+                <button @onclick='() => Nav.NavigateTo("/landlord/properties")'
+                        class="flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition-colors group">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    <span class="font-medium">Back to Properties</span>
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <button @onclick="() => isFavorite = !isFavorite"
+                            class="p-3 rounded-xl transition-all"
+                            style="@(isFavorite ? "background:rgba(239,68,68,.2);color:#f87171" : "background:rgba(255,255,255,.05);color:#9ca3af")">
+                        <i class="fas fa-heart @(isFavorite ? "animate-pulse" : "")"></i>
+                    </button>
+                    <button class="p-3 rounded-xl transition-colors" style="background:rgba(255,255,255,.05)"><i class="fas fa-share text-gray-400"></i></button>
+                    <button class="p-3 rounded-xl transition-colors" style="background:rgba(255,255,255,.05)"><i class="fas fa-print text-gray-400"></i></button>
+                    <button class="p-3 rounded-xl transition-colors" style="background:rgba(255,255,255,.05)"><i class="fas fa-download text-gray-400"></i></button>
+                </div>
+            </div>
+
+            <!-- ===== IMAGE GALLERY ===== -->
+            <div class="relative rounded-3xl overflow-hidden mb-8 group" style="height:500px">
+                <img src="@property.Images[currentImage]" alt="@property.Title"
+                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+
+                <!-- Gradient Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+                <!-- Arrows -->
+                <button @onclick="PrevImage"
+                        class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                        style="background:rgba(0,0,0,.5)">
+                    <i class="fas fa-chevron-left text-xl"></i>
+                </button>
+                <button @onclick="NextImage"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                        style="background:rgba(0,0,0,.5)">
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </button>
+
+                <!-- Counter -->
+                <div class="absolute top-4 right-4 px-4 py-2 rounded-full font-semibold" style="background:rgba(0,0,0,.5)">
+                    @(currentImage + 1) / @property.Images.Count
+                </div>
+
+                <!-- Bottom Overlay -->
+                <div class="absolute bottom-0 left-0 right-0 p-8">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3 flex-wrap">
+                                @GetStatusBadge(property.Status)
+                                @if (property.Featured)
+                                {
+                                    <span class="flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-semibold"
+                                          style="background:rgba(234,179,8,.2);color:#facc15;border-color:rgba(234,179,8,.3)">
+                                        <i class="fas fa-star"></i> Featured
+                                    </span>
+                                }
+                                @if (property.Verified)
+                                {
+                                    <span class="flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-semibold"
+                                          style="background:rgba(59,130,246,.2);color:#60a5fa;border-color:rgba(59,130,246,.3)">
+                                        <i class="fas fa-shield-alt"></i> Verified
+                                    </span>
+                                }
+                            </div>
+
+                            <h1 class="text-4xl font-bold mb-3">@property.Title</h1>
+
+                            <div class="flex items-center gap-2 text-gray-300 mb-4">
+                                <i class="fas fa-map-marker-alt text-cyan-400"></i>
+                                <span>@property.Address</span>
+                            </div>
+
+                            <div class="flex items-center gap-4 flex-wrap">
+                                <div class="flex items-center gap-1">
+                                    @for (int i = 0; i < 5; i++)
+                                    {
+                                        int s = i;
+                                        <i class="fas fa-star" style="color:@(s < (int)property.Rating ? "#facc15" : "#374151")"></i>
+                                    }
+                                    <span class="ml-2 font-semibold">@property.Rating</span>
+                                    <span class="text-gray-400 ml-1">(@property.Reviews reviews)</span>
+                                </div>
+                                <div class="flex items-center gap-4 text-gray-400">
+                                    <span class="flex items-center gap-1"><i class="fas fa-eye"></i> @property.Views views</span>
+                                    <span>•</span>
+                                    <span>@property.Inquiries inquiries</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Card -->
+                        <div class="backdrop-blur-lg rounded-2xl p-6 border border-white/10 ml-6 hidden md:block" style="background:rgba(0,0,0,.5)">
+                            <div class="text-gray-400 text-sm mb-1">Monthly Rent</div>
+                            <div class="text-4xl font-bold text-cyan-400 mb-4">₫@((property.Price / 1_000_000.0).ToString("0.0"))M</div>
+                            <div class="text-gray-400 text-xs mb-4">Deposit: ₫@((property.Deposit / 1_000_000.0).ToString("0.0"))M</div>
+                            <div class="flex gap-2">
+                                <button class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-semibold transition-all hover:scale-105">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="p-3 rounded-xl transition-colors" style="background:rgba(239,68,68,.2);color:#f87171">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thumbnails -->
+                <div class="absolute flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                     style="bottom:6.5rem;left:2rem">
+                    @for (int i = 0; i < property.Images.Count; i++)
+                    {
+                        int idx = i;
+                        <button @onclick="() => currentImage = idx"
+                                class="w-16 h-16 rounded-lg overflow-hidden border-2 transition-all"
+                                style="border-color:@(currentImage == idx ? "#22d3ee" : "rgba(255,255,255,.3)");transform:@(currentImage == idx ? "scale(1.1)" : "scale(1)")">
+                            <img src="@property.Images[idx]" alt="" class="w-full h-full object-cover" />
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- ===== TABS ===== -->
+            <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
+                @foreach (var tab in tabs)
+                {
+                    <button @onclick="() => activeTab = tab.Id"
+                            class="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all"
+                            style="@(activeTab == tab.Id
+                                ? "background:linear-gradient(to right,#06b6d4,#2563eb);box-shadow:0 0 20px rgba(6,182,212,.3)"
+                                : "background:rgba(255,255,255,.05);color:#9ca3af")">
+                        <i class="fas fa-@(tab.Icon)"></i>
+                        @tab.Label
+                    </button>
+                }
+            </div>
+
+            <!-- ===== TAB CONTENT ===== -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- MAIN AREA -->
+                <div class="lg:col-span-2 space-y-6">
+
+                    @if (activeTab == "overview")
+                    {
+                        <!-- Property Details -->
+                        <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(6,182,212,.2)">
+                                    <i class="fas fa-home text-cyan-400"></i>
+                                </div>
+                                Property Details
+                            </h2>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                                <div class="rounded-xl p-4 hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                    <i class="fas fa-bed text-3xl text-cyan-400 mb-3 group-hover:scale-110 transition-transform block"></i>
+                                    <div class="text-2xl font-bold mb-1">@property.Bedrooms</div>
+                                    <div class="text-sm text-gray-400">Bedrooms</div>
+                                </div>
+                                <div class="rounded-xl p-4 hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                    <i class="fas fa-bath text-3xl text-cyan-400 mb-3 group-hover:scale-110 transition-transform block"></i>
+                                    <div class="text-2xl font-bold mb-1">@property.Bathrooms</div>
+                                    <div class="text-sm text-gray-400">Bathrooms</div>
+                                </div>
+                                <div class="rounded-xl p-4 hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                    <i class="fas fa-ruler text-3xl text-cyan-400 mb-3 group-hover:scale-110 transition-transform block"></i>
+                                    <div class="text-2xl font-bold mb-1">@property.Area m²</div>
+                                    <div class="text-sm text-gray-400">Area</div>
+                                </div>
+                                <div class="rounded-xl p-4 hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                    <i class="fas fa-building text-3xl text-cyan-400 mb-3 group-hover:scale-110 transition-transform block"></i>
+                                    <div class="text-2xl font-bold mb-1">@property.Floor/@property.BuildingFloors</div>
+                                    <div class="text-sm text-gray-400">Floor</div>
+                                </div>
+                            </div>
+
+                            <h3 class="text-xl font-bold mb-3">Description</h3>
+                            <p class="text-gray-400 leading-relaxed">@property.Description</p>
+
+                            <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/10">
+                                <div>
+                                    <div class="text-gray-400 text-sm mb-1">Property Type</div>
+                                    <div class="font-semibold">@property.Type</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-400 text-sm mb-1">Year Built</div>
+                                    <div class="font-semibold">@property.YearBuilt</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amenities -->
+                        <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03);animation-delay:.1s">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(168,85,247,.2)">
+                                    <i class="fas fa-check-circle text-purple-400"></i>
+                                </div>
+                                Amenities &amp; Features
+                            </h2>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                @foreach (var amenity in property.Amenities)
+                                {
+                                    <div class="flex items-center gap-3 p-4 rounded-xl hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" style="background:rgba(6,182,212,.2)">
+                                            <i class="fas fa-@(amenity.Icon) text-cyan-400"></i>
+                                        </div>
+                                        <span class="font-medium">@amenity.Name</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03);animation-delay:.2s">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(34,197,94,.2)">
+                                    <i class="fas fa-map-marker-alt text-green-400"></i>
+                                </div>
+                                Location
+                            </h2>
+                            <div class="relative h-64 bg-gray-800 rounded-xl overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&h=600&fit=crop&q=90"
+                                     alt="Map" class="w-full h-full object-cover opacity-50" />
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="px-6 py-3 rounded-xl text-center" style="background:rgba(0,0,0,.7)">
+                                        <i class="fas fa-map-marker-alt text-4xl text-cyan-400 block mb-2"></i>
+                                        <div class="font-semibold">Interactive Map</div>
+                                        <div class="text-sm text-gray-400">Coming Soon</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (activeTab == "tenant")
+                    {
+                        @if (property.Status == "occupied")
+                        {
+                            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03)">
+                                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(59,130,246,.2)">
+                                        <i class="fas fa-users text-blue-400"></i>
+                                    </div>
+                                    Current Tenant
+                                </h2>
+
+                                <div class="flex items-start gap-6 mb-8">
+                                    <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl font-bold flex-shrink-0">
+                                        @property.Tenant.Avatar
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-2xl font-bold mb-2">@property.Tenant.Name</h3>
+                                        <div class="flex items-center gap-4 mb-4 flex-wrap">
+                                            <span class="px-3 py-1 rounded-full text-sm font-semibold border" style="background:rgba(34,197,94,.2);color:#4ade80;border-color:rgba(34,197,94,.3)">
+                                                @(property.Tenant.Status == "active" ? "Active Lease" : "Inactive")
+                                            </span>
+                                            <span class="px-3 py-1 rounded-full text-sm font-semibold border" style="background:rgba(6,182,212,.2);color:#22d3ee;border-color:rgba(6,182,212,.3)">
+                                                @(property.Tenant.PaymentStatus == "on-time" ? "On-Time Payer" : "Late")
+                                            </span>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div class="flex items-center gap-3 text-gray-300">
+                                                <i class="fas fa-envelope text-cyan-400"></i> @property.Tenant.Email
+                                            </div>
+                                            <div class="flex items-center gap-3 text-gray-300">
+                                                <i class="fas fa-phone text-cyan-400"></i> @property.Tenant.Phone
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4 p-6 rounded-xl" style="background:rgba(255,255,255,.05)">
+                                    <div>
+                                        <div class="text-gray-400 text-sm mb-1">Move-In Date</div>
+                                        <div class="font-semibold flex items-center gap-2">
+                                            <i class="fas fa-calendar-alt text-cyan-400"></i>
+                                            @property.Tenant.MoveInDate.ToString("MMM dd, yyyy")
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-400 text-sm mb-1">Lease End Date</div>
+                                        <div class="font-semibold flex items-center gap-2">
+                                            <i class="fas fa-calendar-alt text-orange-400"></i>
+                                            @property.Tenant.LeaseEnd.ToString("MMM dd, yyyy")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center fade-up" style="background:rgba(255,255,255,.03)">
+                                <i class="fas fa-users text-6xl text-gray-600 mb-4 block"></i>
+                                <h3 class="text-xl font-semibold text-gray-400">No Active Tenant</h3>
+                                <p class="text-gray-500 mt-2">This property is currently @property.Status</p>
+                            </div>
+                        }
+                    }
+
+                    @if (activeTab == "financial")
+                    {
+                        <!-- Financial KPIs -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-up">
+                            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/[0.05] transition-all group" style="background:rgba(255,255,255,.03)">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background:rgba(34,197,94,.2)">
+                                    <i class="fas fa-dollar-sign text-2xl text-green-400"></i>
+                                </div>
+                                <div class="text-gray-400 text-sm mb-2">Total Revenue</div>
+                                <div class="text-3xl font-bold text-green-400">₫@((property.Financials.TotalRevenue / 1_000_000.0).ToString("0.0"))M</div>
+                            </div>
+                            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/[0.05] transition-all group" style="background:rgba(255,255,255,.03)">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background:rgba(6,182,212,.2)">
+                                    <i class="fas fa-chart-bar text-2xl text-cyan-400"></i>
+                                </div>
+                                <div class="text-gray-400 text-sm mb-2">Avg Monthly</div>
+                                <div class="text-3xl font-bold text-cyan-400">₫@((property.Financials.AvgMonthlyRevenue / 1_000_000.0).ToString("0.0"))M</div>
+                            </div>
+                            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/[0.05] transition-all group" style="background:rgba(255,255,255,.03)">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background:rgba(168,85,247,.2)">
+                                    <i class="fas fa-chart-line text-2xl text-purple-400"></i>
+                                </div>
+                                <div class="text-gray-400 text-sm mb-2">Occupancy Rate</div>
+                                <div class="text-3xl font-bold text-purple-400">@property.Financials.OccupancyRate%</div>
+                            </div>
+                        </div>
+
+                        <!-- Revenue Bar Chart -->
+                        <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03);animation-delay:.1s">
+                            <h2 class="text-2xl font-bold mb-6">Revenue History</h2>
+                            <div class="flex items-end justify-between gap-2" style="height:16rem">
+                                @{
+                                    long maxAmt = property.RevenueHistory.Max(r => r.Amount);
+                                }
+                                @foreach (var item in property.RevenueHistory)
+                                {
+                                    double pct = maxAmt > 0 ? (double)item.Amount / maxAmt * 100 : 5;
+                                    <div class="flex-1 flex flex-col items-center group">
+                                        <div class="w-full rounded-t-lg transition-all cursor-pointer relative"
+                                             style="height:@(pct.ToString("0"))%;background:linear-gradient(to top,#0891b2,#3b82f6)">
+                                            <div class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10"
+                                                 style="background:#111827">
+                                                ₫@((item.Amount / 1_000_000.0).ToString("0.0"))M
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-2 font-semibold">@item.Month</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (activeTab == "maintenance")
+                    {
+                        <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(249,115,22,.2)">
+                                    <i class="fas fa-tools text-orange-400"></i>
+                                </div>
+                                Maintenance Records
+                            </h2>
+                            <div class="space-y-4">
+                                @foreach (var rec in property.Maintenance)
+                                {
+                                    bool done = rec.Status == "completed";
+                                    <div class="flex items-center justify-between p-6 rounded-xl hover:bg-white/10 transition-all" style="background:rgba(255,255,255,.05)">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 rounded-xl flex items-center justify-center"
+                                                 style="background:@(done ? "rgba(34,197,94,.2)" : "rgba(249,115,22,.2)")">
+                                                <i class="fas fa-tools" style="color:@(done ? "#4ade80" : "#fb923c")"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-semibold mb-1">@rec.Issue</h3>
+                                                <div class="text-sm text-gray-400 flex items-center gap-2">
+                                                    <i class="fas fa-calendar-alt"></i> @rec.Date.ToString("MMM dd, yyyy")
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-bold mb-1">@(rec.Cost > 0 ? $"₫{rec.Cost / 1000:0}K" : "Free")</div>
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                                  style="background:@(done ? "rgba(34,197,94,.2)" : "rgba(249,115,22,.2)");color:@(done ? "#4ade80" : "#fb923c")">
+                                                @rec.Status
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (activeTab == "history")
+                    {
+                        <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03)">
+                            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(6,182,212,.2)">
+                                    <i class="fas fa-history text-cyan-400"></i>
+                                </div>
+                                Activity History
+                            </h2>
+                            <div class="space-y-4">
+                                @foreach (var hist in activityHistory)
+                                {
+                                    <div class="flex items-center gap-4 p-4 rounded-xl hover:bg-white/10 transition-all" style="background:rgba(255,255,255,.05)">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(6,182,212,.2)">
+                                            <i class="fas fa-history text-cyan-400"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-semibold">@hist.Action</div>
+                                            <div class="text-sm text-gray-400">by @hist.User</div>
+                                        </div>
+                                        <div class="text-sm text-gray-500">@hist.Date.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- ===== SIDEBAR ===== -->
+                <div class="space-y-6">
+
+                    <!-- Quick Stats -->
+                    <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 fade-up" style="background:rgba(255,255,255,.03);animation-delay:.3s">
+                        <h3 class="text-lg font-bold mb-4">Quick Stats</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" style="background:rgba(6,182,212,.2)">
+                                        <i class="fas fa-eye text-cyan-400"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-400">Total Views</span>
+                                </div>
+                                <span class="font-bold">@property.Views</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" style="background:rgba(168,85,247,.2)">
+                                        <i class="fas fa-clipboard-list text-purple-400"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-400">Inquiries</span>
+                                </div>
+                                <span class="font-bold">@property.Inquiries</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-white/10 transition-all group" style="background:rgba(255,255,255,.05)">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" style="background:rgba(59,130,246,.2)">
+                                        <i class="fas fa-calendar-alt text-blue-400"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-400">Days Listed</span>
+                                </div>
+                                <span class="font-bold">45</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 fade-up" style="background:rgba(255,255,255,.03);animation-delay:.4s">
+                        <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
+                                    style="background:rgba(34,197,94,.1);color:#4ade80;border-color:rgba(34,197,94,.2)">
+                                <i class="fas fa-file-invoice-dollar"></i> Generate Report
+                            </button>
+                            <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
+                                    style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.2)">
+                                <i class="fas fa-calendar-alt"></i> Schedule Viewing
+                            </button>
+                            <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
+                                    style="background:rgba(6,182,212,.1);color:#22d3ee;border-color:rgba(6,182,212,.2)">
+                                <i class="fas fa-check-circle"></i> Update Status
+                            </button>
+                            <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
+                                    style="background:rgba(249,115,22,.1);color:#fb923c;border-color:rgba(249,115,22,.2)">
+                                <i class="fas fa-tools"></i> Add Maintenance
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Performance Score -->
+                    <div class="backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 fade-up" style="background:linear-gradient(135deg,rgba(6,182,212,.1),rgba(59,130,246,.1));animation-delay:.5s">
+                        <h3 class="text-lg font-bold mb-4">Performance Score</h3>
+                        <div class="flex items-center justify-center mb-4">
+                            <div class="relative w-32 h-32">
+                                <svg class="w-full h-full" style="transform:rotate(-90deg)">
+                                    <circle cx="64" cy="64" r="60" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none" />
+                                    <circle cx="64" cy="64" r="60" stroke="#06b6d4" stroke-width="8" fill="none"
+                                            stroke-dasharray="377" stroke-dashoffset="75" stroke-linecap="round" />
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <div class="text-4xl font-bold text-cyan-400">95</div>
+                                    <div class="text-xs text-gray-400">Score</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            @foreach (var metric in perfMetrics)
+                            {
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">@metric.Label</span>
+                                        <span class="font-semibold">@metric.Value%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full overflow-hidden" style="background:rgba(255,255,255,.1)">
+                                        <div class="h-full rounded-full transition-all duration-1000"
+                                             style="width:@metric.Value%;background:linear-gradient(to right,#06b6d4,#2563eb)">
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool showUserMenu = false;
+    private bool isFavorite = false;
+    private int currentImage = 0;
+    private string activeTab = "overview";
+    private System.Threading.Timer? _imgTimer;
+
+    protected override void OnInitialized()
+    {
+        _imgTimer = new System.Threading.Timer(_ =>
+        {
+            currentImage = (currentImage + 1) % property.Images.Count;
+            InvokeAsync(StateHasChanged);
+        }, null, 5000, 5000);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_imgTimer != null)
+            await _imgTimer.DisposeAsync();
+    }
+
+    private void NextImage() => currentImage = (currentImage + 1) % property.Images.Count;
+    private void PrevImage() => currentImage = (currentImage - 1 + property.Images.Count) % property.Images.Count;
+
+    private RenderFragment GetStatusBadge(string status) => status switch
+    {
+        "available" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
+                              style="background:rgba(34,197,94,.2);color:#4ade80;border-color:rgba(34,197,94,.3)">
+                           <i class="fas fa-check-circle"></i> Available
+                       </span>,
+        "occupied" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
+                             style="background:rgba(59,130,246,.2);color:#60a5fa;border-color:rgba(59,130,246,.3)">
+                          <i class="fas fa-users"></i> Occupied
+                      </span>,
+        "maintenance" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
+                                style="background:rgba(249,115,22,.2);color:#fb923c;border-color:rgba(249,115,22,.3)">
+                             <i class="fas fa-tools"></i> Maintenance
+                         </span>,
+        _ => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
+                    style="background:rgba(156,163,175,.2);color:#9ca3af;border-color:rgba(156,163,175,.3)">
+                  <i class="fas fa-circle"></i> @status
+              </span>
+    };
+
+    // ── Tab Definitions ───────────────────────────────────────────────────────
+    private readonly List<TabDef> tabs = new()
+    {
+        new("overview",    "Overview",    "home"),
+        new("tenant",      "Tenant Info", "users"),
+        new("financial",   "Financials",  "dollar-sign"),
+        new("maintenance", "Maintenance", "tools"),
+        new("history",     "History",     "history"),
+    };
+
+    // ── Performance Metrics ───────────────────────────────────────────────────
+    private readonly List<(string Label, int Value)> perfMetrics = new()
+    {
+        ("Occupancy",   95),
+        ("Payment",    100),
+        ("Maintenance", 90),
+    };
+
+    // ── Activity History ──────────────────────────────────────────────────────
+    private readonly List<HistoryItem> activityHistory = new()
+    {
+        new("Property listed",     "Admin", new DateTime(2024,11,25)),
+        new("Photos updated",      "Admin", new DateTime(2024,11,20)),
+        new("Price adjusted",      "Admin", new DateTime(2024,11,15)),
+        new("Description modified","Admin", new DateTime(2024,11,10)),
+        new("Amenities updated",   "Admin", new DateTime(2024,11,5)),
+    };
+
+    // ── Mock Property ─────────────────────────────────────────────────────────
+    private readonly PropertyDetail property = new()
+    {
+        Id          = 1,
+        Title       = "Luxury Penthouse Suite",
+        Address     = "123 Nguyen Hue Boulevard, District 1, Ho Chi Minh City",
+        Price       = 25_000_000,
+        Deposit     = 50_000_000,
+        Bedrooms    = 3,
+        Bathrooms   = 2,
+        Area        = 120,
+        Floor       = 15,
+        BuildingFloors = 20,
+        YearBuilt   = 2020,
+        Status      = "available",
+        Type        = "Apartment",
+        Rating      = 4.8,
+        Reviews     = 24,
+        Views       = 1234,
+        Inquiries   = 45,
+        Featured    = true,
+        Verified    = true,
+        Description = "Stunning luxury penthouse with breathtaking city views. This modern residence features premium finishes, floor-to-ceiling windows, and access to world-class amenities. Perfect for those seeking an elevated lifestyle in the heart of the city.",
+        Images = new()
+        {
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&h=1000&fit=crop&q=95",
+            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&h=1000&fit=crop&q=95",
+            "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1600&h=1000&fit=crop&q=95",
+            "https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1600&h=1000&fit=crop&q=95",
+            "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1600&h=1000&fit=crop&q=95",
+            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1600&h=1000&fit=crop&q=95",
+        },
+        Amenities = new()
+        {
+            new("wifi",          "High-Speed WiFi"),
+            new("car",           "Parking Space"),
+            new("swimming-pool", "Swimming Pool"),
+            new("dumbbell",      "Fitness Center"),
+            new("shield-alt",    "24/7 Security"),
+            new("camera",        "CCTV Monitoring"),
+            new("fire",          "Central Heating"),
+            new("snowflake",     "Air Conditioning"),
+            new("couch",         "Fully Furnished"),
+            new("tv",            "Smart TV"),
+            new("utensils",      "Modern Kitchen"),
+            new("building",      "Elevator Access"),
+        },
+        Tenant = new()
+        {
+            Name          = "Sarah Johnson",
+            Email         = "sarah.j@email.com",
+            Phone         = "+84 901 234 567",
+            MoveInDate    = new DateTime(2024, 1, 15),
+            LeaseEnd      = new DateTime(2025, 1, 14),
+            Avatar        = "SJ",
+            Status        = "active",
+            PaymentStatus = "on-time",
+        },
+        Financials = new()
+        {
+            TotalRevenue       = 300_000_000,
+            OccupancyRate      = 95,
+            AvgMonthlyRevenue  = 24_500_000,
+        },
+        Maintenance = new()
+        {
+            new(1, "AC Filter Replacement", new DateTime(2024,10,15), 500_000, "completed"),
+            new(2, "Plumbing Repair",        new DateTime(2024,9,20),  800_000, "completed"),
+            new(3, "Scheduled Inspection",   new DateTime(2024,11,1),        0, "pending"),
+        },
+        RevenueHistory = new()
+        {
+            new("Jan",25_000_000), new("Feb",25_000_000), new("Mar",25_000_000),
+            new("Apr",25_000_000), new("May",25_000_000), new("Jun",25_000_000),
+            new("Jul",25_000_000), new("Aug",25_000_000), new("Sep",25_000_000),
+            new("Oct",25_000_000), new("Nov",25_000_000), new("Dec",0),
+        },
+    };
+
+    // ── Data Models ───────────────────────────────────────────────────────────
+    private record TabDef(string Id, string Label, string Icon);
+    private record HistoryItem(string Action, string User, DateTime Date);
+
+    private class PropertyDetail
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Address { get; set; } = "";
+        public long Price { get; set; }
+        public long Deposit { get; set; }
+        public int Bedrooms { get; set; }
+        public int Bathrooms { get; set; }
+        public int Area { get; set; }
+        public int Floor { get; set; }
+        public int BuildingFloors { get; set; }
+        public int YearBuilt { get; set; }
+        public string Status { get; set; } = "";
+        public string Type { get; set; } = "";
+        public double Rating { get; set; }
+        public int Reviews { get; set; }
+        public int Views { get; set; }
+        public int Inquiries { get; set; }
+        public bool Featured { get; set; }
+        public bool Verified { get; set; }
+        public string Description { get; set; } = "";
+        public List<string> Images { get; set; } = new();
+        public List<AmenityItem> Amenities { get; set; } = new();
+        public TenantInfo Tenant { get; set; } = new();
+        public FinancialInfo Financials { get; set; } = new();
+        public List<MaintenanceRecord> Maintenance { get; set; } = new();
+        public List<RevenueMonth> RevenueHistory { get; set; } = new();
+    }
+
+    private record AmenityItem(string Icon, string Name);
+    private class TenantInfo
+    {
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public DateTime MoveInDate { get; set; }
+        public DateTime LeaseEnd { get; set; }
+        public string Avatar { get; set; } = "";
+        public string Status { get; set; } = "";
+        public string PaymentStatus { get; set; } = "";
+    }
+    private class FinancialInfo
+    {
+        public long TotalRevenue { get; set; }
+        public int OccupancyRate { get; set; }
+        public long AvgMonthlyRevenue { get; set; }
+    }
+    private record MaintenanceRecord(int Id, string Issue, DateTime Date, long Cost, string Status);
+    private record RevenueMonth(string Month, long Amount);
+}
