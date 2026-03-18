@@ -1,0 +1,153 @@
+@page "/community"
+@layout STAYTRUST.Components.Layout.CommunityLayout
+
+<div class="w-full">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Main Content Area -->
+            <div class="flex-1 space-y-6">
+                <!-- Category Filters -->
+                <div class="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+                    <button class="whitespace-nowrap px-5 py-2 rounded-full bg-primary text-[#0a2540] text-sm font-bold shadow-lg shadow-primary/20">#All</button>
+                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#RentalTips</button>
+                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#LegalAdvice</button>
+                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#DaNangLiving</button>
+                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#VerifiedNews</button>
+                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#ExpatLife</button>
+                </div>
+
+                <!-- Post Composer -->
+                <div class="glass-card rounded-2xl p-5 shadow-2xl">
+                    <div class="flex gap-4">
+                        <div class="h-10 w-10 rounded-full bg-slate-700 shrink-0 overflow-hidden">
+                            <img class="w-full h-full object-cover" data-alt="Current user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCX9W3oyh8zftQXxBLmWFIiiB-kkCGy4Gsg9mmQBAwyL9fE4lI8EDdkx_ghVkJkFGVPTnlqy-g9cTDJPVerN_a0bFMupmCA8JeiqAd3O1vMPqufEhttUlh7-s_bHiLgDL8FlYSQkSxCFm9czhegCa9LxSBAdjtpeUBcgR1vgPyo7s4lYv2-9CnrtGw4lPf5EDalLZVmILxb565E8A0243ModLAtG1aab0HkCBbVXWg0TmeQRWDSQ0SzhjQ36ruLVvo4OkFQdprljO8"/>
+                        </div>
+                        <div class="flex-1">
+                            <textarea class="w-full bg-transparent border-none focus:ring-0 text-slate-100 placeholder:text-slate-500 resize-none min-h-[80px] p-0 text-lg" placeholder="Share an update or ask a question..."></textarea>
+                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+                                <div class="flex gap-4">
+                                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-slate-400">
+                                        <span class="material-symbols-outlined text-xl text-primary">image</span>
+                                        <span class="text-xs font-semibold">Add Image</span>
+                                    </button>
+                                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-slate-400">
+                                        <span class="material-symbols-outlined text-xl text-primary">location_on</span>
+                                        <span class="text-xs font-semibold"> Tag Location</span>
+                                    </button>
+                                </div>
+                                <button class="bg-primary hover:bg-primary/90 text-[#0a2540] font-bold px-8 py-2 rounded-xl transition-all shadow-lg shadow-primary/20">Post</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Posts -->
+                <div class="space-y-6">
+                    <!-- Post 1 -->
+                    <article class="glass-card rounded-2xl overflow-hidden shadow-xl">
+                        <div class="p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-12 w-12 rounded-full bg-slate-800 p-0.5 border border-primary/30">
+                                        <img class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9Box-4QR2hAZniXwBjvSfuckTk2rR1oBwD0aWvzgbnjOdSrHf61a32ee8gG5XCKmGaPwZFy-rLPW8hGtuDlTL69SpkeFYpu272_PKbuDe1GEAyBKBK_jg_E0kLXTHe9KsHm-B6haWtX5gcxQnRmB4p72YthOxHq-9g_wH-vETdEJhQLoJ7kO2uPOIh_HevGUagXfg1E8OiYRqofE_m9m7ViCswsJuKf-uUZDB7Q5hS5gam-30FNtLHLi-E15Z-BRj44llwdnW4Ko"/>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-100 flex items-center gap-2">
+                                            Nguyen Hoang 
+                                            <span class="flex items-center gap-1 bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full border border-primary/20">
+                                                <span class="material-symbols-outlined text-[12px] fill-1" style="font-variation-settings: 'FILL' 1;">verified</span> 98 Trust Score
+                                            </span>
+                                        </h3>
+                                        <p class="text-xs text-slate-500">2 hours ago • Da Nang, Vietnam</p>
+                                    </div>
+                                </div>
+                                <button class="material-symbols-outlined text-slate-500">more_horiz</button>
+                            </div>
+                            <p class="text-slate-300 mb-4 leading-relaxed">
+                                Just secured this beautiful studio in Son Tra! The verification process through Staytrust made the legal paperwork so much easier. #DaNangLiving #RentalTips
+                            </p>
+                        </div>
+                        <div class="relative aspect-[16/9] w-full bg-slate-800">
+                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkmPvmcIDuModmGBLvU8Ev7aYt72E5_pIwDrImTpyEFgWV6PxyVbnJV1YBUqOjK3xgCIT4IlImVGZhF_EpfLIiEJlJYTjHKcawLOprF_igNPzZ8kIrRcDBTrXSdUZwOy0RoNlCx70jLLEkG0DVAq70lLxBPePVrD5Tx7E5gYBpsSA3mFR9HpnuIfyokuoeYhQhs7-mpTe4mt_oqPohnGp02nvSmGVqixqWoUoGy_8xryLoFh94McbuMHjxHetxc3MvLirbv1aPu98"/>
+                        </div>
+                        <div class="p-4 border-t border-white/10 flex items-center justify-between">
+                            <div class="flex items-center gap-6">
+                                <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined">favorite</span>
+                                    <span class="text-sm font-semibold">124</span>
+                                </button>
+                                <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined">chat_bubble</span>
+                                    <span class="text-sm font-semibold">18</span>
+                                </button>
+                                <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined">share</span>
+                                    <span class="text-sm font-semibold">Share</span>
+                                </button>
+                            </div>
+                            <button class="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
+                                Read More <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="w-full lg:w-80 space-y-6">
+                <!-- Trending Topics -->
+                <section class="glass-card rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-lg font-[800] text-slate-100 mb-4 flex items-center gap-2 uppercase tracking-tight">
+                        <span class="material-symbols-outlined text-primary">trending_up</span>
+                        Trending Topics
+                    </h2>
+                    <ul class="space-y-4">
+                        <li>
+                            <p class="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Housing</p>
+                            <p class="text-sm font-bold text-slate-200 hover:text-primary cursor-pointer transition-colors">Digital Nomad Visas 2024</p>
+                            <p class="text-[11px] text-slate-600 mt-1">1.2k posts this week</p>
+                        </li>
+                    </ul>
+                    <button class="w-full mt-6 py-2 text-primary text-xs font-bold border border-primary/20 rounded-lg hover:bg-primary/5 transition-all">Show More</button>
+                </section>
+
+                <!-- Top Contributors -->
+                <section class="glass-card rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-lg font-[800] text-slate-100 mb-4 flex items-center gap-2 uppercase tracking-tight">
+                        <span class="material-symbols-outlined text-primary">award_star</span>
+                        Top Contributors
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="h-10 w-10 rounded-full bg-slate-800 overflow-hidden">
+                                     <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9RZV7bHWH3ePayDtGE4YeQBf4VgQ1eA1JfZvkF_upDVURDm1-VXQFRS58Z28fFJnNts4gScEgUG_GA8y-wA-rMqtfI5k4PWG3d47ScclbUJNgrgH168NI7u6vDsgvGYP_cQFDaWUQ5iTNM6JwLvMQHblgrbovJcjW-48YZNTwhF5YPPBoJi0IIhSIpiMfwo7xhepl59Qx6Xm3dxSfqjeSii6TmHK5Rp4YxxIztv0PAXTFoeDyhchvZkLCHspVZU2TvMMHfZTfU1s"/>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-100 leading-none text-left">Marcus Thorne</p>
+                                    <p class="text-[10px] text-primary font-bold mt-1 tracking-wider uppercase text-left">99 Trust Score</p>
+                                </div>
+                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline">Follow</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Guidelines -->
+                <section class="glass-card rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-lg font-[800] text-slate-100 mb-4 flex items-center gap-2 uppercase tracking-tight">
+                        <span class="material-symbols-outlined text-primary">gavel</span>
+                        Community Rules
+                    </h2>
+                    <ul class="text-xs text-slate-400 space-y-3">
+                        <li class="flex gap-2">
+                            <span class="text-primary font-bold">01.</span>
+                            Be respectful and professional to all community members.
+                        </li>
+                    </ul>
+                    <a class="block text-center mt-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors" href="#">View Full Guidelines</a>
+                </section>
+            </aside>
+        </div>
+    </main>
+</div>

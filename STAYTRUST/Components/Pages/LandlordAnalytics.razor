@@ -1,0 +1,247 @@
+@page "/landlord-analytics"
+@layout STAYTRUST.Components.Layout.LandlordLayout
+
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-background-dark/80 backdrop-blur-md border-b border-navy-muted">
+<div class="flex flex-col">
+<h2 class="text-2xl font-bold text-slate-100">Revenue &amp; Analytics</h2>
+<p class="text-slate-400 text-sm">Real-time performance across your portfolio</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="bg-navy-muted border-none rounded-xl pl-10 pr-4 py-2 text-sm text-slate-100 focus:ring-1 focus:ring-primary w-64" placeholder="Search data..." type="text"/>
+</div>
+<button class="p-2 bg-navy-muted rounded-xl text-slate-300 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="bg-primary text-background-dark px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-lg">download</span>
+                        Export Report
+                    </button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-8 space-y-8">
+<!-- Top KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-emerald-deep p-6 rounded-2xl border border-navy-muted">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">payments</span>
+<span class="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded">+12.5%</span>
+</div>
+<p class="text-slate-400 text-sm font-medium">Monthly Revenue</p>
+<p class="text-2xl font-bold text-slate-100">$45,280.00</p>
+</div>
+<div class="bg-emerald-deep p-6 rounded-2xl border border-navy-muted">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-blue-400 bg-blue-400/10 p-2 rounded-lg">handshake</span>
+<span class="text-slate-400 text-xs font-bold bg-navy-muted px-2 py-1 rounded">Stable</span>
+</div>
+<p class="text-slate-400 text-sm font-medium">Occupancy Rate</p>
+<p class="text-2xl font-bold text-slate-100">94.2%</p>
+</div>
+<div class="bg-emerald-deep p-6 rounded-2xl border border-navy-muted">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">trending_up</span>
+<span class="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded">+8.3%</span>
+</div>
+<p class="text-slate-400 text-sm font-medium">Net Operating Income</p>
+<p class="text-2xl font-bold text-slate-100">$32,150.00</p>
+</div>
+<div class="bg-emerald-deep p-6 rounded-2xl border border-navy-muted">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-orange-400 bg-orange-400/10 p-2 rounded-lg">receipt_long</span>
+<span class="text-orange-400 text-xs font-bold bg-orange-400/10 px-2 py-1 rounded">-2.1%</span>
+</div>
+<p class="text-slate-400 text-sm font-medium">Operating Expenses</p>
+<p class="text-2xl font-bold text-slate-100">$13,130.00</p>
+</div>
+</div>
+<!-- Main Revenue Chart -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-emerald-deep p-6 rounded-2xl border border-navy-muted">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="text-lg font-bold text-slate-100">Revenue Growth</h3>
+<p class="text-slate-400 text-sm">Year-to-date performance</p>
+</div>
+<div class="flex gap-2 bg-navy-muted p-1 rounded-lg">
+<button class="px-3 py-1 text-xs font-bold rounded-md bg-primary text-background-dark">Monthly</button>
+<button class="px-3 py-1 text-xs font-medium text-slate-400 rounded-md hover:text-white">Quarterly</button>
+</div>
+</div>
+<div class="h-64 relative">
+<!-- SVG Chart Representation -->
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 40">
+<defs>
+<linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#13ec92" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#13ec92" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+<path d="M0,35 Q10,32 20,28 T40,22 T60,25 T80,15 T100,10 L100,40 L0,40 Z" fill="url(#chartGradient)"></path>
+<path d="M0,35 Q10,32 20,28 T40,22 T60,25 T80,15 T100,10" fill="none" stroke="#13ec92" stroke-linecap="round" stroke-width="1.5"></path>
+<!-- Points -->
+<circle cx="20" cy="28" fill="#13ec92" r="1"></circle>
+<circle cx="40" cy="22" fill="#13ec92" r="1"></circle>
+<circle cx="60" cy="25" fill="#13ec92" r="1"></circle>
+<circle cx="80" cy="15" fill="#13ec92" r="1"></circle>
+<circle cx="100" cy="10" fill="#13ec92" r="1"></circle>
+</svg>
+<div class="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-slate-500 font-bold px-2 pt-4 border-t border-navy-muted/30">
+<span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span>
+</div>
+</div>
+</div>
+<!-- Occupancy Donut -->
+<div class="bg-emerald-deep p-6 rounded-2xl border border-navy-muted flex flex-col">
+<h3 class="text-lg font-bold text-slate-100 mb-1">Occupancy Distribution</h3>
+<p class="text-slate-400 text-sm mb-8">By unit category</p>
+<div class="flex-1 flex flex-col items-center justify-center gap-6">
+<div class="relative size-40">
+<svg class="size-full -rotate-90" viewBox="0 0 36 36">
+<circle cx="18" cy="18" fill="none" r="16" stroke="#1a352b" stroke-width="4"></circle>
+<circle cx="18" cy="18" fill="none" r="16" stroke="#13ec92" stroke-dasharray="85, 100" stroke-linecap="round" stroke-width="4"></circle>
+<circle cx="18" cy="18" fill="none" r="16" stroke="#0ea5e9" stroke-dasharray="25, 100" stroke-dashoffset="-85" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-black text-slate-100">94%</span>
+<span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Leased</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 w-full">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary"></div>
+<p class="text-xs text-slate-400 font-medium">Residential <span class="text-slate-100 ml-1">85%</span></p>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-blue-500"></div>
+<p class="text-xs text-slate-400 font-medium">Commercial <span class="text-slate-100 ml-1">25%</span></p>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-navy-muted"></div>
+<p class="text-xs text-slate-400 font-medium">Vacant <span class="text-slate-100 ml-1">6%</span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Top Performing Properties Table -->
+<div class="bg-emerald-deep rounded-2xl border border-navy-muted overflow-hidden">
+<div class="p-6 border-b border-navy-muted flex items-center justify-between">
+<h3 class="text-lg font-bold text-slate-100">Top Performing Properties</h3>
+<button class="text-primary text-sm font-bold hover:underline">View All Properties</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-navy-muted/30">
+<tr>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Property Name</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Location</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Occupancy</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Monthly Revenue</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Trend</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-navy-muted">
+<tr class="hover:bg-navy-muted/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-navy-muted overflow-hidden flex-shrink-0">
+<img alt="Apartment Building" class="size-full object-cover" data-alt="Modern high rise luxury apartment building exterior" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"/>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-100">Emerald Heights</p>
+<p class="text-xs text-slate-500">42 Units • Residential</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-300">Austin, TX</p>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="flex-1 bg-navy-muted h-1.5 rounded-full overflow-hidden min-w-[60px]">
+<div class="bg-primary h-full w-[98%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-300">98%</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-slate-100">$18,450</p>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="text-primary text-xs font-bold flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> 4.2%
+                                        </span>
+</td>
+</tr>
+<tr class="hover:bg-navy-muted/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-navy-muted overflow-hidden flex-shrink-0">
+<img alt="Office Building" class="size-full object-cover" data-alt="Glass facade modern corporate office building" src="https://images.unsplash.com/photo-1577412623126-5b72e0dc3d40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"/>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-100">Silicon Plaza</p>
+<p class="text-xs text-slate-500">12 Units • Commercial</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-300">Palo Alto, CA</p>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="flex-1 bg-navy-muted h-1.5 rounded-full overflow-hidden min-w-[60px]">
+<div class="bg-blue-400 h-full w-[92%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-300">92%</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-slate-100">$12,800</p>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="text-primary text-xs font-bold flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> 2.1%
+                                        </span>
+</td>
+</tr>
+<tr class="hover:bg-navy-muted/20 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-navy-muted overflow-hidden flex-shrink-0">
+<img alt="Townhouses" class="size-full object-cover" data-alt="Elegant suburban townhouses at sunset" src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"/>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-100">The Row House</p>
+<p class="text-xs text-slate-500">8 Units • Residential</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-slate-300">Denver, CO</p>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="flex-1 bg-navy-muted h-1.5 rounded-full overflow-hidden min-w-[60px]">
+<div class="bg-primary h-full w-[100%]"></div>
+</div>
+<span class="text-xs font-bold text-slate-300">100%</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-slate-100">$8,200</p>
+</td>
+<td class="px-6 py-4 text-right">
+<span class="text-slate-400 text-xs font-bold flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">horizontal_rule</span> 0%
+                                        </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>

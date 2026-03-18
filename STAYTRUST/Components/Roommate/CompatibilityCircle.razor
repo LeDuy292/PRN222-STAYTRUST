@@ -1,0 +1,24 @@
+@code {
+    [Parameter]
+    public int Percentage { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+}
+
+<div class="flex flex-col items-center gap-4">
+    <div class="relative size-32">
+        <svg class="size-full" viewBox="0 0 36 36">
+            <path class="stroke-primary/10" 
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                  fill="none" stroke-width="3"></path>
+            <path class="stroke-primary" 
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                  fill="none" stroke-dasharray="@Percentage, 100" stroke-linecap="round" stroke-width="3"></path>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-2xl font-bold text-slate-100">@Percentage%</span>
+        </div>
+    </div>
+    <p class="text-slate-400 font-medium">@Label</p>
+</div>

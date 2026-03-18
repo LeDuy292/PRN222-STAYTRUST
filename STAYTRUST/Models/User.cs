@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-namespace STAYTRUST.Models;
-
-public partial class User
+namespace STAYTRUST.Models
 {
     public int UserId { get; set; }
 
-    public string FullName { get; set; } = null!;
+        [StringLength(20)]
+        public string Role { get; set; } = "Tenant"; // Tenant, Landlord, Admin
 
     public string UserName { get; set; } = null!;
 
