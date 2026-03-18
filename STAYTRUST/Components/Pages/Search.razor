@@ -60,13 +60,13 @@
             <div class="flex items-center gap-4">
                 <AuthorizeView>
                     <Authorized>
-                        <button class="flex items-center justify-center p-2 rounded-xl bg-[#234845] text-white">
-                            <span class="material-symbols-outlined">notifications</span>
-                        </button>
-                        <div class="h-10 w-10 rounded-full border-2 border-[#13ecda] p-0.5" title="Logged in as @context.User.Identity?.Name">
-                            <div class="h-full w-full bg-cover bg-center rounded-full" data-alt="User profile portrait placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBDiGxRqKt2XazEAyudliEMJFwkicIpMu1iPEF9572d4rJWeg0VTt7ToVgV1c2WSxrP4Sc2-17v0oPcorOpqVioMSdaL2hdUNBdQHZ-3qosQrx3ZtMSY1WBcxm5KZWi3jSgkQIimBnCLmDFyienur2nTYceUQ6iWk4DtzPN24iJCg1Z0uzispmvl76qWfCMbV-q5fK85BVokMl5QhuAUK7k4zLrIhrPIJ-cNcO6gOUsI_5DrsUg9qnYbKXYoaJh6e4F7LSr8tusT7ei");'></div>
-                        </div>
-                        <button @onclick="Logout" class="text-xs text-red-400 hover:text-red-300 ml-2 font-bold uppercase tracking-widest pl-4 border-l border-[#234845]">Logout</button>
+                        @{
+                            var user = context.User;
+                            var fullName = user.FindFirst("FullName")?.Value ?? user.Identity?.Name ?? "User";
+                            var role = user.FindFirst("Role")?.Value ?? "Tenant";
+                            var initial = !string.IsNullOrEmpty(fullName) ? fullName.Substring(0, 1).ToUpper() : "U";
+                        }
+                        <UserMenu FullName="@fullName" Role="@role" Initial="@initial" IsDarkMode="true" />
                     </Authorized>
                     <NotAuthorized>
                         <a href="/login" class="px-4 py-2 bg-[#13ecda]/10 text-[#13ecda] border border-[#13ecda]/30 rounded-xl text-sm font-bold hover:bg-[#13ecda]/20 transition-all">Login</a>

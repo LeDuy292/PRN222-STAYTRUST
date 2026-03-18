@@ -10,16 +10,17 @@ namespace STAYTRUST.Services;
 
 public class RentalService : IRentalService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _factory;
 
-    public RentalService(AppDbContext context)
+    public RentalService(IDbContextFactory<AppDbContext> factory)
     {
-        _context = context;
+        _factory = factory;
     }
 
     public async Task<List<RentalContract>> GetUserRentalsAsync(int userId)
     {
-        var rentals = await _context.RentalContracts
+        using var context = await _factory.CreateDbContextAsync();
+        var rentals = await context.RentalContracts
             .Include(r => r.Room)
                 .ThenInclude(rm => rm.RoomImages)
             .Include(r => r.Room)
@@ -30,9 +31,20 @@ public class RentalService : IRentalService
         return rentals;
     }
 
+    public async Task<RentalContract?> GetRentalContractByIdAsync(int contractId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.RentalContracts
+            .Include(r => r.Tenant)
+            .Include(r => r.Room)
+                .ThenInclude(rm => rm.Landlord)
+            .FirstOrDefaultAsync(r => r.ContractId == contractId);
+    }
+
     public async Task<Room?> GetRoomByIdAsync(int roomId)
     {
-        return await _context.Rooms
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.Rooms
             .Include(r => r.RoomImages)
             .Include(r => r.Landlord) // Changed from User to Landlord
             .FirstOrDefaultAsync(r => r.RoomId == roomId);
@@ -40,7 +52,8 @@ public class RentalService : IRentalService
 
     public async Task<List<Invoice>> GetInvoicesByContractIdAsync(int contractId)
     {
-        var invoices = await _context.Invoices
+        using var context = await _factory.CreateDbContextAsync();
+        var invoices = await context.Invoices
             .Where(i => i.ContractId == contractId)
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
@@ -50,7 +63,8 @@ public class RentalService : IRentalService
 
     public async Task<List<MeterReading>> GetMeterReadingsByRoomIdAsync(int roomId)
     {
-        var readings = await _context.MeterReadings
+        using var context = await _factory.CreateDbContextAsync();
+        var readings = await context.MeterReadings
             .Where(m => m.RoomId == roomId)
             .OrderByDescending(m => m.CreatedAt)
             .ToListAsync();
@@ -60,20 +74,27 @@ public class RentalService : IRentalService
 
     public async Task<bool> HasActiveRentalAsync(int userId)
     {
-        return await _context.RentalContracts
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.RentalContracts
             .AnyAsync(r => r.TenantId == userId && r.Status == "Active");
     }
 
     public async Task<RentalContract?> CreateRentalContractAsync(int userId, int roomId)
     {
+        using var context = await _factory.CreateDbContextAsync();
+        
         // 1. Check if user already has an active rental
-        if (await HasActiveRentalAsync(userId))
+        if (await context.RentalContracts.AnyAsync(r => r.TenantId == userId && r.Status == "Active"))
         {
             return null; // Logic check failed: already has active room
         }
 
         // 2. Create the contract
-        var room = await GetRoomByIdAsync(roomId);
+        var room = await context.Rooms
+            .Include(r => r.RoomImages)
+            .Include(r => r.Landlord)
+            .FirstOrDefaultAsync(r => r.RoomId == roomId);
+
         if (room == null || room.Status == "Rented")
         {
             return null;
@@ -88,16 +109,17 @@ public class RentalService : IRentalService
             Status = "Active"
         };
 
-        _context.RentalContracts.Add(contract);
+        context.RentalContracts.Add(contract);
         room.Status = "Rented";
         
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return contract;
     }
 
     public async Task<bool> TerminateRentalContractAsync(int contractId)
     {
-        var contract = await _context.RentalContracts
+        using var context = await _factory.CreateDbContextAsync();
+        var contract = await context.RentalContracts
             .Include(r => r.Room)
             .FirstOrDefaultAsync(r => r.ContractId == contractId);
 
@@ -114,7 +136,7 @@ public class RentalService : IRentalService
             contract.Room.Status = "Available";
         }
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
@@ -122,8 +144,9 @@ public class RentalService : IRentalService
     {
         if (feedback == null) return false;
         
-        _context.Feedbacks.Add(feedback);
-        await _context.SaveChangesAsync();
+        using var context = await _factory.CreateDbContextAsync();
+        context.Feedbacks.Add(feedback);
+        await context.SaveChangesAsync();
         return true;
     }
 }

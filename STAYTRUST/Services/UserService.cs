@@ -8,23 +8,25 @@ namespace STAYTRUST.Services
 {
     public class UserService : IUserService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _factory;
 
-        public UserService(AppDbContext context)
+        public UserService(IDbContextFactory<AppDbContext> factory)
         {
-            _context = context;
+            _factory = factory;
         }
 
         public async Task<User?> GetUserWithProfileAsync(int userId)
         {
-            return await _context.Users
+            using var context = await _factory.CreateDbContextAsync();
+            return await context.Users
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
         }
 
         public async Task<bool> UpdateUserProfileAsync(int userId, string fullName, string phone, UserProfile profileUpdate)
         {
-            var user = await _context.Users
+            using var context = await _factory.CreateDbContextAsync();
+            var user = await context.Users
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
@@ -47,7 +49,7 @@ namespace STAYTRUST.Services
                     AvatarUrl = profileUpdate.AvatarUrl,
                     UpdatedAt = DateTime.Now
                 };
-                _context.UserProfiles.Add(user.UserProfile);
+                context.UserProfiles.Add(user.UserProfile);
             }
             else
             {
@@ -61,7 +63,7 @@ namespace STAYTRUST.Services
 
             try
             {
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)

@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -15,56 +16,55 @@ namespace STAYTRUST.Services
     {
         Task<bool> RegisterUserAsync(string fullName, string email, string password, string? phoneNumber, string role);
         Task<string?> AuthenticateAsync(string email, string password);
+        Task<User?> GetCurrentUserAsync();
     }
 
     public class AuthService : IAuthService
     {
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _factory;
         private readonly IConfiguration _config;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuthService(AppDbContext context, IConfiguration config)
+        public AuthService(IDbContextFactory<AppDbContext> factory, IConfiguration config, IHttpContextAccessor httpContextAccessor)
         {
-            _context = context;
+            _factory = factory;
             _config = config;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<bool> RegisterUserAsync(string fullName, string email, string password, string? phoneNumber, string role)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == email))
+            using var context = await _factory.CreateDbContextAsync();
+            if (await context.Users.AnyAsync(u => u.Email == email))
                 return false;
 
             var user = new User
             {
                 FullName = fullName,
                 Email = email,
-                UserName = email, // Use email as username for uniqueness
-                Phone = phoneNumber ?? "", // Ensure Phone is not null as per schema
+                UserName = email, 
+                Phone = phoneNumber ?? "", 
                 Password = BCrypt.Net.BCrypt.HashPassword(password),
                 Role = role,
                 Status = true,
                 CreatedAt = DateTime.Now
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
             return true;
         }
 
         public async Task<string?> AuthenticateAsync(string email, string password)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-
-            if (user == null)
-            {
-                return null;
-            }
+            using var context = await _factory.CreateDbContextAsync();
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
             {
                 return null;
             }
 
-            // Generate JWT Token
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -85,6 +85,23 @@ namespace STAYTRUST.Services
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<User?> GetCurrentUserAsync()
+        {
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Sub);
+            if (userIdClaim == null)
+            {
+                userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+            }
+
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                using var context = await _factory.CreateDbContextAsync();
+                return await context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            }
+
+            return null;
         }
     }
 }
