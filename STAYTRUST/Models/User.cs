@@ -4,20 +4,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace STAYTRUST.Models
 {
-    public int UserId { get; set; }
+    public partial class User
+    {
+        public int UserId { get; set; }
+
+        public string FullName { get; set; } = null!;
 
         [StringLength(20)]
         public string Role { get; set; } = "Tenant"; // Tenant, Landlord, Admin
 
-    public string UserName { get; set; } = null!;
+        public string UserName { get; set; } = null!;
 
-    public string Email { get; set; } = null!;
+        public string Email { get; set; } = null!;
 
-    public string Phone { get; set; } = null!;
+        public string Phone { get; set; } = null!;
 
-    public string Password { get; set; } = null!;
-
-    public string? Role { get; set; }
+        public string Password { get; set; } = null!;
 
     public bool? Status { get; set; }
 
@@ -34,4 +36,5 @@ namespace STAYTRUST.Models
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
     public virtual UserProfile? UserProfile { get; set; }
+    }
 }

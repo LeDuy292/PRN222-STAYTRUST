@@ -16,6 +16,7 @@ namespace STAYTRUST.Services
     {
         Task<bool> RegisterUserAsync(string fullName, string email, string password, string? phoneNumber, string role);
         Task<string?> AuthenticateAsync(string email, string password);
+        Task<string?> AuthenticateGoogleAsync(string email, string name);
         Task<User?> GetCurrentUserAsync();
     }
 
@@ -40,9 +41,8 @@ namespace STAYTRUST.Services
 
             var user = new User
             {
-                FullName = fullName,
+                UserName = fullName,
                 Email = email,
-                UserName = email, 
                 Phone = phoneNumber ?? "", 
                 Password = BCrypt.Net.BCrypt.HashPassword(password),
                 Role = role,
@@ -72,7 +72,51 @@ namespace STAYTRUST.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("FullName", user.FullName),
+                new Claim("FullName", user.UserName ?? ""),
+                new Claim("Role", user.Role ?? "Tenant"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _config["JwtSettings:Issuer"],
+                audience: _config["JwtSettings:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"])),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<string?> AuthenticateGoogleAsync(string email, string name)
+        {
+            using var context = await _factory.CreateDbContextAsync();
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                user = new User
+                {
+                    FullName = name ?? email,
+                    UserName = name ?? email,
+                    Email = email,
+                    Phone = "0000000000", 
+                    Password = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                    Role = "Tenant",
+                    Status = true,
+                    CreatedAt = DateTime.Now
+                };
+                context.Users.Add(user);
+                await context.SaveChangesAsync();
+            }
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]!));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("FullName", user.UserName ?? ""),
                 new Claim("Role", user.Role ?? "Tenant"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
