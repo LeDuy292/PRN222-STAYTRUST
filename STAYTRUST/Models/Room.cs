@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace STAYTRUST.Models;
@@ -32,4 +32,8 @@ public partial class Room
     public virtual ICollection<RentalContract> RentalContracts { get; set; } = new List<RentalContract>();
 
     public virtual ICollection<RoomImage> RoomImages { get; set; } = new List<RoomImage>();
+
+    public virtual ICollection<FavoriteRoom> FavoriteRooms { get; set; } = new List<FavoriteRoom>();
+
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 }

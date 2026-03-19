@@ -3,14 +3,17 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using STAYTRUST.Models
 @using STAYTRUST.Services
+@inject IRoomService RoomService
 @inject IRentalService RentalService
+@inject IFavoriteService FavoriteService
+@inject IMessageService MessageService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Staytrust Property 3D Detail View</PageTitle>
+<PageTitle>Staytrust - @(Room?.Title ?? "Property Detail")</PageTitle>
 
 <style>
-    /* Scoped font for detail page */
     @@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
     .detail-page-container {
@@ -24,22 +27,10 @@
     .glow-button {
         box-shadow: 0 0 15px rgba(19, 236, 218, 0.3);
     }
-    .detail-page-container ::-webkit-scrollbar {
-        width: 8px;
-    }
-    .detail-page-container ::-webkit-scrollbar-track {
-        background: #102220;
-    }
-    .detail-page-container ::-webkit-scrollbar-thumb {
-        background: #234845;
-        border-radius: 10px;
-    }
-    
-    /* Optional: Ensure map container is absolute to hide main layout scrolling if we want fullscreen detail view */
-    /* Alternatively, this detail page can live inside the layout without absolute positioning */
-    .detail-view-wrapper {
-        background-color: #102220;
-    }
+    .detail-page-container ::-webkit-scrollbar { width: 8px; }
+    .detail-page-container ::-webkit-scrollbar-track { background: #102220; }
+    .detail-page-container ::-webkit-scrollbar-thumb { background: #234845; border-radius: 10px; }
+    .detail-view-wrapper { background-color: #102220; }
 </style>
 
 <div class="detail-page-container detail-view-wrapper text-white relative flex min-h-screen flex-col overflow-x-hidden absolute top-0 left-0 w-screen z-[100]">
@@ -47,22 +38,20 @@
     <header class="sticky top-0 z-50 w-full border-b border-white/10 bg-[#102220]/80 backdrop-blur-md px-6 lg:px-20 py-4">
         <div class="mx-auto flex max-w-7xl items-center justify-between">
             <div class="flex items-center gap-8">
-                <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-3">
                     <div class="text-[#13ecda]">
                         <svg class="h-8 w-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                             <path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold tracking-tight">Staytrust</h2>
-                </div>
+                </a>
                 <div class="hidden md:flex items-center gap-6">
-                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="#">Properties</a>
-                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="#">Rentals</a>
-                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="#">AI Match</a>
+                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="/search">Search</a>
+                    <a class="text-sm font-medium hover:text-[#13ecda] transition-colors" href="/my-rentals">My Rentals</a>
                 </div>
             </div>
             <div class="flex items-center gap-6">
-                <button class="hidden sm:block rounded-xl bg-[#13ecda] px-5 py-2 text-sm font-bold text-[#102220] hover:opacity-90 transition-all">List Property</button>
                 <AuthorizeView>
                     <Authorized>
                         @{
@@ -82,267 +71,324 @@
         </div>
     </header>
     <main class="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 lg:px-20 py-6">
-        <!-- Breadcrumbs -->
-        <nav class="flex items-center gap-2 pb-6 text-sm">
-            <a class="text-[#13ecda]/70 hover:text-[#13ecda] transition-colors" href="#">Da Nang</a>
-            <span class="text-white/30 material-symbols-outlined text-sm">chevron_right</span>
-            <a class="text-[#13ecda]/70 hover:text-[#13ecda] transition-colors" href="#">Son Tra</a>
-            <span class="text-white/30 material-symbols-outlined text-sm">chevron_right</span>
-            <span class="text-white font-medium">Azure Ocean Suite</span>
-        </nav>
-        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <!-- Main Content Left (2/3) -->
-            <div class="lg:col-span-2 space-y-8">
-                <!-- 3D Virtual Tour Viewer -->
-                <section class="group relative overflow-hidden rounded-3xl bg-black aspect-video shadow-2xl">
-                    <div class="absolute inset-0 bg-cover bg-center opacity-80" data-alt="360 degree immersive virtual tour of modern apartment" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBpICKGfnG96hq-qTgStwhoWWPdvse_PIrY8IvbEbhfUTfE67PgdfSvFhH9Hi_Cw1FoVIyEtKyL9AyT7Ml5TDIU0sbF5AQrmXr2As5F3oZ34obxkCL9loXk0kIb1Te85aKPAf3K0mBwa1bA5SuaLit4VigrbbLj6_ruFgHTsWsG9u4H3TE-Rj6MruVqbaCm7GfdYYDYeCdACedbGb4gx8mi_X0TUaK2nO1hORlc3peWzM_4zg5ts5Eb6wbaP3ORNGZhChMzF6U9k0HN");'></div>
-                    <!-- HUD Overlay -->
-                    <div class="absolute inset-0 flex flex-col justify-between p-6">
-                        <div class="flex justify-between items-start">
-                            <div class="rounded-full bg-black/40 backdrop-blur-md px-4 py-2 border border-white/10 flex items-center gap-2">
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#13ecda] opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-[#13ecda]"></span>
-                                </span>
-                                <span class="text-xs font-bold uppercase tracking-widest text-white">Live 3D View</span>
+        @if (Room == null)
+        {
+            <div class="flex items-center justify-center h-64">
+                <div class="text-center">
+                    <div class="w-8 h-8 border-2 border-[#13ecda]/30 border-t-[#13ecda] rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-[#92c9c5] text-sm">Loading property...</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Breadcrumbs -->
+            <nav class="flex items-center gap-2 pb-6 text-sm">
+                <a class="text-[#13ecda]/70 hover:text-[#13ecda] transition-colors" href="/search">Search</a>
+                <span class="text-white/30 material-symbols-outlined text-sm">chevron_right</span>
+                <span class="text-white font-medium">@Room.Title</span>
+            </nav>
+            <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <!-- Main Content Left (2/3) -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Hero Image -->
+                    <section class="group relative overflow-hidden rounded-3xl bg-black aspect-video shadow-2xl">
+                        @{
+                            var heroImage = Room.RoomImages?.FirstOrDefault()?.ImageUrl;
+                        }
+                        @if (!string.IsNullOrEmpty(heroImage))
+                        {
+                            <div class="absolute inset-0 bg-cover bg-center opacity-80" style="background-image: url('@heroImage');"></div>
+                        }
+                        else
+                        {
+                            <div class="absolute inset-0 bg-[#193331] flex items-center justify-center">
+                                <span class="material-symbols-outlined text-6xl text-[#92c9c5]">apartment</span>
                             </div>
-                            <div class="flex gap-2">
-                                <button class="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-[#13ecda] hover:text-[#102220] transition-all">
-                                    <span class="material-symbols-outlined">fullscreen</span>
-                                </button>
-                                <button class="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-[#13ecda] hover:text-[#102220] transition-all">
-                                    <span class="material-symbols-outlined">share</span>
+                        }
+                        <div class="absolute inset-0 flex flex-col justify-between p-6">
+                            <div class="flex justify-between items-start">
+                                <div class="rounded-full bg-black/40 backdrop-blur-md px-4 py-2 border border-white/10 flex items-center gap-2">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#13ecda] opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-[#13ecda]"></span>
+                                    </span>
+                                    <span class="text-xs font-bold uppercase tracking-widest text-white">@Room.Status</span>
+                                </div>
+                                <button @onclick="ToggleFavorite" class="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-red-500/20 transition-all">
+                                    <span class="material-symbols-outlined @(isFavorite ? "text-red-500" : "text-white")">@(isFavorite ? "favorite" : "favorite_border")</span>
                                 </button>
                             </div>
-                        </div>
-                        <div class="flex justify-center items-center gap-6 pb-4">
-                            <div class="flex flex-col items-center gap-2">
-                                <button class="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white hover:scale-105 transition-transform">
-                                    <span class="material-symbols-outlined text-4xl">view_in_ar</span>
-                                </button>
-                                <p class="text-[10px] font-bold uppercase tracking-tighter">Enter AR</p>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-end">
-                            <div class="flex flex-col gap-1">
-                                <h1 class="text-3xl font-bold">@(Room?.Title ?? "Loading property...")</h1>
-                                <div class="flex items-center gap-2 text-[#13ecda]">
-                                    <span class="material-symbols-outlined text-sm">location_on</span>
-                                    <span class="text-sm">@(Room?.Address ?? "Loading location...")</span>
+                            <div class="flex justify-between items-end">
+                                <div class="flex flex-col gap-1">
+                                    <h1 class="text-3xl font-bold">@Room.Title</h1>
+                                    <div class="flex items-center gap-2 text-[#13ecda]">
+                                        <span class="material-symbols-outlined text-sm">location_on</span>
+                                        <span class="text-sm">@Room.Address</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3 bg-black/40 backdrop-blur-md p-2 rounded-xl border border-white/10">
-                                <button class="p-1 hover:text-[#13ecda]"><span class="material-symbols-outlined">zoom_in</span></button>
-                                <div class="w-px h-4 bg-white/20"></div>
-                                <button class="p-1 hover:text-[#13ecda]"><span class="material-symbols-outlined">zoom_out</span></button>
-                                <div class="w-px h-4 bg-white/20"></div>
-                                <button class="p-1 hover:text-[#13ecda]"><span class="material-symbols-outlined">360</span></button>
-                            </div>
                         </div>
-                    </div>
-                </section>
-                <!-- 3D Room Models Grid -->
-                <section class="space-y-4">
-                    <div class="flex items-center justify-between px-2">
-                        <h3 class="text-lg font-bold">Explore Room Models</h3>
-                        <button class="text-[#13ecda] text-sm font-medium hover:underline">View All</button>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
-                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="3D Floor Plan Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCRmSdGaTCS7t5uSaKXLaInI5LOaPIFLKMb5_cKXKjL0tJ2Y6qPlMlklBxZin2SXW4ofce9wIypbU3nQdi2EP7NbqDPwb0YGpkGosJu6q3KORAkYWOGFJEae6vTeoezoGKf874tRk3A_U62FCO_rwDUvM8UQuL_Rwq9WpF7S-GKBUFlAZOAHkWywCAS1-HUJHuqZPF-rHlZUAcbeRs3HA4PGP9_Ib-NnKl8Xjidl7GaZ4AXj2rNOa-EoY13FPrrGLPZ3mtl1xDuUE1H");'></div>
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
-                            <p class="absolute bottom-3 left-3 text-sm font-bold">Floor Plan</p>
-                        </div>
-                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
-                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Master Bedroom 3D Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDKKgX0FaQTxwyfDourmRQcEEoMxYoIx-aWGxY98fbrPYXqFwr4qwuYT1YNp1G-P2mNC0xc7kpySr6IhLPBRNC5errGzs-AHm31Xd0rLXWN-1-KENWfDN1Rb3epdUNPkwyL8HTPLSkStST9Wndb-jnmyUaLAI2rnl3lhgRQynRSk6Jb_vWIPgyInAgF3HW755UdAgmrEFxDG8U6KGz3EQ5LwBNxEptkVtHX8hAgVLgyibvE5DLNZCl7T-L887cuFhWsftDKJcp0gJzJ");'></div>
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
-                            <p class="absolute bottom-3 left-3 text-sm font-bold">Master Bed</p>
-                        </div>
-                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
-                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Modern Kitchen 3D Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuChLtUMPRN4G2S47Nq-RcoV_KnRmpKkkphkNpwAxk7gCk1GEOisMpoUaT9YIemL7X9tLSgulFbQwNlLrSigOr9TNohoxO8mJI7GXgn9a27x44nqyFbL3ZiGhREz3hB1ZDm82_dVZzc-hA0e-bMLVJCaYAzhN9YPwH3WAjpTf2lFGOVK-0TwSQBCcVMea-c1ujoZyfYszpR4ybnpIFMR1QLzb3PAmUdL6nvwR7c5iw_AaQ1G-Siu9nkAWQjzzPTukF4YWyTAJiHOZol4");'></div>
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
-                            <p class="absolute bottom-3 left-3 text-sm font-bold">Kitchen</p>
-                        </div>
-                        <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
-                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Living Area 3D Model" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDYIfynKfn_2R83QWG1UBoRubuVVfXI-1OPXl6VJZ2479EscRqR1qCs3tvk-ghtYYGrSwruP8dC8-qKg5V7nKrBjiDvxQ5VliAZl75f9VOBPLx4iVoySBAA0XxkU7zEEdP_Ck5WQX9ZTMjUBnDot9dpq-gf3HQ6xo98x5qqlhqJR7gnHnWmGSvjJcRwOvvnZZXfr_esD8vH6WdC60wSPINiisdDgwumejqke9w4zskj8HC8wsML7Glh1AWLZJE9G1a2vhXf3hysNHf9");'></div>
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#102220] to-transparent opacity-60"></div>
-                            <p class="absolute bottom-3 left-3 text-sm font-bold">Living Room</p>
-                        </div>
-                    </div>
-                </section>
-                <!-- Amenities Grid -->
-                <section class="rounded-3xl bg-[#193331]/30 p-8 border border-white/5">
-                    <div class="flex items-center gap-3 mb-6">
-                        <h3 class="text-xl font-bold">AI-Verified Amenities</h3>
-                        <span class="rounded-full bg-[#13ecda]/10 px-3 py-1 text-[10px] font-bold text-[#13ecda] border border-[#13ecda]/20 uppercase">Trust Score: 98%</span>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
-                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">wifi</span>
-                            <span class="text-sm font-medium">Gigabit Fiber</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
-                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">pool</span>
-                            <span class="text-sm font-medium">Infinity Pool</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
-                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">home_iot_device</span>
-                            <span class="text-sm font-medium">Smart Access</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center transition-colors hover:bg-white/10">
-                            <span class="material-symbols-outlined text-[#13ecda] text-3xl">fitness_center</span>
-                            <span class="text-sm font-medium">Private Gym</span>
-                        </div>
-                    </div>
-                </section>
-                <!-- House Rules -->
-                <section class="space-y-4">
-                    <h3 class="text-xl font-bold px-2">House Rules</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
-                            <span class="material-symbols-outlined text-[#13ecda]/60">smoke_free</span>
-                            <p class="text-sm">No smoking inside the apartment</p>
-                        </div>
-                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
-                            <span class="material-symbols-outlined text-[#13ecda]/60">pets</span>
-                            <p class="text-sm">Small pets allowed (deposit required)</p>
-                        </div>
-                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
-                            <span class="material-symbols-outlined text-[#13ecda]/60">schedule</span>
-                            <p class="text-sm">Check-in: After 2:00 PM</p>
-                        </div>
-                        <div class="flex items-center gap-4 rounded-2xl bg-[#193331]/30 p-4 border border-white/5">
-                            <span class="material-symbols-outlined text-[#13ecda]/60">groups</span>
-                            <p class="text-sm">Maximum 4 guests per stay</p>
-                        </div>
-                    </div>
-                </section>
-            </div>
-            <!-- Sidebar Right (1/3) -->
-            <div class="space-y-8">
-                <!-- Floating Booking Card -->
-                <div class="sticky top-28 glass-card rounded-3xl p-6 shadow-2xl">
-                    <div class="mb-6 flex items-end justify-between">
-                        <div>
-                            <p class="text-xs font-bold uppercase tracking-widest text-[#13ecda]">Monthly Rent</p>
-                            <h2 class="text-4xl font-bold">$450 <span class="text-lg font-normal text-white/50">/mo</span></h2>
-                        </div>
-                        <div class="flex items-center gap-1 rounded-lg bg-[#13ecda]/20 px-2 py-1 text-xs font-bold text-[#13ecda]">
-                            <span class="material-symbols-outlined text-xs">verified</span>
-                            PRICE LOCK
-                        </div>
-                    </div>
-                    <div class="space-y-4 pb-6 border-b border-white/10">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-white/60">Security Deposit</span>
-                            <span class="font-bold">$450</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-white/60">Utility Fee (Est.)</span>
-                            <span class="font-bold">$30/mo</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-white/60">Staytrust Fee</span>
-                            <span class="font-bold text-[#13ecda]">Included</span>
-                        </div>
-                    </div>
-                    <div class="py-6 space-y-4">
-                        <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Move-in Date</label>
-                            <div class="flex items-center justify-between rounded-xl bg-black/30 p-3 border border-white/5">
-                                <span class="text-sm">October 15, 2023</span>
-                                <span class="material-symbols-outlined text-[#13ecda]">calendar_month</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button @onclick="HandleBooking" disabled="@isBooking" class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                        @(isBooking ? "Processing..." : "Instant Book Now")
-                    </button>
-                    @if (!string.IsNullOrEmpty(bookingMessage))
+                    </section>
+                    <!-- Room Images Gallery -->
+                    @if (Room.RoomImages?.Count > 1)
                     {
-                        <p class="mt-4 text-center text-sm @(bookingSuccess ? "text-emerald-400" : "text-red-400") font-medium">@bookingMessage</p>
+                        <section class="space-y-4">
+                            <h3 class="text-lg font-bold px-2">Room Gallery</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                @foreach (var img in Room.RoomImages.Skip(1))
+                                {
+                                    <div class="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-[#193331] border border-white/5 hover:border-[#13ecda]/50 transition-all">
+                                        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('@img.ImageUrl');"></div>
+                                    </div>
+                                }
+                            </div>
+                        </section>
                     }
-                    <p class="mt-4 text-center text-[10px] text-white/40 font-medium">Free cancellation within 48 hours</p>
-                </div>
-                <!-- Landlord Trust Profile -->
-                <div class="rounded-3xl bg-[#193331]/30 p-6 border border-white/5">
-                    <h3 class="text-sm font-bold uppercase tracking-widest text-white/40 mb-4">Verified Host</h3>
-                    <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <div class="h-16 w-16 rounded-full bg-cover bg-center border-2 border-[#13ecda]" data-alt="Landlord profile photo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA0gOa-lmoV0ezcxjAYn4BTLar7xFOIFRg9cfUA4VXNl7qL6hewrqo42__t-s1dO8DXOdX43JbKVNtIA0S1ECtjR5bYzRoNreOrUehQEFPnjCXUUs8UKzm6s_u3eAXa9k8ePSRsGW6Xcsna4scEKZISaQbt-AbixQj4_vkvCakYJlPCmuYb9sKbWh2hnq7NrZB0theLodclqKh7fSxjxN7ROcknS9IUSyPeVkP4gGyiVwrdQ6ys0TZTlHZlyuCvu824FCqfDsxraHrO");'></div>
-                            <div class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#13ecda] text-[#102220]">
-                                <span class="material-symbols-outlined text-xs font-bold">check</span>
+                    <!-- Description -->
+                    @if (!string.IsNullOrEmpty(Room.Description))
+                    {
+                        <section class="rounded-3xl bg-[#193331]/30 p-8 border border-white/5">
+                            <h3 class="text-xl font-bold mb-4">About this property</h3>
+                            <p class="text-[#92c9c5] leading-relaxed">@Room.Description</p>
+                        </section>
+                    }
+                    <!-- Room Info -->
+                    <section class="rounded-3xl bg-[#193331]/30 p-8 border border-white/5">
+                        <h3 class="text-xl font-bold mb-6">Room Details</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center">
+                                <span class="material-symbols-outlined text-[#13ecda] text-3xl">square_foot</span>
+                                <span class="text-sm font-medium">@(Room.Area?.ToString("F0") ?? "N/A") m²</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center">
+                                <span class="material-symbols-outlined text-[#13ecda] text-3xl">payments</span>
+                                <span class="text-sm font-medium">@Room.Price.ToString("N0") ₫</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center">
+                                <span class="material-symbols-outlined text-[#13ecda] text-3xl">circle</span>
+                                <span class="text-sm font-medium">@Room.Status</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 text-center">
+                                <span class="material-symbols-outlined text-[#13ecda] text-3xl">calendar_month</span>
+                                <span class="text-sm font-medium">@(Room.CreatedAt?.ToString("dd/MM/yyyy") ?? "N/A")</span>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="text-lg font-bold">Leila Nguyen</h4>
-                            <div class="flex items-center gap-1 text-sm text-[#13ecda]">
-                                <span class="material-symbols-outlined text-xs fill-1">star</span>
-                                <span class="font-bold">4.98</span>
-                                <span class="text-white/50 font-normal ml-1">(124 reviews)</span>
+                    </section>
+                    <!-- Reviews Section -->
+                    <section class="space-y-6">
+                        <div class="flex items-center justify-between px-2">
+                            <h3 class="text-xl font-bold">Reviews (@(Room.Feedbacks?.Count ?? 0))</h3>
+                            @if (Room.Feedbacks?.Any() == true)
+                            {
+                                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#13ecda]/10 border border-[#13ecda]/20">
+                                    <span class="material-symbols-outlined text-[#13ecda] text-sm">star</span>
+                                    <span class="text-sm font-bold text-[#13ecda]">@Room.Feedbacks.Average(f => f.Rating).ToString("F1")</span>
+                                </div>
+                            }
+                        </div>
+
+                        @if (Room.Feedbacks?.Any() == true)
+                        {
+                            @foreach (var fb in Room.Feedbacks.OrderByDescending(f => f.CreatedAt))
+                            {
+                                <div class="glass-card rounded-2xl p-6">
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="h-10 w-10 rounded-full bg-[#13ecda]/20 flex items-center justify-center text-[#13ecda] font-bold">
+                                            @(fb.User?.FullName?.Substring(0, 1).ToUpper() ?? "U")
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-sm">@(fb.User?.FullName ?? "Anonymous")</p>
+                                            <p class="text-[10px] text-[#92c9c5]">@(fb.CreatedAt?.ToString("dd/MM/yyyy") ?? "")</p>
+                                        </div>
+                                        <div class="ml-auto flex gap-0.5">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <span class="material-symbols-outlined text-sm @(i <= fb.Rating ? "text-yellow-400" : "text-white/20")">star</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(fb.Comment))
+                                    {
+                                        <p class="text-sm text-[#92c9c5]">@fb.Comment</p>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-[#92c9c5] text-sm px-2">No reviews yet for this property.</p>
+                        }
+
+                        <!-- Add Review Form -->
+                        <div class="glass-card rounded-2xl p-6 space-y-4">
+                            <h4 class="text-sm font-bold uppercase tracking-widest text-[#13ecda]">Leave a Review</h4>
+                            <div class="flex gap-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    int rating = i;
+                                    <button @onclick="() => newRating = rating" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all @(newRating >= rating ? "bg-yellow-400/20 border-yellow-400 text-yellow-400" : "bg-white/5 border-white/10 text-white/30 hover:border-yellow-400/50")">
+                                        <span class="material-symbols-outlined">star</span>
+                                    </button>
+                                }
+                            </div>
+                            <textarea @bind="newComment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[100px] focus:border-[#13ecda]/50 focus:ring-0 transition-all text-white text-sm" placeholder="Share your experience..."></textarea>
+                            <button @onclick="SubmitReview" disabled="@isSubmittingReview" class="px-6 py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm hover:bg-[#10d4c4] transition-all disabled:opacity-50">
+                                @(isSubmittingReview ? "Submitting..." : "Submit Review")
+                            </button>
+                        </div>
+                    </section>
+                </div>
+                <!-- Sidebar Right (1/3) -->
+                <div class="space-y-8">
+                    <!-- Booking Card -->
+                    <div class="sticky top-28 glass-card rounded-3xl p-6 shadow-2xl">
+                        <div class="mb-6 flex items-end justify-between">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-widest text-[#13ecda]">Monthly Rent</p>
+                                <h2 class="text-4xl font-bold">@Room.Price.ToString("N0") <span class="text-lg font-normal text-white/50">₫/mo</span></h2>
                             </div>
                         </div>
+                        <div class="space-y-4 pb-6 border-b border-white/10">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-white/60">Security Deposit</span>
+                                <span class="font-bold">@Room.Price.ToString("N0") ₫</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-white/60">Area</span>
+                                <span class="font-bold">@(Room.Area?.ToString("F0") ?? "N/A") m²</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-white/60">Status</span>
+                                <span class="font-bold text-[#13ecda]">@Room.Status</span>
+                            </div>
+                        </div>
+                        <div class="py-6">
+                            <button @onclick="HandleBooking" disabled="@isBooking" class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                @(isBooking ? "Processing..." : "Instant Book Now")
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(bookingMessage))
+                        {
+                            <p class="mt-2 text-center text-sm @(bookingSuccess ? "text-emerald-400" : "text-red-400") font-medium">@bookingMessage</p>
+                        }
+                        <p class="mt-4 text-center text-[10px] text-white/40 font-medium">Free cancellation within 48 hours</p>
                     </div>
-                    <div class="mt-6 space-y-3">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-white/60">Trust Score</span>
-                            <span class="font-bold text-[#13ecda]">High</span>
+                    <!-- Landlord Profile -->
+                    <div class="rounded-3xl bg-[#193331]/30 p-6 border border-white/5">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-white/40 mb-4">Property Owner</h3>
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <div class="h-16 w-16 rounded-full bg-[#13ecda]/20 flex items-center justify-center text-[#13ecda] text-2xl font-bold">
+                                    @(Room.Landlord?.FullName?.Substring(0, 1).ToUpper() ?? "L")
+                                </div>
+                                <div class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#13ecda] text-[#102220]">
+                                    <span class="material-symbols-outlined text-xs font-bold">check</span>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold">@(Room.Landlord?.FullName ?? "Owner")</h4>
+                                <p class="text-xs text-[#92c9c5]">@(Room.Landlord?.Email ?? "")</p>
+                            </div>
                         </div>
-                        <div class="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                            <div class="h-full w-[94%] bg-[#13ecda]"></div>
-                        </div>
-                    </div>
-                    <button class="mt-6 w-full rounded-xl border border-white/10 py-3 text-sm font-medium hover:bg-white/5 transition-colors">
-                        Contact Host
-                    </button>
-                </div>
-                <!-- Location Preview Card -->
-                <div class="overflow-hidden rounded-3xl bg-[#193331]/30 border border-white/5">
-                    <div class="h-32 w-full bg-cover bg-center grayscale contrast-125 opacity-70" data-alt="Map of Son Tra Da Nang" data-location="Da Nang" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBaqM5lI3_qGZMJPg9KHNDRpm0UqJP2SYs0RBeIeZLRSo7aW73hlp4sRSxz7BDtv_QTMlQJDTahlbi1qRmL94uXoUn1I0yiwDZh2Mt1mphQOXX7i20MruPVs3DCQ7maTHTuKQJ15iJomXckQqKEHU8guY9DCUWj4fOtmHWJyLooAy3aoOFE1iKd9Nwn6vw7ZHY9MyEU6y9wywEBADK90ECSWdtbk8l_RRIkPYSa0OdaO4_ULxwC2MalP3728NoMee7w9B6LLm-9p90U");'></div>
-                    <div class="p-6">
-                        <h4 class="font-bold">Neighborhood</h4>
-                        <p class="mt-1 text-xs text-white/50 leading-relaxed">Located in the vibrant Son Tra district, just 2 minutes walk from My Khe Beach. Close to seafood markets and high-end cafes.</p>
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <span class="rounded-full bg-white/5 px-3 py-1 text-[10px] border border-white/5">Beach: 200m</span>
-                            <span class="rounded-full bg-white/5 px-3 py-1 text-[10px] border border-white/5">Market: 500m</span>
-                            <span class="rounded-full bg-white/5 px-3 py-1 text-[10px] border border-white/5">Airport: 15min</span>
-                        </div>
+                        <!-- Contact Host Button -->
+                        <button @onclick="OpenMessageModal" class="mt-6 w-full rounded-xl border border-white/10 py-3 text-sm font-medium hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">chat</span>
+                            Contact Host
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
+        }
     </main>
-    <!-- Footer -->
     <footer class="mt-20 border-t border-white/10 py-12 px-6 lg:px-20 text-white/40">
         <div class="mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-8">
             <div class="flex items-center gap-2">
                 <span class="text-[#13ecda] font-bold">Staytrust</span>
-                <span>© 2023. All rights reserved.</span>
-            </div>
-            <div class="flex gap-8 text-sm font-medium">
-                <a class="hover:text-[#13ecda] transition-colors" href="#">Privacy</a>
-                <a class="hover:text-[#13ecda] transition-colors" href="#">Terms</a>
-                <a class="hover:text-[#13ecda] transition-colors" href="#">Support</a>
-                <a class="hover:text-[#13ecda] transition-colors" href="#">Safety</a>
+                <span>© 2024. All rights reserved.</span>
             </div>
         </div>
     </footer>
 </div>
 
+<!-- Message Modal -->
+@if (showMessageModal)
+{
+    <div class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+        <div class="glass-card w-full max-w-lg rounded-3xl p-8 border border-white/10 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold">Message to @(Room?.Landlord?.FullName ?? "Owner")</h3>
+                <button @onclick="CloseMessageModal" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Previous messages -->
+            @if (conversationMessages?.Any() == true)
+            {
+                <div class="max-h-64 overflow-y-auto space-y-3 mb-4 pr-2">
+                    @foreach (var msg in conversationMessages)
+                    {
+                        var isMe = msg.SenderId == currentUserId;
+                        <div class="flex @(isMe ? "justify-end" : "justify-start")">
+                            <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm @(isMe ? "bg-[#13ecda] text-[#102220]" : "bg-white/10 text-white")">
+                                <p>@msg.Content</p>
+                                <p class="text-[10px] mt-1 @(isMe ? "text-[#102220]/60" : "text-white/40")">@(msg.CreatedAt?.ToString("HH:mm dd/MM") ?? "")</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <textarea @bind="messageContent" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[100px] focus:border-[#13ecda]/50 focus:ring-0 transition-all text-white text-sm mb-4" placeholder="Write your message..."></textarea>
+            <button @onclick="SendMessage" disabled="@isSendingMessage" class="w-full py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm hover:bg-[#10d4c4] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">send</span>
+                @(isSendingMessage ? "Sending..." : "Send Message")
+            </button>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public int RoomId { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
     private Room? Room { get; set; }
     private string? bookingMessage;
     private bool bookingSuccess;
     private bool isBooking;
+    private bool isFavorite;
+    private int? currentUserId;
+
+    // Review
+    private int newRating = 5;
+    private string newComment = "";
+    private bool isSubmittingReview;
+
+    // Messaging
+    private bool showMessageModal;
+    private string messageContent = "";
+    private bool isSendingMessage;
+    private List<Message>? conversationMessages;
 
     protected override async Task OnInitializedAsync()
     {
-        Room = await RentalService.GetRoomByIdAsync(RoomId);
-        if (Room == null)
+        Room = await RoomService.GetRoomDetailWithFeedbacksAsync(RoomId);
+
+        if (AuthStateTask != null)
         {
-            // Fallback or redirect if room not found
-            // NavigationManager.NavigateTo("/");
+            var authState = await AuthStateTask;
+            var user = authState.User;
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                              ?? user.FindFirst("sub")?.Value;
+                if (int.TryParse(userIdStr, out var uid))
+                {
+                    currentUserId = uid;
+                    isFavorite = await FavoriteService.IsFavoriteAsync(uid, RoomId);
+                }
+            }
         }
     }
 
@@ -360,9 +406,9 @@
             return;
         }
 
-        var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+        var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                         ?? user.FindFirst("sub")?.Value;
-        
+
         if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
         {
             bookingMessage = "Không thể xác định thông tin người dùng.";
@@ -370,7 +416,6 @@
             return;
         }
 
-        // The core logic check requested by the user
         if (await RentalService.HasActiveRentalAsync(userId))
         {
             bookingMessage = "Bạn hiện đang thuê một phòng khác. Vui lòng trả phòng trước khi thuê phòng mới.";
@@ -394,9 +439,76 @@
         isBooking = false;
     }
 
-    private async Task Logout()
+    private async Task ToggleFavorite()
     {
-        // This was using HttpClient, but we can just navigate to a logout endpoint if it exists or use AuthService
-        NavigationManager.NavigateTo("/login", true);
+        if (currentUserId == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        var added = await FavoriteService.ToggleFavoriteAsync(currentUserId.Value, RoomId);
+        isFavorite = added;
+    }
+
+    private async Task SubmitReview()
+    {
+        if (currentUserId == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        isSubmittingReview = true;
+        var feedback = new Feedback
+        {
+            RoomId = RoomId,
+            UserId = currentUserId.Value,
+            Rating = newRating,
+            Comment = newComment,
+            CreatedAt = DateTime.Now
+        };
+
+        var success = await RentalService.SubmitFeedbackAsync(feedback);
+        if (success)
+        {
+            // Reload room to show new review
+            Room = await RoomService.GetRoomDetailWithFeedbacksAsync(RoomId);
+            newComment = "";
+            newRating = 5;
+            await JSRuntime.InvokeVoidAsync("alert", "Cảm ơn bạn đã gửi đánh giá!");
+        }
+        isSubmittingReview = false;
+    }
+
+    private async Task OpenMessageModal()
+    {
+        if (currentUserId == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        if (Room?.LandlordId > 0)
+        {
+            conversationMessages = await MessageService.GetConversationAsync(currentUserId.Value, Room.LandlordId, RoomId);
+        }
+        showMessageModal = true;
+    }
+
+    private void CloseMessageModal()
+    {
+        showMessageModal = false;
+        messageContent = "";
+    }
+
+    private async Task SendMessage()
+    {
+        if (currentUserId == null || Room == null || string.IsNullOrWhiteSpace(messageContent)) return;
+
+        isSendingMessage = true;
+        await MessageService.SendMessageAsync(currentUserId.Value, Room.LandlordId, RoomId, messageContent);
+        conversationMessages = await MessageService.GetConversationAsync(currentUserId.Value, Room.LandlordId, RoomId);
+        messageContent = "";
+        isSendingMessage = false;
     }
 }
