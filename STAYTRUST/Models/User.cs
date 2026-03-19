@@ -35,6 +35,12 @@ namespace STAYTRUST.Models
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
+    public virtual ICollection<FavoriteRoom> FavoriteRooms { get; set; } = new List<FavoriteRoom>();
+
+    public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
+
+    public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
+
     public virtual UserProfile? UserProfile { get; set; }
     }
 }

@@ -40,6 +40,10 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
+    public virtual DbSet<FavoriteRoom> FavoriteRooms { get; set; }
+
+    public virtual DbSet<Message> Messages { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -270,6 +274,47 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey<UserProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Profile_User");
+        });
+
+        modelBuilder.Entity<FavoriteRoom>(entity =>
+        {
+            entity.HasKey(e => e.FavoriteId);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasIndex(e => new { e.UserId, e.RoomId }).IsUnique();
+
+            entity.HasOne(d => d.User).WithMany(p => p.FavoriteRooms)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.Room).WithMany(p => p.FavoriteRooms)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.SentMessages)
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(d => d.Receiver).WithMany(p => p.ReceivedMessages)
+                .HasForeignKey(d => d.ReceiverId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(d => d.Room).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);
