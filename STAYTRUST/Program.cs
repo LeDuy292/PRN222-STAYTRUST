@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using System.Text;
 
 using STAYTRUST.Components;
@@ -71,6 +73,13 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
+})
+.AddCookie()
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "placeholder";
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "placeholder";
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 });
 
 // Add HttpContextAccessor and custom Authentication state provider for Blazor

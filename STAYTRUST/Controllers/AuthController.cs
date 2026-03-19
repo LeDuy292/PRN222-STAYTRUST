@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using STAYTRUST.Services;
+using System.Security.Claims;
 
 namespace STAYTRUST.Controllers
 {
@@ -21,6 +25,44 @@ namespace STAYTRUST.Controllers
         public IActionResult GetCaptcha()
         {
             return Ok(new { message = "Use Google reCAPTCHA v2" });
+        }
+
+        [HttpGet("login-google")]
+        public IActionResult LoginGoogle(string returnUrl = "/")
+        {
+            var properties = new AuthenticationProperties { RedirectUri = $"/api/auth/google-callback?returnUrl={returnUrl}" };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback(string returnUrl = "/")
+        {
+            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+                return Redirect("/login?error=google_failed");
+
+            var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+            var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrEmpty(email))
+                return Redirect("/login?error=no_email");
+
+            var token = await _authService.AuthenticateGoogleAsync(email, name ?? email);
+            
+            if (token == null)
+            {
+                return Redirect("/login?error=invalid");
+            }
+
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddMinutes(1440)
+            });
+
+            return Redirect(returnUrl ?? "/");
         }
 
         [HttpPost("login")]

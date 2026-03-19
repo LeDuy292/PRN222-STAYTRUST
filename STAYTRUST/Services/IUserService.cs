@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using STAYTRUST.Models;
 
 namespace STAYTRUST.Services
@@ -7,5 +8,6 @@ namespace STAYTRUST.Services
     {
         Task<User?> GetUserWithProfileAsync(int userId);
         Task<bool> UpdateUserProfileAsync(int userId, string fullName, string phone, UserProfile profileUpdate);
+        Task<List<User>> GetPotentialRoommatesAsync();
     }
 }

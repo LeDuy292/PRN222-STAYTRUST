@@ -23,6 +23,15 @@ namespace STAYTRUST.Services
                 .FirstOrDefaultAsync(u => u.UserId == userId);
         }
 
+        public async Task<List<User>> GetPotentialRoommatesAsync()
+        {
+            using var context = await _factory.CreateDbContextAsync();
+            return await context.Users
+                .Include(u => u.UserProfile)
+                .Where(u => u.Role == "Tenant" && u.Status == true)
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateUserProfileAsync(int userId, string fullName, string phone, UserProfile profileUpdate)
         {
             using var context = await _factory.CreateDbContextAsync();
@@ -33,7 +42,7 @@ namespace STAYTRUST.Services
             if (user == null) return false;
 
             // Update User fields
-            user.FullName = fullName;
+            user.UserName = fullName;
             user.Phone = phone;
 
             // Update or Create UserProfile
