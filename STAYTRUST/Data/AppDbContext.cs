@@ -194,6 +194,7 @@ public partial class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
             entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Image360Url).HasMaxLength(500);
 
             entity.HasOne(d => d.Landlord).WithMany(p => p.Rooms)
                 .HasForeignKey(d => d.LandlordId)

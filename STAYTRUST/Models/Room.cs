@@ -21,6 +21,8 @@ public partial class Room
 
     public string? Status { get; set; }
 
+    public string? Image360Url { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
