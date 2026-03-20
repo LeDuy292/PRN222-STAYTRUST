@@ -48,6 +48,7 @@ CREATE TABLE Rooms (
     Area FLOAT,
     [Address] NVARCHAR(255),
     [Status] VARCHAR(20) CHECK (Status IN ('Available', 'Rented')),
+    Image360Url NVARCHAR(500) NULL,
     CreatedAt DATETIME DEFAULT GETDATE(),
 
     CONSTRAINT FK_Room_Landlord
@@ -208,19 +209,23 @@ VALUES
 (2, '1990-05-15', N'Nam', '987654321', N'Hà Nội'),
 (3, '2000-10-20', N'Nam', '555666777', N'Hồ Chí Minh');
 
--- Insert Rooms
-INSERT INTO Rooms (LandlordId, Title, [Description], Price, Area, [Address], [Status])
+-- Insert Rooms (Image360Url: dùng ảnh panorama nội thất cho demo, thay bằng URL thực khi landlord upload)
+INSERT INTO Rooms (LandlordId, Title, [Description], Price, Area, [Address], [Status], Image360Url)
 VALUES 
-(2, N'Azure Ocean Suite', N'Phòng suite cao cấp nhìn ra biển với đầy đủ tiện nghi.', 4500000, 55, N'Võ Nguyên Giáp, Sơn Trà, Đà Nẵng', 'Rented'),
-(2, N'Modern Loft', N'Căn hộ loft hiện đại ngay trung tâm thành phố.', 6500000, 45, N'Sơn Trà, Đà Nẵng', 'Available'),
-(2, N'Sunrise Studio', N'Phòng studio đón nắng sớm, không gian ấm cúng.', 3500000, 30, N'Ngũ Hành Sơn, Đà Nẵng', 'Available');
+(2, N'Azure Ocean Suite', N'Phòng suite cao cấp nhìn ra biển với đầy đủ tiện nghi.', 4500000, 55, N'Võ Nguyên Giáp, Sơn Trà, Đà Nẵng', 'Rented', 'https://raw.githubusercontent.com/ArcherFMY/SD-T2I-360PanoImage/main/data/a-living-room.png'),
+(2, N'Modern Loft', N'Căn hộ loft hiện đại ngay trung tâm thành phố.', 6500000, 45, N'Sơn Trà, Đà Nẵng', 'Available', 'https://raw.githubusercontent.com/ArcherFMY/SD-T2I-360PanoImage/main/data/a-living-room.png'),
+(2, N'Sunrise Studio', N'Phòng studio đón nắng sớm, không gian ấm cúng.', 3500000, 30, N'Ngũ Hành Sơn, Đà Nẵng', 'Available', 'https://raw.githubusercontent.com/ArcherFMY/SD-T2I-360PanoImage/main/data/a-living-room.png'),
+(2, N'Diamond Penthouse', N'Penthouse sang trọng bậc nhất với view toàn thành phố.', 12000000, 120, N'Hải Châu, Đà Nẵng', 'Available', 'https://raw.githubusercontent.com/ArcherFMY/SD-T2I-360PanoImage/main/data/a-living-room.png'),
+(2, N'Cozy Green Apartment', N'Không gian xanh mát, yên tĩnh, phù hợp cho người đi làm.', 4000000, 40, N'Cẩm Lệ, Đà Nẵng', 'Available', 'https://raw.githubusercontent.com/ArcherFMY/SD-T2I-360PanoImage/main/data/a-living-room.png');
 
 -- Insert RoomImages
 INSERT INTO RoomImages (RoomId, ImageUrl, Approved)
 VALUES 
 (1, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop', 1),
 (2, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1980&auto=format&fit=crop', 1),
-(3, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=2070&auto=format&fit=crop', 1);
+(3, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=2070&auto=format&fit=crop', 1),
+(4, 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?q=80&auto=format&fit=crop', 1),
+(5, 'https://images.unsplash.com/photo-1560448205-4d9b3e6bb6db?q=80&auto=format&fit=crop', 1);
 
 -- Insert RentalContracts
 INSERT INTO RentalContracts (RoomId, TenantId, StartDate, EndDate, Deposit, [Status])
