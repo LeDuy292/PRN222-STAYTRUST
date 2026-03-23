@@ -79,8 +79,19 @@
 
 <body class="font-display bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-white overflow-x-hidden antialiased">
     <Routes />
+    <Chatbox />
     <script src="_framework/blazor.web.js"></script>
     <script src="js/scrollTracker.js"></script>
+    <script>
+        // Utility function for chatbox
+        window.scrollToBottom = (element) => {
+            if (element) {
+                setTimeout(() => {
+                    element.scrollTop = element.scrollHeight;
+                }, 0);
+            }
+        };
+    </script>
     <!-- Photo Sphere Viewer JS (Three.js bundled) -->
     <script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@@photo-sphere-viewer/core@5/index.min.js"></script>

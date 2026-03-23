@@ -19,7 +19,11 @@ public partial class MeterReading
 
     public int? WaterNew { get; set; }
 
+    public string Status { get; set; } = "Submitted";
+
     public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Room Room { get; set; } = null!;
 }

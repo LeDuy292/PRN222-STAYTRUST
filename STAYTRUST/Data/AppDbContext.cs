@@ -40,6 +40,9 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
+    public virtual DbSet<UtilityRate> UtilityRates { get; set; }
+
+    public virtual DbSet<Notification> Notifications { get; set; }
     public virtual DbSet<FavoriteRoom> FavoriteRooms { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
@@ -101,6 +104,13 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Submitted");
             entity.Property(e => e.Month)
                 .HasMaxLength(7)
                 .IsUnicode(false)
@@ -110,6 +120,47 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.RoomId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Meter_Room");
+        });
+
+        modelBuilder.Entity<UtilityRate>(entity =>
+        {
+            entity.HasKey(e => e.RateId).HasName("PK__UtilityR__BBCD30A0");
+
+            entity.Property(e => e.ElectricPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasDefaultValue(3500);
+            entity.Property(e => e.WaterPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasDefaultValue(12000);
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.UtilityRates)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Rate_Room");
+
+            entity.HasIndex(e => e.RoomId).IsUnique();
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12");
+
+            entity.Property(e => e.Title)
+                .HasMaxLength(200)
+                .IsUnicode(true);
+            entity.Property(e => e.Message).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Notification_User");
         });
 
         modelBuilder.Entity<Payment>(entity =>

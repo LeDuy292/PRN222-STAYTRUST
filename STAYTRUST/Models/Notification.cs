@@ -2,11 +2,14 @@ using System;
 
 namespace STAYTRUST.Models;
 
-public partial class Notification
+public class Notification
+
 {
     public int NotificationId { get; set; }
 
     public int UserId { get; set; }
+
+
 
     public string Title { get; set; } = null!;
 

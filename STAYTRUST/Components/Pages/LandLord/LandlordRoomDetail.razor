@@ -1,10 +1,15 @@
 @page "/landlord/properties/{Id:int}"
-@layout LandlordLayout
 @rendermode InteractiveServer
+@using System.Text.Json
+@using STAYTRUST.Models.DTOs
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject NavigationManager Nav
+@inject HttpClient Http
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<PageTitle>@property.Title - STAYTRUST</PageTitle>
+<PageTitle>@(isLoading ? "Loading..." : property.Title) - STAYTRUST</PageTitle>
 
 <HeadContent>
     <style>
@@ -13,6 +18,133 @@
             to   { opacity: 1; transform: translateY(0); }
         }
         .fade-up { animation: fadeInUp 0.6s ease-out both; }
+        
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @@keyframes glow-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 30px rgba(6,182,212,0.6), inset 0 0 20px rgba(255,255,255,0.2);
+            }
+            50% { 
+                box-shadow: 0 0 50px rgba(6,182,212,0.9), inset 0 0 20px rgba(255,255,255,0.3);
+            }
+        }
+        
+        .arrow-btn-prev, .arrow-btn-next {
+            animation: glow-pulse 2.5s ease-in-out infinite;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        
+        .modal-content {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: sticky;
+            top: 0;
+            background: rgba(30, 41, 59, 0.95);
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin: -2rem -2rem 1rem -2rem;
+            padding: 0 2rem;
+            z-index: 10;
+        }
+        
+        .modal-message {
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 0 1rem 0;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            position: sticky;
+            bottom: 0;
+            background: rgba(30, 41, 59, 0.95);
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 1rem -2rem -2rem -2rem;
+            padding: 1rem 2rem;
+            z-index: 10;
+        }
+        
+        .btn-modal {
+            padding: 0.875rem 1.75rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-modal:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary-modal {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn-secondary-modal:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #f1f5f9;
+        }
+        
+        .btn-danger-modal {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fecaca;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-danger-modal:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
     </style>
 </HeadContent>
 
@@ -25,66 +157,40 @@
         </div>
     </div>
 
-    <!-- ========== NAVBAR ========== -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700/50">
-        <div class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-
-                <a href="/landlord/home" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
-                         style="box-shadow:0 0 15px rgba(6,182,212,.3)">
-                        <i class="fas fa-home text-white text-xl"></i>
-                    </div>
-                    <div>
-                        <div class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">STAYTRUST</div>
-                        <div class="text-xs text-cyan-500 font-bold uppercase tracking-widest">Elite Portal</div>
-                    </div>
-                </a>
-
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="/landlord/dashboard"  class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Dashboard</a>
-                    <a href="/landlord/properties" class="text-cyan-400 font-semibold border-b-2 border-cyan-400 pb-1">Properties</a>
-                    <a href="/landlord/prime"      class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Prime Plans</a>
-                    <a href="/landlord/features"   class="text-gray-300 hover:text-cyan-400 transition-colors font-medium">Features</a>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <button class="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
-                        <i class="fas fa-bell text-xl text-gray-400"></i>
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                    </button>
-                    <div class="relative">
-                        <button @onclick="() => showUserMenu = !showUserMenu"
-                                class="flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-xl transition-all border border-white/10"
-                                style="background:rgba(255,255,255,.05)">
-                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">AP</div>
-                            <div class="hidden md:block text-left">
-                                <div class="text-sm font-semibold">Alexander Pierce</div>
-                                <div class="text-xs text-cyan-400">Elite Landlord</div>
-                            </div>
-                        </button>
-                        @if (showUserMenu)
-                        {
-                            <div class="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl overflow-hidden z-50">
-                                <a href="/landlord/dashboard"  class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard</span></a>
-                                <a href="/landlord/properties" class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors" style="background:rgba(255,255,255,.05)"><i class="fas fa-building text-cyan-400"></i><span>My Properties</span></a>
-                                <a href="/landlord/settings"   class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"><i class="fas fa-cog text-gray-400"></i><span>Settings</span></a>
-                                <div class="border-t border-gray-700/50"></div>
-                                <button @onclick='() => Nav.NavigateTo("/auth")'
-                                        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-red-400">
-                                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-                                </button>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- ========== HEADER ========== -->
+    <HeaderLandlord />
 
     <!-- ========== MAIN CONTENT ========== -->
     <div class="pt-24 px-6 pb-12">
         <div class="max-w-7xl mx-auto">
+
+            @if (isLoading)
+            {
+                <!-- Loading State -->
+                <div class="flex items-center justify-center py-40">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center animate-spin"
+                             style="background:rgba(6,182,212,.2);border:2px solid rgba(6,182,212,.1);border-top-color:rgba(6,182,212,.5)">
+                        </div>
+                        <p class="text-gray-400 text-lg">Loading property details...</p>
+                    </div>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <!-- Error State -->
+                <div class="backdrop-blur-xl border border-red-500/30 rounded-2xl p-8 text-center"
+                     style="background:rgba(239,68,68,.1)">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4 block"></i>
+                    <p class="text-red-400 text-lg mb-6">@errorMessage</p>
+                    <button @onclick='() => Nav.NavigateTo("/landlord/properties")'
+                            class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:scale-105 transition-all">
+                        Back to Properties
+                    </button>
+                </div>
+            }
+            else
+            {
 
             <!-- Back Button & Action Bar -->
             <div class="flex items-center justify-between mb-6">
@@ -108,27 +214,27 @@
 
             <!-- ===== IMAGE GALLERY ===== -->
             <div class="relative rounded-3xl overflow-hidden mb-8 group" style="height:500px">
-                <img src="@property.Images[currentImage]" alt="@property.Title"
+                <img src="@(property.Images != null && property.Images.Count > 0 ? property.Images[currentImage] : "https://via.placeholder.com/800x500?text=No+Image")" alt="@property.Title"
                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
                 <!-- Gradient Overlay -->
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
-                <!-- Arrows -->
+                <!-- Arrows - Prominent Navigation -->
                 <button @onclick="PrevImage"
-                        class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
-                        style="background:rgba(0,0,0,.5)">
-                    <i class="fas fa-chevron-left text-xl"></i>
+                        class="arrow-btn-prev absolute left-6 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-125 hover:-translate-x-2 z-20 group-hover:opacity-100"
+                        style="background:linear-gradient(135deg, rgba(6,182,212,0.9), rgba(6,182,212,0.7));border:2px solid rgba(6,182,212,0.8)">
+                    <i class="fas fa-chevron-left text-2xl text-white"></i>
                 </button>
                 <button @onclick="NextImage"
-                        class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
-                        style="background:rgba(0,0,0,.5)">
-                    <i class="fas fa-chevron-right text-xl"></i>
+                        class="arrow-btn-next absolute right-6 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-125 hover:translate-x-2 z-20 group-hover:opacity-100"
+                        style="background:linear-gradient(135deg, rgba(6,182,212,0.9), rgba(6,182,212,0.7));border:2px solid rgba(6,182,212,0.8)">
+                    <i class="fas fa-chevron-right text-2xl text-white"></i>
                 </button>
 
                 <!-- Counter -->
                 <div class="absolute top-4 right-4 px-4 py-2 rounded-full font-semibold" style="background:rgba(0,0,0,.5)">
-                    @(currentImage + 1) / @property.Images.Count
+                    @(property.Images != null && property.Images.Count > 0 ? (currentImage + 1).ToString() : "0") / @(property.Images?.Count ?? 0)
                 </div>
 
                 <!-- Bottom Overlay -->
@@ -184,10 +290,12 @@
                             <div class="text-4xl font-bold text-cyan-400 mb-4">₫@((property.Price / 1_000_000.0).ToString("0.0"))M</div>
                             <div class="text-gray-400 text-xs mb-4">Deposit: ₫@((property.Deposit / 1_000_000.0).ToString("0.0"))M</div>
                             <div class="flex gap-2">
-                                <button class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-semibold transition-all hover:scale-105">
+                                <button @onclick='() => Nav.NavigateTo($"/landlord/edit-listing/{property.Id}")'
+                                        class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-semibold transition-all hover:scale-105">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
-                                <button class="p-3 rounded-xl transition-colors" style="background:rgba(239,68,68,.2);color:#f87171">
+                                <button @onclick="DeleteProperty"
+                                        class="p-3 rounded-xl transition-colors" style="background:rgba(239,68,68,.2);color:#f87171">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -325,7 +433,7 @@
 
                     @if (activeTab == "tenant")
                     {
-                        @if (property.Status == "occupied")
+                        @if (property.Tenant != null && !string.IsNullOrEmpty(property.Tenant.FullName))
                         {
                             <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8 fade-up" style="background:rgba(255,255,255,.03)">
                                 <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
@@ -337,10 +445,11 @@
 
                                 <div class="flex items-start gap-6 mb-8">
                                     <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl font-bold flex-shrink-0">
-                                        @property.Tenant.Avatar
+                                        @(property.Tenant.Avatar ?? "T")
                                     </div>
                                     <div class="flex-1">
-                                        <h3 class="text-2xl font-bold mb-2">@property.Tenant.Name</h3>
+                                        <h3 class="text-2xl font-bold mb-2">@property.Tenant.FullName</h3>
+                                        <p class="text-sm text-gray-500 mb-3">@property.Tenant.Name</p>
                                         <div class="flex items-center gap-4 mb-4 flex-wrap">
                                             <span class="px-3 py-1 rounded-full text-sm font-semibold border" style="background:rgba(34,197,94,.2);color:#4ade80;border-color:rgba(34,197,94,.3)">
                                                 @(property.Tenant.Status == "active" ? "Active Lease" : "Inactive")
@@ -383,7 +492,7 @@
                             <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center fade-up" style="background:rgba(255,255,255,.03)">
                                 <i class="fas fa-users text-6xl text-gray-600 mb-4 block"></i>
                                 <h3 class="text-xl font-semibold text-gray-400">No Active Tenant</h3>
-                                <p class="text-gray-500 mt-2">This property is currently @property.Status</p>
+                                <p class="text-gray-500 mt-2">This property is currently @(property.Status?.ToLower() ?? "unavailable")</p>
                             </div>
                         }
                     }
@@ -548,17 +657,21 @@
                     <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-6 fade-up" style="background:rgba(255,255,255,.03);animation-delay:.4s">
                         <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
                         <div class="space-y-3">
-                            <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
-                                    style="background:rgba(34,197,94,.1);color:#4ade80;border-color:rgba(34,197,94,.2)">
-                                <i class="fas fa-file-invoice-dollar"></i> Generate Report
+                            @if (property.Status?.ToLower() == "occupied" || property.Status?.ToLower() == "rented")
+                            {
+                                <button @onclick="ShowBillingModal" class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
+                                        style="background:rgba(34,197,94,.1);color:#4ade80;border-color:rgba(34,197,94,.2)">
+                                    <i class="fas fa-file-invoice-dollar"></i> Create Monthly Bill
+                                </button>
+                            }
+                            <button @onclick='() => Nav.NavigateTo("/landlord/smart-billing")' 
+                                    class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
+                                    style="background:rgba(6,182,212,.1);color:#22d3ee;border-color:rgba(6,182,212,.2)">
+                                <i class="fas fa-receipt"></i> View Billing & Invoices
                             </button>
                             <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
                                     style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.2)">
-                                <i class="fas fa-calendar-alt"></i> Schedule Viewing
-                            </button>
-                            <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
-                                    style="background:rgba(6,182,212,.1);color:#22d3ee;border-color:rgba(6,182,212,.2)">
-                                <i class="fas fa-check-circle"></i> Update Status
+                                <i class="fas fa-file-contract"></i> View Contracts
                             </button>
                             <button class="w-full flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-105 font-semibold border"
                                     style="background:rgba(249,115,22,.1);color:#fb923c;border-color:rgba(249,115,22,.2)">
@@ -603,6 +716,7 @@
 
                 </div>
             </div>
+            }
         </div>
     </div>
 </div>
@@ -610,18 +724,43 @@
 @code {
     [Parameter] public int Id { get; set; }
 
-    private bool showUserMenu = false;
     private bool isFavorite = false;
     private int currentImage = 0;
     private string activeTab = "overview";
+    private bool showDeleteConfirm = false;
+    private bool isDeleting = false;
+    private bool showBillingModal = false;
+    private bool isSubmittingBill = false;
+    private string billingError = "";
     private System.Threading.Timer? _imgTimer;
+    private PropertyDetailDto property = new();
+    private bool isLoading = true;
+    private string errorMessage = "";
 
-    protected override void OnInitialized()
+    // Billing Form State
+    private BillingFormModel billingForm = new();
+    private bool services_wifi = false;
+    private bool services_trash = false;
+    private bool services_parking = false;
+
+    private long servicesTotal => 
+        (services_wifi ? 500000 : 0) + 
+        (services_trash ? 200000 : 0) + 
+        (services_parking ? 300000 : 0);
+
+    protected override async Task OnInitializedAsync()
     {
+        await LoadPropertyDetail();
+        if (!string.IsNullOrEmpty(errorMessage))
+            return;
+
         _imgTimer = new System.Threading.Timer(_ =>
         {
-            currentImage = (currentImage + 1) % property.Images.Count;
-            InvokeAsync(StateHasChanged);
+            if (property?.Images != null && property.Images.Count > 0)
+            {
+                currentImage = (currentImage + 1) % property.Images.Count;
+                InvokeAsync(StateHasChanged);
+            }
         }, null, 5000, 5000);
     }
 
@@ -631,16 +770,215 @@
             await _imgTimer.DisposeAsync();
     }
 
-    private void NextImage() => currentImage = (currentImage + 1) % property.Images.Count;
-    private void PrevImage() => currentImage = (currentImage - 1 + property.Images.Count) % property.Images.Count;
-
-    private RenderFragment GetStatusBadge(string status) => status switch
+    private async Task LoadPropertyDetail()
     {
-        "available" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
+        isLoading = true;
+        try
+        {
+            var response = await Http.GetAsync($"api/properties/{Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var contentStream = await response.Content.ReadAsStreamAsync();
+                using var doc = JsonDocument.Parse(contentStream);
+                var root = doc.RootElement;
+                
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var jsonString = dataElement.GetRawText();
+                    property = JsonSerializer.Deserialize<PropertyDetailDto>(jsonString, options) ?? new();
+                    
+                    // Ensure Images is never null and always has at least a placeholder
+                    if (property.Images == null || property.Images.Count == 0)
+                    {
+                        property.Images = new List<string> 
+                        { 
+                            "https://via.placeholder.com/800x500?text=No+Image" 
+                        };
+                    }
+                    
+                    currentImage = 0;
+                    await LoadPreviousMeterReading();
+                }
+                else
+                {
+                    errorMessage = "Unable to load property data from server";
+                }
+            }
+            else
+            {
+                errorMessage = $"Failed to load property details (Status: {response.StatusCode})";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading property: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadPreviousMeterReading()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/smart-billing/last-reading/{Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var contentStream = await response.Content.ReadAsStreamAsync();
+                using var doc = JsonDocument.Parse(contentStream);
+                var root = doc.RootElement;
+                
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var lastReading = JsonSerializer.Deserialize<MeterReadingDto>(dataElement.GetRawText(), options);
+                    if (lastReading != null)
+                    {
+                        billingForm.ElectricOld = lastReading.ElectricNew;
+                        billingForm.WaterOld = lastReading.WaterNew;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading previous meter reading: {ex.Message}");
+        }
+    }
+
+    private long GetTotalBill()
+    {
+        long roomPrice = (long)property.Price;
+        long electricFee = (billingForm.ElectricNew - billingForm.ElectricOld) * 3500;
+        long waterFee = (billingForm.WaterNew - billingForm.WaterOld) * 12000;
+        return roomPrice + electricFee + waterFee + servicesTotal;
+    }
+
+    private void ShowBillingModal()
+    {
+        showBillingModal = true;
+        billingError = "";
+    }
+
+    private async Task SubmitBilling()
+    {
+        // Validation
+        if (billingForm.ElectricNew < billingForm.ElectricOld)
+        {
+            billingError = "Electric reading cannot be less than previous reading";
+            return;
+        }
+
+        if (billingForm.WaterNew < billingForm.WaterOld)
+        {
+            billingError = "Water reading cannot be less than previous reading";
+            return;
+        }
+
+        if (billingForm.ElectricNew == billingForm.ElectricOld && billingForm.WaterNew == billingForm.WaterOld)
+        {
+            billingError = "Please update at least one meter reading";
+            return;
+        }
+
+        isSubmittingBill = true;
+        try
+        {
+            var createBillingDto = new CreateInvoiceDto
+            {
+                RoomId = Id,
+                Month = DateTime.Now.ToString("yyyy-MM"),
+                ElectricNew = billingForm.ElectricNew,
+                ElectricOld = billingForm.ElectricOld,
+                WaterNew = billingForm.WaterNew,
+                WaterOld = billingForm.WaterOld,
+                ElectricPrice = 3500,
+                WaterPrice = 12000,
+                ServicesTotal = servicesTotal,
+                RoomPrice = (long)property.Price
+            };
+
+            var response = await Http.PostAsJsonAsync("api/smart-billing/create-invoice", createBillingDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                showBillingModal = false;
+                await JS.InvokeVoidAsync("alert", "Invoice created successfully and sent to tenant!");
+                await LoadPropertyDetail(); // Refresh data
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                billingError = "Failed to create invoice. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            billingError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmittingBill = false;
+        }
+    }
+
+    private void NextImage()
+    {
+        if (property?.Images != null && property.Images.Count > 0)
+        {
+            currentImage = (currentImage + 1) % property.Images.Count;
+        }
+    }
+
+    private void PrevImage()
+    {
+        if (property?.Images != null && property.Images.Count > 0)
+        {
+            currentImage = (currentImage - 1 + property.Images.Count) % property.Images.Count;
+        }
+    }
+
+    private async Task DeleteProperty()
+    {
+        showDeleteConfirm = true;
+    }
+    
+    private async Task ConfirmDelete()
+    {
+        isDeleting = true;
+        try
+        {
+            var resp = await Http.DeleteAsync($"api/listings/{Id}");
+            if (resp.IsSuccessStatusCode)
+            {
+                showDeleteConfirm = false;
+                Nav.NavigateTo("/landlord/properties");
+            }
+            else
+            {
+                errorMessage = "Failed to delete property. Please try again.";
+                showDeleteConfirm = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            showDeleteConfirm = false;
+        }
+        finally { isDeleting = false; }
+    }
+
+    private RenderFragment GetStatusBadge(string status) => status.ToLower() switch
+    {
+        "available" or "active" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
                               style="background:rgba(34,197,94,.2);color:#4ade80;border-color:rgba(34,197,94,.3)">
                            <i class="fas fa-check-circle"></i> Available
                        </span>,
-        "occupied" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
+        "occupied" or "rented" => @<span class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold"
                              style="background:rgba(59,130,246,.2);color:#60a5fa;border-color:rgba(59,130,246,.3)">
                           <i class="fas fa-users"></i> Occupied
                       </span>,
@@ -682,137 +1020,234 @@
         new("Amenities updated",   "Admin", new DateTime(2024,11,5)),
     };
 
-    // ── Mock Property ─────────────────────────────────────────────────────────
-    private readonly PropertyDetail property = new()
-    {
-        Id          = 1,
-        Title       = "Luxury Penthouse Suite",
-        Address     = "123 Nguyen Hue Boulevard, District 1, Ho Chi Minh City",
-        Price       = 25_000_000,
-        Deposit     = 50_000_000,
-        Bedrooms    = 3,
-        Bathrooms   = 2,
-        Area        = 120,
-        Floor       = 15,
-        BuildingFloors = 20,
-        YearBuilt   = 2020,
-        Status      = "available",
-        Type        = "Apartment",
-        Rating      = 4.8,
-        Reviews     = 24,
-        Views       = 1234,
-        Inquiries   = 45,
-        Featured    = true,
-        Verified    = true,
-        Description = "Stunning luxury penthouse with breathtaking city views. This modern residence features premium finishes, floor-to-ceiling windows, and access to world-class amenities. Perfect for those seeking an elevated lifestyle in the heart of the city.",
-        Images = new()
-        {
-            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&h=1000&fit=crop&q=95",
-            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&h=1000&fit=crop&q=95",
-            "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1600&h=1000&fit=crop&q=95",
-            "https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1600&h=1000&fit=crop&q=95",
-            "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1600&h=1000&fit=crop&q=95",
-            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1600&h=1000&fit=crop&q=95",
-        },
-        Amenities = new()
-        {
-            new("wifi",          "High-Speed WiFi"),
-            new("car",           "Parking Space"),
-            new("swimming-pool", "Swimming Pool"),
-            new("dumbbell",      "Fitness Center"),
-            new("shield-alt",    "24/7 Security"),
-            new("camera",        "CCTV Monitoring"),
-            new("fire",          "Central Heating"),
-            new("snowflake",     "Air Conditioning"),
-            new("couch",         "Fully Furnished"),
-            new("tv",            "Smart TV"),
-            new("utensils",      "Modern Kitchen"),
-            new("building",      "Elevator Access"),
-        },
-        Tenant = new()
-        {
-            Name          = "Sarah Johnson",
-            Email         = "sarah.j@email.com",
-            Phone         = "+84 901 234 567",
-            MoveInDate    = new DateTime(2024, 1, 15),
-            LeaseEnd      = new DateTime(2025, 1, 14),
-            Avatar        = "SJ",
-            Status        = "active",
-            PaymentStatus = "on-time",
-        },
-        Financials = new()
-        {
-            TotalRevenue       = 300_000_000,
-            OccupancyRate      = 95,
-            AvgMonthlyRevenue  = 24_500_000,
-        },
-        Maintenance = new()
-        {
-            new(1, "AC Filter Replacement", new DateTime(2024,10,15), 500_000, "completed"),
-            new(2, "Plumbing Repair",        new DateTime(2024,9,20),  800_000, "completed"),
-            new(3, "Scheduled Inspection",   new DateTime(2024,11,1),        0, "pending"),
-        },
-        RevenueHistory = new()
-        {
-            new("Jan",25_000_000), new("Feb",25_000_000), new("Mar",25_000_000),
-            new("Apr",25_000_000), new("May",25_000_000), new("Jun",25_000_000),
-            new("Jul",25_000_000), new("Aug",25_000_000), new("Sep",25_000_000),
-            new("Oct",25_000_000), new("Nov",25_000_000), new("Dec",0),
-        },
-    };
-
     // ── Data Models ───────────────────────────────────────────────────────────
     private record TabDef(string Id, string Label, string Icon);
     private record HistoryItem(string Action, string User, DateTime Date);
 
-    private class PropertyDetail
+    private class BillingFormModel
     {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Address { get; set; } = "";
-        public long Price { get; set; }
-        public long Deposit { get; set; }
-        public int Bedrooms { get; set; }
-        public int Bathrooms { get; set; }
-        public int Area { get; set; }
-        public int Floor { get; set; }
-        public int BuildingFloors { get; set; }
-        public int YearBuilt { get; set; }
-        public string Status { get; set; } = "";
-        public string Type { get; set; } = "";
-        public double Rating { get; set; }
-        public int Reviews { get; set; }
-        public int Views { get; set; }
-        public int Inquiries { get; set; }
-        public bool Featured { get; set; }
-        public bool Verified { get; set; }
-        public string Description { get; set; } = "";
-        public List<string> Images { get; set; } = new();
-        public List<AmenityItem> Amenities { get; set; } = new();
-        public TenantInfo Tenant { get; set; } = new();
-        public FinancialInfo Financials { get; set; } = new();
-        public List<MaintenanceRecord> Maintenance { get; set; } = new();
-        public List<RevenueMonth> RevenueHistory { get; set; } = new();
+        public int ElectricOld { get; set; }
+        public int ElectricNew { get; set; }
+        public int WaterOld { get; set; }
+        public int WaterNew { get; set; }
     }
 
-    private record AmenityItem(string Icon, string Name);
-    private class TenantInfo
+    private class CreateInvoiceDto
     {
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Phone { get; set; } = "";
-        public DateTime MoveInDate { get; set; }
-        public DateTime LeaseEnd { get; set; }
-        public string Avatar { get; set; } = "";
-        public string Status { get; set; } = "";
-        public string PaymentStatus { get; set; } = "";
+        public int RoomId { get; set; }
+        public string Month { get; set; } = "";
+        public int ElectricOld { get; set; }
+        public int ElectricNew { get; set; }
+        public int WaterOld { get; set; }
+        public int WaterNew { get; set; }
+        public int ElectricPrice { get; set; }
+        public int WaterPrice { get; set; }
+        public long RoomPrice { get; set; }
+        public long ServicesTotal { get; set; }
     }
-    private class FinancialInfo
+
+    private class MeterReadingDto
     {
-        public long TotalRevenue { get; set; }
-        public int OccupancyRate { get; set; }
-        public long AvgMonthlyRevenue { get; set; }
+        public int ReadingId { get; set; }
+        public int RoomId { get; set; }
+        public string Month { get; set; }
+        public int ElectricOld { get; set; }
+        public int ElectricNew { get; set; }
+        public int WaterOld { get; set; }
+        public int WaterNew { get; set; }
     }
-    private record MaintenanceRecord(int Id, string Issue, DateTime Date, long Cost, string Status);
-    private record RevenueMonth(string Month, long Amount);
 }
+
+    <!-- Delete Confirmation Modal -->
+    @if (showDeleteConfirm)
+    {
+        <div class="modal-overlay" @onclick="() => showDeleteConfirm = false">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-title">
+                    <i class="fas fa-exclamation-circle" style="color:#f87171"></i>
+                    Delete Property
+                </div>
+                <div class="modal-message">
+                    Are you sure you want to delete this property? This action cannot be undone. All associated images and data will be permanently removed.
+                </div>
+                <div class="modal-actions">
+                    <button @onclick="() => showDeleteConfirm = false" class="btn-modal btn-secondary-modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button @onclick="ConfirmDelete" disabled="@isDeleting" class="btn-modal btn-danger-modal">
+                        @if (isDeleting)
+                        {
+                            <span style="width:1rem;height:1rem;border:2px solid rgba(255,255,255,0.2);border-top-color:#fecaca;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;margin-right:0.5rem"></span>
+                            <span>Deleting...</span>
+                        }
+                        else
+                        {
+                            <span><i class="fas fa-trash"></i> Delete Permanently</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Monthly Billing Modal -->
+    @if (showBillingModal)
+    {
+        <div class="modal-overlay" @onclick="() => showBillingModal = false">
+            <div class="modal-content" @onclick:stopPropagation="true" style="max-width:750px;width:95%">
+                <div class="modal-title">
+                    <i class="fas fa-file-invoice-dollar" style="color:#4ade80"></i>
+                    Create Monthly Bill
+                </div>
+                
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(billingError))
+                    {
+                        <div class="mb-3 p-3 rounded-lg border text-sm" style="background:rgba(239,68,68,.1);color:#fecaca;border-color:rgba(239,68,68,.3)">
+                            <i class="fas fa-exclamation-circle mr-2"></i>@billingError
+                        </div>
+                    }
+
+                    <div class="space-y-3">
+                        <!-- Header Info - Compact -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">Month / Year</label>
+                                <input type="text" readonly value="@DateTime.Now.ToString("MMM yyyy")" 
+                                       class="w-full px-3 py-2 rounded-lg border border-white/10 bg-gray-900 text-white focus:outline-none text-sm"
+                                       style="background:rgba(255,255,255,.03)"/>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">Room Rent</label>
+                                <input type="text" readonly value="₫@((property.Price / 1_000_000.0).ToString("0.0"))M" 
+                                       class="w-full px-3 py-2 rounded-lg border border-white/10 bg-gray-900 text-cyan-400 focus:outline-none font-semibold text-sm"
+                                       style="background:rgba(6,182,212,.1)"/>
+                            </div>
+                        </div>
+
+                        <!-- Meter Readings - Compact 2x3 -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Electric -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">⚡ Electric Start</label>
+                                <input type="text" readonly value="@billingForm.ElectricOld" 
+                                       class="w-full px-3 py-2 rounded-lg border border-white/10 bg-gray-900 text-white text-sm"
+                                       style="background:rgba(255,255,255,.03)"/>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">⚡ Electric End</label>
+                                <input type="number" @bind="billingForm.ElectricNew" placeholder="0"
+                                       class="w-full px-3 py-2 rounded-lg border border-white/10 bg-gray-900 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 text-sm"
+                                       style="background:rgba(255,255,255,.03)"/>
+                            </div>
+                            <!-- Water -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">💧 Water Start</label>
+                                <input type="text" readonly value="@billingForm.WaterOld" 
+                                       class="w-full px-3 py-2 rounded-lg border border-white/10 bg-gray-900 text-white text-sm"
+                                       style="background:rgba(255,255,255,.03)"/>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">💧 Water End</label>
+                                <input type="number" @bind="billingForm.WaterNew" placeholder="0"
+                                       class="w-full px-3 py-2 rounded-lg border border-white/10 bg-gray-900 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 text-sm"
+                                       style="background:rgba(255,255,255,.03)"/>
+                            </div>
+                        </div>
+
+                        <!-- Usage Display - Compact -->
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="px-3 py-2 rounded-lg border border-cyan-500/50 text-cyan-400 font-bold text-center" style="background:rgba(6,182,212,.1)">
+                                ⚡ @(billingForm.ElectricNew - billingForm.ElectricOld) kWh
+                            </div>
+                            <div class="px-3 py-2 rounded-lg border border-blue-500/50 text-blue-400 font-bold text-center" style="background:rgba(59,130,246,.1)">
+                                💧 @(billingForm.WaterNew - billingForm.WaterOld) m³
+                            </div>
+                        </div>
+
+                        <!-- Charges Summary - Compact -->
+                        <div class="p-3 rounded-lg border border-cyan-500/30 text-sm" style="background:rgba(6,182,212,.1)">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-300">⚡ Electric: @(billingForm.ElectricNew - billingForm.ElectricOld) kWh × ₫3.5K</span>
+                                    <span class="font-bold text-cyan-400">₫@((billingForm.ElectricNew - billingForm.ElectricOld) * 3500):N0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-300">💧 Water: @(billingForm.WaterNew - billingForm.WaterOld) m³ × ₫12K</span>
+                                    <span class="font-bold text-cyan-400">₫@((billingForm.WaterNew - billingForm.WaterOld) * 12000):N0</span>
+                                </div>
+                                <div class="flex justify-between pt-2 border-t border-cyan-500/30">
+                                    <span class="text-gray-300">🔧 Services</span>
+                                    <span class="font-bold text-cyan-400">₫@servicesTotal:N0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Bill - Compact -->
+                        <div class="p-3 rounded-lg border-2" style="border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.15)">
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-300">Room Rent</span><span class="font-bold text-green-400">₫@(property.Price.ToString("N0"))</span></div>
+                                <div class="flex justify-between"><span class="text-gray-300">Utilities</span><span class="font-bold text-green-400">₫@((((billingForm.ElectricNew - billingForm.ElectricOld) * 3500) + ((billingForm.WaterNew - billingForm.WaterOld) * 12000)).ToString("N0"))</span></div>
+                                <div class="flex justify-between"><span class="text-gray-300">Services</span><span class="font-bold text-green-400">₫@servicesTotal:N0</span></div>
+                                <div class="flex justify-between pt-2 border-t border-green-500/50 font-bold text-base">
+                                    <span class="text-green-400">TOTAL</span>
+                                    <span class="text-green-400">₫@GetTotalBill():N0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Services Checkboxes - Compact -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 mb-2">🎁 Add Services (Optional)</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-white/5 transition-all border border-white/10 text-xs"
+                                       style="background:rgba(255,255,255,.05)">
+                                    <input type="checkbox" @bind="services_wifi" class="w-4 h-4 rounded cursor-pointer" style="accent-color:#06b6d4"/>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-white truncate">WiFi</div>
+                                        <div class="text-gray-400 truncate">₫500K</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-white/5 transition-all border border-white/10 text-xs"
+                                       style="background:rgba(255,255,255,.05)">
+                                    <input type="checkbox" @bind="services_trash" class="w-4 h-4 rounded cursor-pointer" style="accent-color:#f97316"/>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-white truncate">Trash</div>
+                                        <div class="text-gray-400 truncate">₫200K</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-white/5 transition-all border border-white/10 text-xs"
+                                       style="background:rgba(255,255,255,.05)">
+                                    <input type="checkbox" @bind="services_parking" class="w-4 h-4 rounded cursor-pointer" style="accent-color:#3b82f6"/>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-white truncate">Parking</div>
+                                        <div class="text-gray-400 truncate">₫300K</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="modal-actions">
+                    <button @onclick="() => showBillingModal = false" class="px-6 py-3 rounded-xl font-semibold transition-all text-sm"
+                            style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)">
+                        Cancel
+                    </button>
+                    <button @onclick="SubmitBilling" disabled="@isSubmittingBill" 
+                            class="px-6 py-3 rounded-xl font-semibold transition-all text-black text-sm"
+                            style="background:linear-gradient(to right,#06b6d4,#2563eb);box-shadow:0 0 20px rgba(6,182,212,.3)">
+                        @if (isSubmittingBill)
+                        {
+                            <span><i class="fas fa-spinner fa-spin mr-2"></i>Creating...</span>
+                        }
+                        else
+                        {
+                            <span><i class="fas fa-check mr-2"></i>Create & Send</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }

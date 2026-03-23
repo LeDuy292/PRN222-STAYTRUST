@@ -16,8 +16,8 @@ namespace STAYTRUST.Services
     {
         Task<bool> RegisterUserAsync(string fullName, string email, string password, string? phoneNumber, string role);
         Task<string?> AuthenticateAsync(string email, string password);
-        Task<string?> AuthenticateGoogleAsync(string email, string name);
-        Task<User?> GetCurrentUserAsync();
+        Task<string?> GetUserRoleAsync(string email);
+
     }
 
     public class AuthService : IAuthService
@@ -114,10 +114,12 @@ namespace STAYTRUST.Services
 
             var claims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("FullName", user.UserName ?? ""),
-                new Claim("Role", user.Role ?? "Tenant"),
+                new Claim("FullName", user.FullName),
+                new Claim(ClaimTypes.Role, user.Role ?? "Tenant"),
+
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -130,22 +132,11 @@ namespace STAYTRUST.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-        public async Task<User?> GetCurrentUserAsync()
+        public async Task<string?> GetUserRoleAsync(string email)
         {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Sub);
-            if (userIdClaim == null)
-            {
-                userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
-            }
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return user?.Role;
 
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-            {
-                using var context = await _factory.CreateDbContextAsync();
-                return await context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
-            }
-
-            return null;
         }
     }
 }

@@ -477,8 +477,8 @@
                                                                 {
                                                                     <tr class="hover:bg-white/[0.01] transition-colors">
                                                                         <td class="py-8 px-4 font-black">@invoice.Month</td>
-                                                                        <td class="py-8 px-4 text-slate-400">@invoice.RoomPrice?.ToString("N0")</td>
-                                                                        <td class="py-8 px-4 text-slate-500">@((invoice.ElectricFee + invoice.WaterFee)?.ToString("N0"))</td>
+                                                                        <td class="py-8 px-4 text-slate-400">@invoice.RoomPrice.ToString("N0")</td>
+                                                                        <td class="py-8 px-4 text-slate-500">@((invoice.ElectricFee + invoice.WaterFee).ToString("N0"))</td>
                                                                         <td class="py-8 px-4 font-black text-emerald-400 text-lg">@invoice.TotalAmount?.ToString("N0")</td>
                                                                         <td class="py-8 px-4 text-center">
                                                                             <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest @(invoice.Status == "Paid" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/20 text-amber-400 border border-amber-500/20")">
@@ -764,16 +764,14 @@
                     
                     <div class="space-y-4">
                         <div class="flex justify-between text-base">
-                            <span class="text-slate-400">Monthly Rent</span>
-                            <span class="font-black">@selectedInvoice.RoomPrice?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
-                        </div>
-                        <div class="flex justify-between text-base">
-                            <span class="text-slate-400">Electricity Fee</span>
-                            <span class="font-black">@selectedInvoice.ElectricFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
-                        </div>
-                        <div class="flex justify-between text-base">
-                            <span class="text-slate-400">Water Fee</span>
-                            <span class="font-black">@selectedInvoice.WaterFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+<span class="text-slate-400">Monthly Rent</span>
+<span class="font-black">@selectedInvoice.RoomPrice?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+
+<span class="text-slate-400">Electricity Fee</span>
+<span class="font-black">@selectedInvoice.ElectricFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+
+<span class="text-slate-400">Water Fee</span>
+<span class="font-black">@selectedInvoice.WaterFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
                         </div>
                     </div>
 

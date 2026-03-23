@@ -1,17 +1,22 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Amazon.S3;
+using Amazon;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 using STAYTRUST.Components;
 using STAYTRUST.Data;
 using STAYTRUST.Services;
 using STAYTRUST.Models;
 using PayOS;
+using Microsoft.EntityFrameworkCore;
 
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Database Context Factory
@@ -33,6 +38,32 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOSSettings"));
 builder.Services.AddHttpClient<ICaptchaService, CaptchaService>();
+
+// Add AWS S3 Service
+var awsOptions = builder.Configuration.GetAWSOptions();
+var accessKey = builder.Configuration["AWS:AccessKeyId"];
+var secretKey = builder.Configuration["AWS:SecretKey"];
+if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
+{
+    awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey);
+}
+awsOptions.Region = Amazon.RegionEndpoint.GetBySystemName(builder.Configuration["AWS:Region"] ?? "ap-southeast-2");
+builder.Services.AddAWSService<Amazon.S3.IAmazonS3>(awsOptions);
+builder.Services.AddScoped<IAwsS3Service, AwsS3Service>();
+
+// Add Image Validation Service
+builder.Services.AddHttpClient<IImageValidationService, SightengineImageValidationService>();
+
+// Add Listing Management Service
+builder.Services.AddScoped<IListingManagementService, ListingManagementService>();
+
+// Add Smart Billing Service
+builder.Services.AddScoped<ISmartBillingService, SmartBillingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Add Gemini AI Service for Chatbot
+builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>();
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -60,7 +91,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!)),
+        NameClaimType = ClaimTypes.NameIdentifier,
+        RoleClaimType = ClaimTypes.Role
     };
     
     // We want to support reading the JWT from an HttpOnly Cookie
@@ -86,10 +119,22 @@ builder.Services.AddAuthentication(options =>
 
 // Add HttpContextAccessor and custom Authentication state provider for Blazor
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 builder.Services.AddScoped(sp => 
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+    var httpContextAccessor = sp.GetRequiredService<IHttpContextAccessor>();
+    var client = new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+
+    // Forward the JWT auth cookie as a Bearer token for API calls
+    var token = httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+    if (!string.IsNullOrEmpty(token))
+    {
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+    }
+
+    return client;
 });
 
 
@@ -103,14 +148,18 @@ builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddDbContext<StayTrustDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddControllers();
+// builder.Services.AddScoped<IRoomService, RoomService>(); // If this exists elsewhere
+// builder.Services.AddControllers(); - already added above
 
 var app = builder.Build();
+
+// Migrate plain text passwords to bcrypt on startup
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await PasswordMigrationService.MigratePasswordsAsync(context);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -123,11 +172,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
-app.UseAntiforgery();
 app.UseSession();
 app.UseAuthentication();
-
 app.UseAuthorization();
+app.UseAntiforgery();
 
 app.MapControllers();
 app.MapRazorComponents<App>()
