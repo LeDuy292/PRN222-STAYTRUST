@@ -364,11 +364,11 @@
                                                     <div class="space-y-4 mb-10">
                                                         <div class="flex justify-between text-base">
                                                             <span class="text-slate-400 font-medium">Monthly Rent</span>
-                                                            <span class="font-black">@upcomingInvoice.RoomPrice?.ToString("N0")</span>
+                                                            <span class="font-black">@upcomingInvoice.RoomPrice.ToString("N0")</span>
                                                         </div>
                                                         <div class="flex justify-between text-base">
                                                             <span class="text-slate-400 font-medium">Utilities</span>
-                                                            <span class="font-black">@((upcomingInvoice.ElectricFee + upcomingInvoice.WaterFee)?.ToString("N0"))</span>
+                                                            <span class="font-black">@((upcomingInvoice.ElectricFee + upcomingInvoice.WaterFee).ToString("N0"))</span>
                                                         </div>
                                                         <div class="pt-6 border-t border-white/10 flex justify-between items-end">
                                                             <div>
@@ -765,13 +765,13 @@
                     <div class="space-y-4">
                         <div class="flex justify-between text-base">
 <span class="text-slate-400">Monthly Rent</span>
-<span class="font-black">@selectedInvoice.RoomPrice?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+<span class="font-black">@selectedInvoice.RoomPrice.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
 
 <span class="text-slate-400">Electricity Fee</span>
-<span class="font-black">@selectedInvoice.ElectricFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+<span class="font-black">@selectedInvoice.ElectricFee.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
 
 <span class="text-slate-400">Water Fee</span>
-<span class="font-black">@selectedInvoice.WaterFee?.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
+<span class="font-black">@selectedInvoice.WaterFee.ToString("N0") <span class="text-[10px] text-slate-500">VND</span></span>
                         </div>
                     </div>
 
