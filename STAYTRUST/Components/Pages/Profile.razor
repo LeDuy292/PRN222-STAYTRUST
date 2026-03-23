@@ -200,7 +200,7 @@
                 user = await UserService.GetUserWithProfileAsync(userId);
                 if (user != null)
                 {
-                    FullName = user.FullName;
+                    FullName = user.UserName;
                     Phone = user.Phone;
                     if (user.UserProfile != null)
                     {

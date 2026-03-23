@@ -8,6 +8,8 @@ namespace STAYTRUST.Services
     {
         Task<List<Room>> GetAllRoomsAsync();
         Task<Room?> GetRoomByIdAsync(int id);
+        Task<List<Room>> SearchRoomsAsync(string? address, decimal? minPrice, decimal? maxPrice, double? minArea);
+        Task<Room?> GetRoomDetailWithFeedbacksAsync(int id);
         Task<bool> CreateRoomAsync(Room room);
         Task<bool> UpdateRoomAsync(Room room);
         Task<bool> DeleteRoomAsync(int id);
@@ -15,16 +17,25 @@ namespace STAYTRUST.Services
 
     public class RoomService : IRoomService
     {
-        private readonly StayTrustDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _factory;
 
-        public RoomService(StayTrustDbContext context)
+        public RoomService(IDbContextFactory<AppDbContext> factory)
         {
-            _context = context;
+            _factory = factory;
+        }
+
+        private async Task<AppDbContext> GetContextAsync()
+        {
+            if (_factory != null)
+                return await _factory.CreateDbContextAsync();
+            // This shouldn't happen ideally, but handle gracefully
+            return null!;
         }
 
         public async Task<List<Room>> GetAllRoomsAsync()
         {
-            return await _context.Rooms
+            using var context = await _factory.CreateDbContextAsync();
+            return await context.Rooms
                 .Include(r => r.Landlord)
                 .Include(r => r.RoomImages)
                 .ToListAsync();
@@ -32,31 +43,80 @@ namespace STAYTRUST.Services
 
         public async Task<Room?> GetRoomByIdAsync(int id)
         {
-            return await _context.Rooms
+            using var context = await _factory.CreateDbContextAsync();
+            return await context.Rooms
                 .Include(r => r.Landlord)
                 .Include(r => r.RoomImages)
                 .FirstOrDefaultAsync(r => r.RoomId == id);
         }
 
+        public async Task<List<Room>> SearchRoomsAsync(string? address, decimal? minPrice, decimal? maxPrice, double? minArea)
+        {
+            using var context = await _factory.CreateDbContextAsync();
+            var query = context.Rooms
+                .Include(r => r.Landlord)
+                .Include(r => r.RoomImages)
+                .Include(r => r.Feedbacks)
+                // Removed the filter so ALL rooms show up for the demo:
+                // .Where(r => r.Status != "Rented") 
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(address))
+            {
+                query = query.Where(r => r.Address != null && r.Address.Contains(address)
+                                      || r.Title != null && r.Title.Contains(address));
+            }
+
+            if (minPrice.HasValue)
+            {
+                query = query.Where(r => r.Price >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(r => r.Price <= maxPrice.Value);
+            }
+
+            if (minArea.HasValue)
+            {
+                query = query.Where(r => r.Area.HasValue && r.Area.Value >= minArea.Value);
+            }
+
+            return await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        }
+
+        public async Task<Room?> GetRoomDetailWithFeedbacksAsync(int id)
+        {
+            using var context = await _factory.CreateDbContextAsync();
+            return await context.Rooms
+                .Include(r => r.Landlord)
+                .Include(r => r.RoomImages)
+                .Include(r => r.Feedbacks)
+                    .ThenInclude(f => f.User)
+                .FirstOrDefaultAsync(r => r.RoomId == id);
+        }
+
         public async Task<bool> CreateRoomAsync(Room room)
         {
-            _context.Rooms.Add(room);
-            return await _context.SaveChangesAsync() > 0;
+            using var context = await _factory.CreateDbContextAsync();
+            context.Rooms.Add(room);
+            return await context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> UpdateRoomAsync(Room room)
         {
-            _context.Rooms.Update(room);
-            return await _context.SaveChangesAsync() > 0;
+            using var context = await _factory.CreateDbContextAsync();
+            context.Rooms.Update(room);
+            return await context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> DeleteRoomAsync(int id)
         {
-            var room = await _context.Rooms.FindAsync(id);
-            if (room == null) return false;
-
-            _context.Rooms.Remove(room);
-            return await _context.SaveChangesAsync() > 0;
+            using var context = await _factory.CreateDbContextAsync();
+            var rm = await context.Rooms.FindAsync(id);
+            if (rm == null) return false;
+            context.Rooms.Remove(rm);
+            return await context.SaveChangesAsync() > 0;
         }
     }
 }

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Amazon.S3;
@@ -17,15 +19,23 @@ using Microsoft.EntityFrameworkCore;
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Database Context
-builder.Services.AddDbContext<AppDbContext>(options =>
+// Add Database Context Factory
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Also add the scoped context for parts that still expect it during migration or for simple cases
+builder.Services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
 
 // Add Authentication Service
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRentalService, RentalService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOSSettings"));
 builder.Services.AddHttpClient<ICaptchaService, CaptchaService>();
 
@@ -98,6 +108,13 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
+})
+.AddCookie()
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "placeholder";
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "placeholder";
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 });
 
 // Add HttpContextAccessor and custom Authentication state provider for Blazor

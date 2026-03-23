@@ -8,6 +8,7 @@ namespace STAYTRUST.Models
     {
         public int UserId { get; set; }
 
+
         public string FullName { get; set; } = null!;
 
         [StringLength(100)]
@@ -24,6 +25,7 @@ namespace STAYTRUST.Models
 
         public bool? Status { get; set; }
 
+
         public DateTime? CreatedAt { get; set; }
 
         public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
@@ -34,8 +36,16 @@ namespace STAYTRUST.Models
 
         public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
-        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-        public virtual UserProfile? UserProfile { get; set; }
+public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
+
+public virtual ICollection<FavoriteRoom> FavoriteRooms { get; set; } = new List<FavoriteRoom>();
+
+public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
+
+public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
+
+public virtual UserProfile? UserProfile { get; set; }
     }
 }

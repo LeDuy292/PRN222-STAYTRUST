@@ -28,6 +28,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Report> Reports { get; set; }
 
+    public virtual DbSet<Notification> Notifications { get; set; }
+
     public virtual DbSet<Room> Rooms { get; set; }
 
     public virtual DbSet<RoomImage> RoomImages { get; set; }
@@ -41,6 +43,9 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<UtilityRate> UtilityRates { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
+    public virtual DbSet<FavoriteRoom> FavoriteRooms { get; set; }
+
+    public virtual DbSet<Message> Messages { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -203,10 +208,28 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.ReportType).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Reports)
                 .HasForeignKey(d => d.CreatedBy)
                 .HasConstraintName("FK_Report_User");
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Notification_User");
         });
 
         modelBuilder.Entity<Room>(entity =>
@@ -222,6 +245,7 @@ public partial class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
             entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Image360Url).HasMaxLength(500);
 
             entity.HasOne(d => d.Landlord).WithMany(p => p.Rooms)
                 .HasForeignKey(d => d.LandlordId)
@@ -302,6 +326,47 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey<UserProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Profile_User");
+        });
+
+        modelBuilder.Entity<FavoriteRoom>(entity =>
+        {
+            entity.HasKey(e => e.FavoriteId);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasIndex(e => new { e.UserId, e.RoomId }).IsUnique();
+
+            entity.HasOne(d => d.User).WithMany(p => p.FavoriteRooms)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.Room).WithMany(p => p.FavoriteRooms)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.SentMessages)
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(d => d.Receiver).WithMany(p => p.ReceivedMessages)
+                .HasForeignKey(d => d.ReceiverId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(d => d.Room).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);

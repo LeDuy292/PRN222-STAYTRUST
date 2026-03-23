@@ -15,10 +15,10 @@ namespace STAYTRUST.Services
     public class PaymentService : IPaymentService
     {
         private readonly PayOSClient _payOSClient;
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _factory;
         private readonly ILogger<PaymentService> _logger;
 
-        public PaymentService(IOptions<PayOSSettings> settings, AppDbContext context, ILogger<PaymentService> logger)
+        public PaymentService(IOptions<PayOSSettings> settings, IDbContextFactory<AppDbContext> factory, ILogger<PaymentService> logger)
         {
             var options = new PayOSOptions
             {
@@ -27,7 +27,7 @@ namespace STAYTRUST.Services
                 ChecksumKey = settings.Value.ChecksumKey
             };
             _payOSClient = new PayOSClient(options);
-            _context = context;
+            _factory = factory;
             _logger = logger;
         }
 

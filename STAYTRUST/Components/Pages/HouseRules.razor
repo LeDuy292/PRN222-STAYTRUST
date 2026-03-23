@@ -1,0 +1,127 @@
+@page "/house-rules/{ContractId:int}"
+@using STAYTRUST.Models
+@using STAYTRUST.Services
+@inject IRentalService RentalService
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>House Rules & Community Protocols</PageTitle>
+
+<style>
+    body { background-color: white !important; font-family: 'Space Grotesk', sans-serif; color: #000; }
+    
+    @@media print {
+        #print-btn { display: none !important; }
+        .document-overlay { position: static !important; }
+        @@page { margin: 1.5cm; }
+        body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; padding: 0; }
+        nav, footer, .sidebar { display: none !important; }
+    }
+
+    .rule-item {
+        border-left: 3px solid #10b981; /* emerald-500 */
+        padding-left: 1.5rem;
+        margin-bottom: 2rem;
+    }
+</style>
+
+@if (contract == null)
+{
+    <div class="fixed inset-0 z-[999] bg-white text-black flex items-center justify-center font-black text-2xl tracking-widest uppercase">
+        Loading Protocol Data...
+    </div>
+}
+else
+{
+    <div class="fixed inset-0 z-[999] bg-slate-100 overflow-y-auto document-overlay flex justify-center py-10">
+        
+        <div class="fixed top-8 right-12 z-50" id="print-btn">
+            <div class="flex gap-4">
+                <button @onclick="GoBack" class="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold px-6 py-3 rounded-full shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
+                    <span class="material-symbols-outlined">close</span> CLOSE
+                </button>
+                <button @onclick="PrintDocument" class="bg-emerald-500 hover:bg-emerald-600 text-black font-black px-6 py-3 rounded-full shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
+                    <span class="material-symbols-outlined">print</span> SAVE AS PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white w-full max-w-[210mm] min-h-[297mm] p-16 shadow-2xl rounded-2xl relative text-black leading-relaxed">
+            <div class="text-center mb-12 border-b-2 border-slate-900 pb-8">
+                <div class="flex items-center justify-center gap-3 mb-4 text-emerald-600">
+                    <span class="material-symbols-outlined text-5xl">gavel</span>
+                    <span class="text-4xl font-black tracking-tighter">STAYTRUST</span>
+                </div>
+                <h1 class="text-3xl font-black uppercase tracking-widest text-slate-900 mt-6">House Rules & Community Protocols</h1>
+                <p class="text-slate-500 mt-2 font-bold tracking-widest">Effective for Unit: @contract.Room?.Title</p>
+            </div>
+
+            <div class="space-y-10">
+                <div class="rule-item">
+                    <h2 class="text-lg font-black uppercase text-slate-900 mb-2">1. Acoustic Integrity (Quiet Hours)</h2>
+                    <p class="text-slate-700 font-medium">Quiet hours are strictly enforced between <strong>22:00 and 07:00</strong> daily. During this period, all residents must minimize noise generation from media devices, social gatherings, and vocal activity to ensure undisturbed rest for all nodes in the residential matrix.</p>
+                </div>
+
+                <div class="rule-item">
+                    <h2 class="text-lg font-black uppercase text-slate-900 mb-2">2. Fauna & Biological Entities (Pets)</h2>
+                    <p class="text-slate-700 font-medium">Domestic animals are permitted only upon successful registration and architectural scanning. Owners are fully responsible for the sanitation, noise control, and physical impact of their biological entities on common and private areas.</p>
+                </div>
+
+                <div class="rule-item" style="border-left-color: #ef4444;"> <!-- red-500 for warning -->
+                    <h2 class="text-lg font-black uppercase text-slate-900 mb-2">3. Combustion & Hazardous Materials</h2>
+                    <p class="text-slate-700 font-medium">StayTrust maintains a <strong>Zero-Combustion Policy</strong> within all internal spatial dimensions. Smoking, open flames, and the storage of volatile chemicals are strictly prohibited to maintain atmospheric quality and fire-safety integrity.</p>
+                </div>
+
+                <div class="rule-item">
+                    <h2 class="text-lg font-black uppercase text-slate-900 mb-2">4. Resource Disposal & Logic (Waste)</h2>
+                    <p class="text-slate-700 font-medium">Waste management is synchronized on <strong>Tuesdays and Fridays (before 09:00 AM)</strong>. All discarded matter must be categorized (Organic, Recyclable, Inorganic) and placed in designated disposal ports to maintain system cleanliness.</p>
+                </div>
+
+                <div class="rule-item">
+                    <h2 class="text-lg font-black uppercase text-slate-900 mb-2">5. Visitor Protocols</h2>
+                    <p class="text-slate-700 font-medium">Guests are permitted between 08:00 and 23:00. Overnight stays exceeding 48 hours must be logged in the system for security verification. The host remains legally responsible for the conduct of all non-resident entities they authorize.</p>
+                </div>
+
+                <div class="rule-item">
+                    <h2 class="text-lg font-black uppercase text-slate-900 mb-2">6. Architectural Modifications</h2>
+                    <p class="text-slate-700 font-medium">Any changes to the physical structure, electrical circuits, or visual aesthetics (walls, flooring) of the unit require prior written approval from the Landlord. "Temporary" modifications must be fully reversible without system degradation.</p>
+                </div>
+            </div>
+
+            <div class="mt-20 p-8 bg-slate-50 rounded-2xl border border-slate-200">
+                <p class="text-sm text-slate-600 italic text-justify leading-relaxed">
+                    By accessing and residing in this unit, the Resident acknowledges receipt of these Community Protocols and agrees to adhere to the standards set forth. Failure to comply may result in periodic fines or termination of the occupancy agreement.
+                </p>
+            </div>
+
+            <div class="mt-20 pt-8 border-t border-slate-200 text-center text-[10px] text-slate-400 font-black tracking-[0.3em] uppercase">
+                StayTrust Residential Governance System • Document Version 2.4.0
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int ContractId { get; set; }
+
+    private RentalContract? contract;
+
+    protected override async Task OnInitializedAsync()
+    {
+        contract = await RentalService.GetRentalContractByIdAsync(ContractId);
+    }
+
+    private async Task PrintDocument()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/my-rentals");
+    }
+}

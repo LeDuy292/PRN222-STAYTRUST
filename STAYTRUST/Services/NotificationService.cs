@@ -1,68 +1,63 @@
+
+using Microsoft.EntityFrameworkCore;
 using STAYTRUST.Data;
 using STAYTRUST.Models;
-using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace STAYTRUST.Services
+namespace STAYTRUST.Services;
+
+public class NotificationService : INotificationService
 {
-    public interface INotificationService
+    private readonly IDbContextFactory<AppDbContext> _factory;
+
+    public NotificationService(IDbContextFactory<AppDbContext> factory)
     {
-        Task SendNotificationAsync(int userId, string title, string message);
-        Task<List<Notification>> GetUserNotificationsAsync(int userId);
-        Task MarkAsReadAsync(int notificationId);
+        _factory = factory;
     }
 
-    public class NotificationService : INotificationService
+    public async Task<List<Notification>> GetUserNotificationsAsync(int userId)
     {
-        private readonly AppDbContext _context;
-        private readonly ILogger<NotificationService> _logger;
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.Notifications
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+    }
 
-        public NotificationService(AppDbContext context, ILogger<NotificationService> logger)
+    public async Task<int> GetUnreadCountAsync(int userId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.Notifications
+            .CountAsync(n => n.UserId == userId && (n.IsRead == false || n.IsRead == null));
+    }
+
+    public async Task MarkAsReadAsync(int notificationId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        var notification = await context.Notifications.FindAsync(notificationId);
+        if (notification != null)
         {
-            _context = context;
-            _logger = logger;
+            notification.IsRead = true;
+            await context.SaveChangesAsync();
         }
+    }
 
-        public async Task SendNotificationAsync(int userId, string title, string message)
+    public async Task SendNotificationAsync(int userId, string title, string message)
+    {
+        var notification = new Notification
         {
-            try
-            {
-                var notification = new Notification
-                {
-                    UserId = userId,
-                    Title = title,
-                    Message = message,
-                    IsRead = false,
-                    CreatedAt = DateTime.Now
-                };
+            UserId = userId,
+            Title = title,
+            Message = message,
+            IsRead = false,
+            CreatedAt = DateTime.Now
+        };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Notification sent to user {userId}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error sending notification: {ex.Message}");
-            }
-        }
-
-        public async Task<List<Notification>> GetUserNotificationsAsync(int userId)
-        {
-            return await _context.Notifications
-                .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task MarkAsReadAsync(int notificationId)
-        {
-            var notification = await _context.Notifications.FindAsync(notificationId);
-            if (notification != null)
-            {
-                notification.IsRead = true;
-                _context.Notifications.Update(notification);
-                await _context.SaveChangesAsync();
-            }
-        }
+        using var context = await _factory.CreateDbContextAsync();
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
     }
 }

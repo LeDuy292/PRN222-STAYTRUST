@@ -7,6 +7,7 @@ namespace STAYTRUST.Services;
 public interface IRentalService
 {
     Task<List<RentalContract>> GetUserRentalsAsync(int userId);
+    Task<RentalContract?> GetRentalContractByIdAsync(int contractId);
     Task<Room?> GetRoomByIdAsync(int roomId);
     Task<List<Invoice>> GetInvoicesByContractIdAsync(int contractId);
     Task<List<MeterReading>> GetMeterReadingsByRoomIdAsync(int roomId);
