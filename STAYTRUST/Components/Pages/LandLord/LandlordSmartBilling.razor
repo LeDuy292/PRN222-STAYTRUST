@@ -1,0 +1,49 @@
+@page "/landlord/smart-billing"
+@rendermode InteractiveServer
+
+<PageTitle>Smart Billing - STAYTRUST</PageTitle>
+
+<div class="min-h-screen text-white" style="background-color:#0a0a0a">
+    <div class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Smart Billing
+            </h1>
+            <p class="text-gray-400 text-lg mb-8">Qu?n lý ?i?n/n??c và t?o hóa ??n t? ??ng</p>
+
+            <div class="backdrop-blur-xl border border-white/10 rounded-2xl p-8" style="background:rgba(255,255,255,.03)">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="p-6 rounded-xl" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3)">
+                        <div class="text-gray-400 text-sm mb-2">Hóa ??n Tháng Này</div>
+                        <div class="text-3xl font-bold">0</div>
+                    </div>
+                    <div class="p-6 rounded-xl" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3)">
+                        <div class="text-gray-400 text-sm mb-2">?ã Thanh Toán</div>
+                        <div class="text-3xl font-bold text-green-400">0</div>
+                    </div>
+                    <div class="p-6 rounded-xl" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)">
+                        <div class="text-gray-400 text-sm mb-2">Ch?a Thanh Toán</div>
+                        <div class="text-3xl font-bold text-red-400">0</div>
+                    </div>
+                    <div class="p-6 rounded-xl" style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3)">
+                        <div class="text-gray-400 text-sm mb-2">T?ng Doanh Thu</div>
+                        <div class="text-3xl font-bold text-purple-400">0 ?</div>
+                    </div>
+                </div>
+
+                <div class="text-center py-12">
+                    <h2 class="text-xl font-semibold mb-4">Chào m?ng ??n Smart Billing</h2>
+                    <p class="text-gray-400 mb-6">H? th?ng qu?n lý hóa ??n ?i?n/n??c t? ??ng</p>
+                    <p class="text-sm text-gray-500">Tính n?ng này s? s?m có s?n. Hãy quay l?i sau!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Load data here
+    }
+}

@@ -1,0 +1,1051 @@
+@page "/landlord/post-room"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Text.Json
+@using System.Net.Http.Headers
+@using STAYTRUST.Models.DTOs
+@inject NavigationManager Nav
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Post New Listing - STAYTRUST</PageTitle>
+
+<style>
+    @@keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .page-container {
+        background: linear-gradient(135deg, #0f172a 0%, #1a1a2e 100%);
+        min-height: 100vh;
+        position: relative;
+    }
+
+    .page-container::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .content-wrapper {
+        position: relative;
+        z-index: 1;
+        padding: 6rem 1.5rem 5rem;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Header */
+    .page-header {
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .page-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #06b6d4 0%, #0284c7 50%, #7c3aed 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        color: #cbd5e1;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+    }
+
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #06b6d4;
+    }
+
+    .alert {
+        padding: 1rem 1.25rem;
+        border-radius: 0.875rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        font-weight: 500;
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    .alert-error {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fecaca;
+    }
+
+    .alert-error i {
+        color: #f87171;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .alert-success {
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #86efac;
+    }
+
+    .alert-success i {
+        color: #4ade80;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .steps-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+
+    .step-btn {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.875rem;
+        color: #94a3b8;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .step-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #cbd5e1;
+    }
+
+    .step-btn.active {
+        background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+    }
+
+    .step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .step-btn.active .step-number {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .form-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.25rem;
+        padding: 2.5rem;
+        backdrop-filter: blur(10px);
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        background: rgba(6, 182, 212, 0.15);
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: #06b6d4;
+    }
+
+    .form-group {
+        margin-bottom: 1.75rem;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        margin-bottom: 0.5rem;
+    }
+
+    .required {
+        color: #f87171;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem;
+        padding: 0.875rem 1rem;
+        color: #f1f5f9;
+        font-size: 0.95rem;
+        font-weight: 500;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: #64748b;
+    }
+
+    .form-input:hover,
+    .form-select:hover,
+    .form-textarea:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.08);
+        border-color: #06b6d4;
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z' fill='%2306b6d4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        padding-right: 2.5rem;
+    }
+
+    .input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: #06b6d4;
+        font-size: 1rem;
+        pointer-events: none;
+    }
+
+    .input-with-icon {
+        padding-left: 2.75rem !important;
+    }
+
+    .form-hint {
+        display: block;
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 0.375rem;
+    }
+
+    .form-hint.success {
+        color: #4ade80;
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .amenities-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+
+    .amenity-btn {
+        padding: 0.875rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem;
+        color: #cbd5e1;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .amenity-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #f1f5f9;
+    }
+
+    .amenity-btn.selected {
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%);
+        border-color: #06b6d4;
+        color: #22d3ee;
+    }
+
+    .amenity-btn i {
+        font-size: 1.1rem;
+    }
+
+    .upload-zone {
+        border: 2px dashed #06b6d4;
+        border-radius: 1rem;
+        padding: 3rem 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(6, 182, 212, 0.05);
+    }
+
+    .upload-zone:hover {
+        border-color: #0891b2;
+        background: rgba(6, 182, 212, 0.1);
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        color: #06b6d4;
+        margin-bottom: 1rem;
+    }
+
+    .upload-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-hint {
+        font-size: 0.9rem;
+        color: #94a3b8;
+    }
+
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    .image-card {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .image-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-card:hover {
+        border-color: #06b6d4;
+        box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+    }
+
+    .image-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
+    }
+
+    .image-card:hover .image-overlay {
+        opacity: 1;
+    }
+
+    .delete-btn {
+        padding: 0.625rem 1rem;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s ease;
+    }
+
+    .delete-btn:hover {
+        background: #b91c1c;
+    }
+
+    .loading-spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #06b6d4;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.875rem 1.75rem;
+        border-radius: 0.75rem;
+        border: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #f1f5f9;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: #94a3b8;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        opacity: 0.3;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+    }
+</style>
+
+<div class="page-container">
+    <div class="content-wrapper">
+        <button @onclick='() => Nav.NavigateTo("/landlord/properties")' class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back</span>
+        </button>
+
+        <div class="page-header">
+            <h1 class="page-title">Post New Listing</h1>
+            <p class="page-subtitle">Fill in complete information to create an attractive rental listing</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-error" role="alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                <span>@successMessage</span>
+            </div>
+        }
+
+        <div class="steps-container">
+            @for (int s = 1; s <= 3; s++)
+            {
+                int step = s;
+                <button @onclick="() => currentStep = step" 
+                        type="button"
+                        class="step-btn @(currentStep == step ? "active" : "")">
+                    <span class="step-number">@step</span>
+                    <span>@(step == 1 ? "Basic Information" : step == 2 ? "Property Details" : "Upload Images")</span>
+                </button>
+            }
+        </div>
+
+        @if (currentStep == 1)
+        {
+            <div class="form-card">
+                <div class="section-title">
+                    <div class="section-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <span>Basic Information</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Title <span class="required">*</span></label>
+                    <input @bind="model.Title" 
+                           type="text" 
+                           class="form-input" 
+                           placeholder="E.g: 2-Bedroom Apartment in District 1 Near BTS" />
+                    <small class="form-hint">The more attractive the title, the easier to attract customers</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description <span class="required">*</span></label>
+                    <textarea @bind="model.Description" 
+                              class="form-textarea" 
+                              placeholder="Describe the furniture, amenities, surrounding area, transportation..."></textarea>
+                    <small class="form-hint">@((model.Description?.Length ?? 0) / 500) / 500 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address <span class="required">*</span></label>
+                    <div class="input-group">
+                        <i class="input-icon fas fa-map-marker-alt"></i>
+                        <input @bind="model.Address" 
+                               type="text" 
+                               class="form-input input-with-icon" 
+                               placeholder="E.g: 123 Nguyen Hue St, District 1, HCMC" />
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Monthly Rent (?) <span class="required">*</span></label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-dollar-sign"></i>
+                            <input @bind="model.Price" 
+                                   type="number" 
+                                   class="form-input input-with-icon" 
+                                   placeholder="5000000" 
+                                   min="0" />
+                        </div>
+                        @if (model.Price > 0)
+                        {
+                            <small class="form-hint success">? ?@((model.Price / 1_000_000.0).ToString("F1")) million/month</small>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Security Deposit (?)</label>
+                        <div class="input-group">
+                            <i class="input-icon fas fa-lock"></i>
+                            <input @bind="model.Deposit" 
+                                   type="number" 
+                                   class="form-input input-with-icon" 
+                                   placeholder="10000000" 
+                                   min="0" />
+                        </div>
+                        @if (model.Deposit > 0)
+                        {
+                            <small class="form-hint success">? ?@((model.Deposit / 1_000_000.0).ToString("F1")) million</small>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Area (m²) <span class="required">*</span></label>
+                    <div class="input-group">
+                        <i class="input-icon fas fa-ruler-combined"></i>
+                        <input @bind="model.Area" 
+                               type="number" 
+                               class="form-input input-with-icon" 
+                               placeholder="50" 
+                               min="0" />
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <div></div>
+                    <button @onclick="() => currentStep = 2" type="button" class="btn btn-primary">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (currentStep == 2)
+        {
+            <div class="form-card">
+                <div class="section-title">
+                    <div class="section-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <span>Property Details</span>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Bedrooms</label>
+                        <input @bind="model.Bedrooms" type="number" class="form-input" placeholder="1" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bathrooms</label>
+                        <input @bind="model.Bathrooms" type="number" class="form-input" placeholder="1" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Floor</label>
+                        <input @bind="model.Floor" type="number" class="form-input" placeholder="1" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Total Floors</label>
+                        <input @bind="model.BuildingFloors" type="number" class="form-input" placeholder="10" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Year Built</label>
+                        <input @bind="model.YearBuilt" type="number" class="form-input" placeholder="2020" min="1900" max="2030" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Property Type</label>
+                        <select @bind="model.Type" class="form-select">
+                            <option value="Apartment">Apartment</option>
+                            <option value="Studio">Studio</option>
+                            <option value="House">House</option>
+                            <option value="Villa">Villa</option>
+                            <option value="Loft">Loft</option>
+                            <option value="Penthouse">Penthouse</option>
+                            <option value="Room">Room</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Amenities & Services</label>
+                    <div class="amenities-grid">
+                        @foreach (var amenity in availableAmenities)
+                        {
+                            var a = amenity;
+                            bool selected = selectedAmenities.Contains(a.Key);
+                            <button @onclick="() => ToggleAmenity(a.Key)" 
+                                    type="button"
+                                    class="amenity-btn @(selected ? "selected" : "")">
+                                <i class="fas fa-@(a.Icon)"></i>
+                                <span>@a.Name</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button @onclick="() => currentStep = 1" type="button" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button @onclick="() => currentStep = 3" type="button" class="btn btn-primary">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (currentStep == 3)
+        {
+            <div class="form-card">
+                <div class="section-title">
+                    <div class="section-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <span>Upload Images (@uploadedImages.Count / 10)</span>
+                </div>
+
+                @if (uploadedImages.Count < 10)
+                {
+                    <div class="form-group">
+                        <label for="fileUpload" class="upload-zone">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">Click to upload or drag and drop images</div>
+                            <div class="upload-hint">JPG, PNG, WebP • Max 10 images • Max 5MB per image</div>
+                        </label>
+                        <InputFile id="fileUpload" 
+                                   OnChange="OnFileSelected" 
+                                   multiple 
+                                   accept=".jpg,.jpeg,.png,.webp"
+                                   style="display:none;" />
+                    </div>
+                }
+
+                @if (uploadedImages.Count > 0)
+                {
+                    <div class="form-group">
+                        <label class="form-label">Uploaded Images</label>
+                        <div class="image-grid">
+                            @foreach (var (img, idx) in uploadedImages.Select((v, i) => (v, i)))
+                            {
+                                int index = idx;
+                                <div class="image-card">
+                                    <img src="@img.PreviewUrl" alt="Upload @(index + 1)" />
+                                    <div class="image-overlay">
+                                        <button @onclick="() => RemoveUploadedImage(index)" 
+                                                type="button"
+                                                class="delete-btn">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+
+                                    @if (img.IsUploading)
+                                    {
+                                        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;border-radius:inherit">
+                                            <div class="loading-spinner"></div>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(img.ValidationMessage))
+                                    {
+                                        <div style="position:absolute;bottom:0;left:0;right:0;padding:0.5rem;font-size:0.75rem;font-weight:600;text-align:center;@(img.IsValid ? "background:rgba(34,197,94,0.5);color:#86efac" : "background:rgba(239,68,68,0.5);color:#fecaca")">
+                                            <i class="fas fa-@(img.IsValid ? "check-circle" : "exclamation-triangle")"></i> @img.ValidationMessage
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (uploadedImages.Count == 0)
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-image"></i>
+                        <p>No images uploaded yet</p>
+                    </div>
+                }
+
+                <div class="button-group">
+                    <button @onclick="() => currentStep = 2" type="button" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+                        <button @onclick="() => SaveListing(false)" 
+                                disabled="@isSaving"
+                                type="button"
+                                class="btn btn-secondary">
+                            <i class="fas fa-save"></i> Save Draft
+                        </button>
+                        <button @onclick="() => SaveListing(true)" 
+                                disabled="@isSaving"
+                                type="button"
+                                class="btn btn-primary">
+                            @if (isSaving)
+                            {
+                                <div class="loading-spinner" style="width:1rem;height:1rem;border-width:2px"></div>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span><i class="fas fa-paper-plane"></i> Submit for Review</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private int currentStep = 1;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+    private CreateRoomListingDto model = new() { Bedrooms = 1, Bathrooms = 1, Type = "Apartment" };
+    private List<UploadedImage> uploadedImages = new();
+    private HashSet<string> selectedAmenities = new();
+
+    private readonly List<AmenityItem> availableAmenities = new()
+    {
+        new("wifi", "wifi", "High-Speed WiFi"),
+        new("aircon", "snowflake", "Air Conditioning"),
+        new("parking", "car", "Parking Space"),
+        new("security", "shield-alt", "24/7 Security"),
+        new("gym", "dumbbell", "Fitness Center"),
+        new("pool", "swimming-pool", "Swimming Pool"),
+        new("camera", "camera", "CCTV Camera"),
+        new("laundry", "tshirt", "Laundry Service"),
+        new("freedom", "clock", "No Curfew"),
+        new("pet", "paw", "Pet Friendly"),
+        new("elevator", "arrows-alt-v", "Elevator"),
+        new("furniture", "couch", "Furnished"),
+    };
+
+    private void ToggleAmenity(string key)
+    {
+        if (!selectedAmenities.Remove(key))
+            selectedAmenities.Add(key);
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        errorMessage = "";
+        var files = e.GetMultipleFiles(30);
+
+        foreach (var file in files)
+        {
+            if (uploadedImages.Count >= 10)
+            {
+                errorMessage = "Maximum 10 images allowed.";
+                break;
+            }
+
+            if (file.Size > 5 * 1024 * 1024)
+            {
+                errorMessage = $"File {file.Name} exceeds 5MB limit.";
+                continue;
+            }
+
+            var img = new UploadedImage
+            {
+                File = file,
+                PreviewUrl = "",
+                IsUploading = false,
+                FileName = file.Name
+            };
+
+            try
+            {
+                var resizedImage = await file.RequestImageFileAsync(file.ContentType, 300, 300);
+                using var previewMs = new MemoryStream();
+                await resizedImage.OpenReadStream(2 * 1024 * 1024).CopyToAsync(previewMs);
+                var previewBuffer = previewMs.ToArray();
+                img.PreviewUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(previewBuffer)}";
+
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(5 * 1024 * 1024).CopyToAsync(ms);
+                img.FileBytes = ms.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading file: {ex.Message}");
+                img.PreviewUrl = "https://via.placeholder.com/300?text=Error";
+            }
+
+            uploadedImages.Add(img);
+        }
+    }
+
+    private void RemoveUploadedImage(int index)
+    {
+        if (index >= 0 && index < uploadedImages.Count)
+            uploadedImages.RemoveAt(index);
+    }
+
+    private async Task SaveListing(bool submitForReview)
+    {
+        errorMessage = "";
+        successMessage = "";
+
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "Title is required.";
+            currentStep = 1;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(model.Address))
+        {
+            errorMessage = "Address is required.";
+            currentStep = 1;
+            return;
+        }
+        if (model.Price <= 0)
+        {
+            errorMessage = "Please enter a valid rental price.";
+            currentStep = 1;
+            return;
+        }
+
+        isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            model.Amenities = selectedAmenities.ToList();
+
+            var json = JsonSerializer.Serialize(model);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await Http.PostAsync("api/listings/create", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Failed to create listing: {err}";
+                return;
+            }
+
+            var responseStream = await response.Content.ReadAsStreamAsync();
+            using var doc = JsonDocument.Parse(responseStream);
+            var roomId = doc.RootElement.GetProperty("data").GetProperty("roomId").GetInt32();
+
+            foreach (var img in uploadedImages)
+            {
+                img.IsUploading = true;
+                StateHasChanged();
+
+                try
+                {
+                    using var formContent = new MultipartFormDataContent();
+                    var fileContent = new ByteArrayContent(img.FileBytes!);
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(GetMimeType(img.FileName));
+                    formContent.Add(fileContent, "Image", img.FileName);
+                    formContent.Add(new StringContent("false"), "Is360");
+
+                    var imgResp = await Http.PostAsync($"api/listings/{roomId}/upload-image", formContent);
+                    if (imgResp.IsSuccessStatusCode)
+                    {
+                        img.IsValid = true;
+                        img.ValidationMessage = "Uploaded";
+                    }
+                    else
+                    {
+                        img.IsValid = false;
+                        img.ValidationMessage = "Error";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    img.IsValid = false;
+                    img.ValidationMessage = "Error";
+                    Console.WriteLine($"Image upload error: {ex.Message}");
+                }
+                finally
+                {
+                    img.IsUploading = false;
+                    StateHasChanged();
+                }
+            }
+
+            if (submitForReview)
+            {
+                await Http.PostAsync($"api/listings/{roomId}/submit-for-review", null);
+            }
+
+            successMessage = submitForReview
+                ? "Listing submitted for review successfully!"
+                : "Listing saved as draft!";
+
+            await Task.Delay(1500);
+            Nav.NavigateTo("/landlord/properties");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            Console.WriteLine($"SaveListing error: {ex}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static string GetMimeType(string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLower();
+        return ext switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
+    }
+
+    private record AmenityItem(string Key, string Icon, string Name);
+
+    private class UploadedImage
+    {
+        public IBrowserFile? File { get; set; }
+        public string PreviewUrl { get; set; } = "";
+        public string FileName { get; set; } = "";
+        public byte[]? FileBytes { get; set; }
+        public bool IsUploading { get; set; }
+        public bool IsValid { get; set; }
+        public string? ValidationMessage { get; set; }
+    }
+}

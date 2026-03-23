@@ -57,6 +57,13 @@ namespace STAYTRUST.Controllers
                 Expires = expires
             });
 
+            // Get user role to determine redirect URL
+            var userRole = await _authService.GetUserRoleAsync(email);
+            if (userRole == "Landlord")
+            {
+                return Redirect("/landlord/home");
+            }
+
             return Redirect("/");
         }
 

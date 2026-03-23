@@ -11,17 +11,17 @@ public partial class Invoice
 
     public string? Month { get; set; }
 
-    public decimal? RoomPrice { get; set; }
+    public decimal RoomPrice { get; set; }
 
-    public decimal? ElectricFee { get; set; }
+    public decimal ElectricFee { get; set; }
 
-    public decimal? WaterFee { get; set; }
+    public decimal WaterFee { get; set; }
 
     public decimal? TotalAmount { get; set; }
 
-    public string? Status { get; set; }
+    public string Status { get; set; } = "Unpaid";
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public virtual RentalContract Contract { get; set; } = null!;
 

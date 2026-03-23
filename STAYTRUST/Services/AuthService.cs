@@ -15,6 +15,7 @@ namespace STAYTRUST.Services
     {
         Task<bool> RegisterUserAsync(string fullName, string email, string password, string? phoneNumber, string role);
         Task<string?> AuthenticateAsync(string email, string password);
+        Task<string?> GetUserRoleAsync(string email);
     }
 
     public class AuthService : IAuthService
@@ -70,10 +71,11 @@ namespace STAYTRUST.Services
 
             var claims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("FullName", user.FullName),
-                new Claim("Role", user.Role ?? "Tenant"),
+                new Claim(ClaimTypes.Role, user.Role ?? "Tenant"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -85,6 +87,12 @@ namespace STAYTRUST.Services
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<string?> GetUserRoleAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return user?.Role;
         }
     }
 }

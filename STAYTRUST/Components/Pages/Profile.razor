@@ -225,8 +225,9 @@
         statusMessage = null;
         isError = false;
 
-        var profileUpdate = new UserProfile
+        var profileUpdate = new STAYTRUST.Models.UserProfile
         {
+            UserId = user.UserId,
             DateOfBirth = DateOfBirth,
             Gender = Gender,
             IdentityNumber = IdentityNumber,
