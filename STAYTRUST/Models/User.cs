@@ -38,9 +38,8 @@ namespace STAYTRUST.Models
 
 public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
-public virtual ICollection<FavoriteRoom> FavoriteRooms { get; set; } = new List<FavoriteRoom>();
+        public virtual ICollection<FavoriteRoom> FavoriteRooms { get; set; } = new List<FavoriteRoom>();
 
 public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();
 
