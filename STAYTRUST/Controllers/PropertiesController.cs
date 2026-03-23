@@ -125,6 +125,28 @@ namespace STAYTRUST.Controllers
                     new() { Icon = "camera", Name = "CCTV Monitoring" },
                 };
 
+                // Get tenant information if property is occupied
+                TenantInfoDto? tenantInfo = null;
+                var activeContract = await _context.RentalContracts
+                    .Include(c => c.Tenant)
+                    .FirstOrDefaultAsync(c => c.RoomId == id && c.Status == "Active");
+
+                if (activeContract != null)
+                {
+                    tenantInfo = new TenantInfoDto
+                    {
+                        Name = activeContract.Tenant?.UserName ?? "Unknown",
+                        FullName = activeContract.Tenant?.FullName ?? "Unknown",
+                        Email = activeContract.Tenant?.Email ?? "",
+                        Phone = activeContract.Tenant?.Phone ?? "",
+                        MoveInDate = activeContract.StartDate?.ToDateTime(TimeOnly.MinValue) ?? DateTime.MinValue,
+                        LeaseEnd = activeContract.EndDate?.ToDateTime(TimeOnly.MinValue) ?? DateTime.MinValue,
+                        Avatar = "T", // First letter of tenant name for avatar
+                        Status = "active",
+                        PaymentStatus = "on-time"
+                    };
+                }
+
                 var response = new PropertyDetailDto
                 {
                     Id = property.RoomId,
@@ -150,6 +172,7 @@ namespace STAYTRUST.Controllers
                     Image360Url = property.Image360Url ?? "",
                     Images = property.RoomImages.Select(i => i.ImageUrl ?? "").ToList(),
                     Amenities = amenities,
+                    Tenant = tenantInfo,
                     CreatedAt = property.CreatedAt ?? DateTime.Now
                 };
 

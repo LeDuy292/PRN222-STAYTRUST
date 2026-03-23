@@ -51,6 +51,9 @@ builder.Services.AddScoped<IListingManagementService, ListingManagementService>(
 builder.Services.AddScoped<ISmartBillingService, SmartBillingService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
+// Add Gemini AI Service for Chatbot
+builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>();
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
