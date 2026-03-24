@@ -45,6 +45,9 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<FavoriteRoom> FavoriteRooms { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
+    public virtual DbSet<ForumPost> ForumPosts { get; set; }
+    public virtual DbSet<ForumComment> ForumComments { get; set; }
+    public virtual DbSet<ForumLike> ForumLikes { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -349,6 +352,30 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.Room).WithMany(p => p.Messages)
                 .HasForeignKey(d => d.RoomId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<ForumPost>(entity =>
+        {
+            entity.HasKey(e => e.PostId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.User).WithMany(p => p.ForumPosts).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<ForumComment>(entity =>
+        {
+            entity.HasKey(e => e.CommentId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.Post).WithMany(p => p.Comments).HasForeignKey(d => d.PostId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(d => d.User).WithMany(p => p.ForumComments).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<ForumLike>(entity =>
+        {
+            entity.HasKey(e => e.LikeId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.Post).WithMany(p => p.Likes).HasForeignKey(d => d.PostId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(d => d.User).WithMany(p => p.ForumLikes).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.ClientSetNull);
+            entity.HasIndex(e => new { e.UserId, e.PostId }).IsUnique();
         });
 
         OnModelCreatingPartial(modelBuilder);

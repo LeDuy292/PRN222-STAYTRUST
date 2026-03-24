@@ -45,6 +45,10 @@ public virtual ICollection<Message> SentMessages { get; set; } = new List<Messag
 
 public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
 
+public virtual ICollection<ForumPost> ForumPosts { get; set; } = new List<ForumPost>();
+public virtual ICollection<ForumComment> ForumComments { get; set; } = new List<ForumComment>();
+public virtual ICollection<ForumLike> ForumLikes { get; set; } = new List<ForumLike>();
+
 public virtual UserProfile? UserProfile { get; set; }
     }
 }

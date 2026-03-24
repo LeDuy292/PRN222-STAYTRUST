@@ -1,3 +1,10 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using STAYTRUST.Data
+@using STAYTRUST.Models
+@using Microsoft.EntityFrameworkCore
+@inject AuthenticationStateProvider AuthStateProvider
+@inject AppDbContext DbContext
+
 <aside class="w-72 bg-surface-dark border-r border-primary/10 flex flex-col h-full">
 <div class="p-6 flex items-center gap-3">
 <div class="size-10 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30">
@@ -27,18 +34,56 @@
 <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="/landlord-team">
 <span class="material-symbols-outlined">admin_panel_settings</span>
 <span>Team Management</span>
-</a></nav>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="/community">
+<span class="material-symbols-outlined">forum</span>
+<span>Community Forum</span>
+</a>
+</nav>
 <div class="p-4 border-t border-primary/10">
 <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" href="#">
 <span class="material-symbols-outlined">settings</span>
 <span>Settings</span>
 </a>
-<div class="mt-4 flex items-center gap-3 px-4 py-3 bg-primary/5 rounded-xl border border-primary/10">
-<img class="size-10 rounded-full border-2 border-primary/20" data-alt="Landlord profile photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu7WBtdFQpKS2S-nie45ilrgiW7n4Qh7oimNU7TCIYumHHs7g-8AYUez7EQa4VLVSPw5K0GnpGZDpBlQ7woWp8_ceaGQDH8mcb3NKulbtp_Wcv_K9JfztR-JXTELJARSXyu459C5aJPLjHRQ_nfOhN3Q_PEE-jMeNNEjGNNpPnufGNAR3M8E-b83FIqAVqsi4tk7ChgntPiwz2IcxcRcQdC_1c2CpdHIn1IFPzsoJ6-PenAi6QqgroyoajtDc4RRMf6x8J-GOSWDo"/>
-<div class="flex-1 min-w-0">
-<p class="text-sm font-semibold text-slate-100 truncate">Alex Sterling</p>
-<p class="text-xs text-slate-500 truncate">Premium Account</p>
-</div>
-</div>
-</div>
+        <a href="/profile" class="mt-4 flex items-center gap-3 px-4 py-3 bg-primary/5 rounded-xl border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer">
+            <img class="size-10 rounded-full border-2 border-primary/20 object-cover" alt="Profile" src="@(userAvatarUrl ?? $"https://ui-avatars.com/api/?name={userFullName}")"/>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-100 truncate">@userFullName</p>
+                <p class="text-xs text-slate-500 truncate">@userRole</p>
+            </div>
+        </a>
+    </div>
 </aside>
+
+@code {
+    private string userFullName = "Loading...";
+    private string userRole = "Loading...";
+    private string? userAvatarUrl = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                         ?? user.FindFirst("sub")?.Value 
+                         ?? user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                var dbUser = await DbContext.Users
+                    .Include(u => u.UserProfile)
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
+
+                if (dbUser != null)
+                {
+                    userFullName = dbUser.FullName;
+                    userRole = dbUser.Role ?? "Member";
+                    userAvatarUrl = dbUser.UserProfile?.AvatarUrl;
+                }
+            }
+        }
+    }
+}

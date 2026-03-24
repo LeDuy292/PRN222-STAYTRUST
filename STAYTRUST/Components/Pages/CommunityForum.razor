@@ -1,5 +1,17 @@
 @page "/community"
+@rendermode InteractiveServer
 @layout STAYTRUST.Components.Layout.CommunityLayout
+@using STAYTRUST.Models
+@using STAYTRUST.Data
+@using STAYTRUST.Services
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AppDbContext DbContext
+@inject IAwsS3Service AwsS3
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <div class="w-full">
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -8,88 +20,162 @@
             <div class="flex-1 space-y-6">
                 <!-- Category Filters -->
                 <div class="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-                    <button class="whitespace-nowrap px-5 py-2 rounded-full bg-primary text-[#0a2540] text-sm font-bold shadow-lg shadow-primary/20">#All</button>
-                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#RentalTips</button>
-                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#LegalAdvice</button>
-                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#DaNangLiving</button>
-                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#VerifiedNews</button>
-                    <button class="whitespace-nowrap px-5 py-2 rounded-full glass-card text-slate-300 hover:text-white text-sm font-medium transition-all">#ExpatLife</button>
+                    <button @onclick='() => SetCategory("All")' 
+                            class="whitespace-nowrap px-5 py-2 rounded-full @(selectedCategory == "All" ? "bg-primary text-[#0a2540] font-bold" : "glass-card text-slate-300 hover:text-white font-medium") text-sm transition-all shadow-lg shadow-primary/20">#All</button>
+                    <button @onclick='() => SetCategory("RentalTips")' 
+                            class="whitespace-nowrap px-5 py-2 rounded-full @(selectedCategory == "RentalTips" ? "bg-primary text-[#0a2540] font-bold" : "glass-card text-slate-300 hover:text-white font-medium") text-sm transition-all">#RentalTips</button>
+                    <button @onclick='() => SetCategory("LegalAdvice")' 
+                            class="whitespace-nowrap px-5 py-2 rounded-full @(selectedCategory == "LegalAdvice" ? "bg-primary text-[#0a2540] font-bold" : "glass-card text-slate-300 hover:text-white font-medium") text-sm transition-all">#LegalAdvice</button>
+                    <button @onclick='() => SetCategory("DaNangLiving")' 
+                            class="whitespace-nowrap px-5 py-2 rounded-full @(selectedCategory == "DaNangLiving" ? "bg-primary text-[#0a2540] font-bold" : "glass-card text-slate-300 hover:text-white font-medium") text-sm transition-all">#DaNangLiving</button>
+                    <button @onclick='() => SetCategory("VerifiedNews")' 
+                            class="whitespace-nowrap px-5 py-2 rounded-full @(selectedCategory == "VerifiedNews" ? "bg-primary text-[#0a2540] font-bold" : "glass-card text-slate-300 hover:text-white font-medium") text-sm transition-all">#VerifiedNews</button>
+                    <button @onclick='() => SetCategory("ExpatLife")' 
+                            class="whitespace-nowrap px-5 py-2 rounded-full @(selectedCategory == "ExpatLife" ? "bg-primary text-[#0a2540] font-bold" : "glass-card text-slate-300 hover:text-white font-medium") text-sm transition-all">#ExpatLife</button>
                 </div>
 
                 <!-- Post Composer -->
-                <div class="glass-card rounded-2xl p-5 shadow-2xl">
-                    <div class="flex gap-4">
-                        <div class="h-10 w-10 rounded-full bg-slate-700 shrink-0 overflow-hidden">
-                            <img class="w-full h-full object-cover" data-alt="Current user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCX9W3oyh8zftQXxBLmWFIiiB-kkCGy4Gsg9mmQBAwyL9fE4lI8EDdkx_ghVkJkFGVPTnlqy-g9cTDJPVerN_a0bFMupmCA8JeiqAd3O1vMPqufEhttUlh7-s_bHiLgDL8FlYSQkSxCFm9czhegCa9LxSBAdjtpeUBcgR1vgPyo7s4lYv2-9CnrtGw4lPf5EDalLZVmILxb565E8A0243ModLAtG1aab0HkCBbVXWg0TmeQRWDSQ0SzhjQ36ruLVvo4OkFQdprljO8"/>
-                        </div>
-                        <div class="flex-1">
-                            <textarea class="w-full bg-transparent border-none focus:ring-0 text-slate-100 placeholder:text-slate-500 resize-none min-h-[80px] p-0 text-lg" placeholder="Share an update or ask a question..."></textarea>
-                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
-                                <div class="flex gap-4">
-                                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-slate-400">
-                                        <span class="material-symbols-outlined text-xl text-primary">image</span>
-                                        <span class="text-xs font-semibold">Add Image</span>
-                                    </button>
-                                    <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-slate-400">
-                                        <span class="material-symbols-outlined text-xl text-primary">location_on</span>
-                                        <span class="text-xs font-semibold"> Tag Location</span>
-                                    </button>
+                <AuthorizeView>
+                    <Authorized>
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-100 flex items-center gap-3">
+                                <span class="material-symbols-outlined text-red-500">error</span>
+                                <span class="text-sm">@errorMessage</span>
+                            </div>
+                        }
+                        <div class="glass-card rounded-2xl p-5 shadow-2xl">
+                            <div class="flex gap-4">
+                                <div class="h-10 w-10 rounded-full bg-slate-700 shrink-0 overflow-hidden">
+                                    <img class="w-full h-full object-cover" src="@userAvatarUrl"/>
                                 </div>
-                                <button class="bg-primary hover:bg-primary/90 text-[#0a2540] font-bold px-8 py-2 rounded-xl transition-all shadow-lg shadow-primary/20">Post</button>
+                                <div class="flex-1">
+                                    <textarea @bind="newPostContent" class="w-full bg-transparent border-none focus:ring-0 text-slate-100 placeholder:text-slate-500 resize-none min-h-[80px] p-0 text-lg" placeholder="Share an update or ask a question..."></textarea>
+                                    @if (imagePreviewUrl != null)
+                                    {
+                                        <div class="mt-4 relative inline-block rounded-xl overflow-hidden border border-white/20 shadow-lg">
+                                            <img src="@imagePreviewUrl" class="max-h-48 object-contain bg-black/30" />
+                                            <button @onclick="ClearImage" class="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 rounded-full w-7 h-7 flex items-center justify-center text-white backdrop-blur-sm transition-all shadow-lg text-lg font-bold pb-1">×</button>
+                                        </div>
+                                    }
+                                    <div class="relative">
+                                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+                                            <div class="flex gap-4">
+                                                <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-slate-400 cursor-pointer">
+                                                    <span class="material-symbols-outlined text-xl text-primary">image</span>
+                                                    <span class="text-xs font-semibold">Add Image</span>
+                                                    <InputFile OnChange="HandleImageUpload" accept="image/*" class="hidden" />
+                                                </label>
+                                                <!-- Emoji Button -->
+                                                <button @onclick="ToggleEmojis" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-slate-400">
+                                                    <span class="material-symbols-outlined text-xl text-yellow-400">sentiment_satisfied</span>
+                                                    <span class="text-xs font-semibold">Emoji</span>
+                                                </button>
+                                            </div>
+                                            <button @onclick="CreatePost" disabled="@isPosting" class="@(isPosting ? "opacity-50 cursor-not-allowed" : "") bg-primary hover:bg-primary/90 text-[#0a2540] font-bold px-8 py-2 rounded-xl transition-all shadow-lg shadow-primary/20">
+                                                @(isPosting ? "Posting..." : "Post")
+                                            </button>
+                                        </div>
+                                        <!-- Emoji Panel -->
+                                        @if (showEmojis)
+                                        {
+                                            <div class="absolute bottom-full left-12 mb-2 p-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl z-10 flex gap-2 w-max animate-in fade-in slide-in-from-bottom-2">
+                                                @foreach (var emoji in new[] { "😊", "😂", "🥰", "👍", "❤️", "🔥", "🏠", "💡", "💰", "🎉" })
+                                                {
+                                                    <button @onclick="() => AddEmoji(emoji)" class="text-2xl hover:bg-white/10 p-2 rounded-xl transition-transform hover:scale-110">@emoji</button>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <div class="glass-card rounded-2xl p-6 text-center shadow-xl">
+                            <p class="text-slate-300 mb-4">Please log in to share updates or ask questions.</p>
+                            <a href="/auth" class="inline-block bg-primary hover:bg-primary/90 text-[#0a2540] font-bold px-8 py-2 rounded-xl transition-all">Login</a>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
 
                 <!-- Feed Posts -->
                 <div class="space-y-6">
-                    <!-- Post 1 -->
-                    <article class="glass-card rounded-2xl overflow-hidden shadow-xl">
-                        <div class="p-5">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="h-12 w-12 rounded-full bg-slate-800 p-0.5 border border-primary/30">
-                                        <img class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9Box-4QR2hAZniXwBjvSfuckTk2rR1oBwD0aWvzgbnjOdSrHf61a32ee8gG5XCKmGaPwZFy-rLPW8hGtuDlTL69SpkeFYpu272_PKbuDe1GEAyBKBK_jg_E0kLXTHe9KsHm-B6haWtX5gcxQnRmB4p72YthOxHq-9g_wH-vETdEJhQLoJ7kO2uPOIh_HevGUagXfg1E8OiYRqofE_m9m7ViCswsJuKf-uUZDB7Q5hS5gam-30FNtLHLi-E15Z-BRj44llwdnW4Ko"/>
+                    @foreach (var post in filteredPosts)
+                    {
+                        <article class="glass-card rounded-2xl overflow-hidden shadow-xl">
+                            <div class="p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <a href="/user-profile/@post.UserId" class="h-12 w-12 block rounded-full bg-slate-800 p-0.5 border border-primary/30 hover:scale-105 transition-transform">
+                                            <img class="w-full h-full rounded-full object-cover" src="@(post.User.UserProfile?.AvatarUrl ?? "https://ui-avatars.com/api/?name=" + post.User.FullName)"/>
+                                        </a>
+                                        <div>
+                                            <a href="/user-profile/@post.UserId" class="font-bold text-slate-100 flex items-center gap-2 hover:underline">
+                                                @post.User.FullName
+                                                @if (post.User.Role == "Admin")
+                                                {
+                                                    <span class="flex items-center gap-1 bg-red-500/10 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-500/20">
+                                                        <span class="material-symbols-outlined text-[12px] fill-1">shield</span> @post.User.Role
+                                                    </span>
+                                                }
+                                                else if (post.User.Role == "Landlord")
+                                                {
+                                                    <span class="flex items-center gap-1 bg-amber-500/10 text-amber-400 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/20">
+                                                        <span class="material-symbols-outlined text-[12px] fill-1">real_estate_agent</span> @post.User.Role
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                                        <span class="material-symbols-outlined text-[12px] fill-1">person</span> @post.User.Role
+                                                    </span>
+                                                }
+                                            </a>
+                                            <p class="text-xs text-slate-500">@GetTimeAgo(post.CreatedAt)</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 class="font-bold text-slate-100 flex items-center gap-2">
-                                            Nguyen Hoang 
-                                            <span class="flex items-center gap-1 bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full border border-primary/20">
-                                                <span class="material-symbols-outlined text-[12px] fill-1" style="font-variation-settings: 'FILL' 1;">verified</span> 98 Trust Score
-                                            </span>
-                                        </h3>
-                                        <p class="text-xs text-slate-500">2 hours ago • Da Nang, Vietnam</p>
-                                    </div>
+                                    <button class="material-symbols-outlined text-slate-500">more_horiz</button>
                                 </div>
-                                <button class="material-symbols-outlined text-slate-500">more_horiz</button>
+                                <p class="text-slate-300 mb-4 leading-relaxed">
+                                    @post.Content
+                                </p>
                             </div>
-                            <p class="text-slate-300 mb-4 leading-relaxed">
-                                Just secured this beautiful studio in Son Tra! The verification process through Staytrust made the legal paperwork so much easier. #DaNangLiving #RentalTips
-                            </p>
-                        </div>
-                        <div class="relative aspect-[16/9] w-full bg-slate-800">
-                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkmPvmcIDuModmGBLvU8Ev7aYt72E5_pIwDrImTpyEFgWV6PxyVbnJV1YBUqOjK3xgCIT4IlImVGZhF_EpfLIiEJlJYTjHKcawLOprF_igNPzZ8kIrRcDBTrXSdUZwOy0RoNlCx70jLLEkG0DVAq70lLxBPePVrD5Tx7E5gYBpsSA3mFR9HpnuIfyokuoeYhQhs7-mpTe4mt_oqPohnGp02nvSmGVqixqWoUoGy_8xryLoFh94McbuMHjxHetxc3MvLirbv1aPu98"/>
-                        </div>
-                        <div class="p-4 border-t border-white/10 flex items-center justify-between">
-                            <div class="flex items-center gap-6">
-                                <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span class="material-symbols-outlined">favorite</span>
-                                    <span class="text-sm font-semibold">124</span>
-                                </button>
-                                <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span class="material-symbols-outlined">chat_bubble</span>
-                                    <span class="text-sm font-semibold">18</span>
-                                </button>
-                                <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
-                                    <span class="material-symbols-outlined">share</span>
-                                    <span class="text-sm font-semibold">Share</span>
+                            @if (!string.IsNullOrEmpty(post.ImageUrl))
+                            {
+                                <div class="relative aspect-[16/9] w-full bg-slate-800">
+                                    <img class="w-full h-full object-cover" src="@post.ImageUrl"/>
+                                </div>
+                            }
+                            <div class="p-4 border-t border-white/10 flex items-center justify-between">
+                                <div class="flex items-center gap-6">
+                                    <button @onclick="() => ToggleLike(post)" class="flex items-center gap-2 @(HasLiked(post) ? "text-primary" : "text-slate-400") hover:text-primary transition-colors">
+                                        <span class="material-symbols-outlined @(HasLiked(post) ? "fill-1" : "")">favorite</span>
+                                        <span class="text-sm font-semibold">@post.LikeCount</span>
+                                    </button>
+                                    <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                        <span class="material-symbols-outlined">chat_bubble</span>
+                                        <span class="text-sm font-semibold">@post.CommentCount</span>
+                                    </button>
+                                    <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                        <span class="material-symbols-outlined">share</span>
+                                        <span class="text-sm font-semibold">Share</span>
+                                    </button>
+                                </div>
+                                <button class="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
+                                    Read More <span class="material-symbols-outlined text-sm">arrow_forward</span>
                                 </button>
                             </div>
-                            <button class="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
-                                Read More <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                            </button>
+                        </article>
+                    }
+                    
+                    @if (!filteredPosts.Any())
+                    {
+                        <div class="text-center py-20 text-slate-500">
+                            <span class="material-symbols-outlined text-6xl mb-4">forum</span>
+                            <p>No posts found in this category.</p>
                         </div>
-                    </article>
+                    }
                 </div>
             </div>
 
@@ -111,7 +197,7 @@
                     <button class="w-full mt-6 py-2 text-primary text-xs font-bold border border-primary/20 rounded-lg hover:bg-primary/5 transition-all">Show More</button>
                 </section>
 
-                <!-- Top Contributors -->
+                <!-- Top Contributors (Sample Static) -->
                 <section class="glass-card rounded-2xl p-6 shadow-xl">
                     <h2 class="text-lg font-[800] text-slate-100 mb-4 flex items-center gap-2 uppercase tracking-tight">
                         <span class="material-symbols-outlined text-primary">award_star</span>
@@ -121,7 +207,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="h-10 w-10 rounded-full bg-slate-800 overflow-hidden">
-                                     <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9RZV7bHWH3ePayDtGE4YeQBf4VgQ1eA1JfZvkF_upDVURDm1-VXQFRS58Z28fFJnNts4gScEgUG_GA8y-wA-rMqtfI5k4PWG3d47ScclbUJNgrgH168NI7u6vDsgvGYP_cQFDaWUQ5iTNM6JwLvMQHblgrbovJcjW-48YZNTwhF5YPPBoJi0IIhSIpiMfwo7xhepl59Qx6Xm3dxSfqjeSii6TmHK5Rp4YxxIztv0PAXTFoeDyhchvZkLCHspVZU2TvMMHfZTfU1s"/>
+                                     <img class="w-full h-full object-cover" src="https://ui-avatars.com/api/?name=Marcus+Thorne"/>
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-slate-100 leading-none text-left">Marcus Thorne</p>
@@ -151,3 +237,214 @@
         </div>
     </main>
 </div>
+
+@code {
+    private List<ForumPost> posts = new();
+    private List<ForumPost> filteredPosts => selectedCategory == "All" 
+        ? posts 
+        : posts.Where(p => p.Category == selectedCategory).ToList();
+
+    private string newPostContent = "";
+    private string selectedCategory = "All";
+    private User? currentUser;
+    private string userAvatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCX9W3oyh8zftQXxBLmWFIiiB-kkCGy4Gsg9mmQBAwyL9fE4lI8EDdkx_ghVkJkFGVPTnlqy-g9cTDJPVerN_a0bFMupmCA8JeiqAd3O1vMPqufEhttUlh7-s_bHiLgDL8FlYSQkSxCFm9czhegCa9LxSBAdjtpeUBcgR1vgPyo7s4lYv2-9CnrtGw4lPf5EDalLZVmILxb565E8A0243ModLAtG1aab0HkCBbVXWg0TmeQRWDSQ0SzhjQ36ruLVvo4OkFQdprljO8";
+    private int? currentUserId;
+    private List<int> userLikedPostIds = new();
+    
+    private IBrowserFile? selectedImage;
+    private string? imagePreviewUrl;
+    private bool isPosting = false;
+    private string? errorMessage = null;
+    private bool showEmojis = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var claimsUser = authState.User;
+
+        if (claimsUser.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                        ?? claimsUser.FindFirst("sub")?.Value 
+                        ?? claimsUser.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                currentUser = await DbContext.Users
+                    .Include(u => u.UserProfile)
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
+                
+                if (currentUser != null)
+                {
+                    currentUserId = currentUser.UserId;
+                    userAvatarUrl = currentUser.UserProfile?.AvatarUrl ?? userAvatarUrl;
+                    
+                    userLikedPostIds = await DbContext.ForumLikes
+                        .Where(l => l.UserId == currentUserId)
+                        .Select(l => l.PostId)
+                        .ToListAsync();
+                }
+            }
+        }
+
+        await LoadPosts();
+    }
+
+    private async Task LoadPosts()
+    {
+        posts = await DbContext.ForumPosts
+            .Include(p => p.User)
+                .ThenInclude(u => u.UserProfile)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+    }
+
+    private void ToggleEmojis() => showEmojis = !showEmojis;
+
+    private void AddEmoji(string emoji)
+    {
+        newPostContent += emoji;
+        showEmojis = false;
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        selectedImage = e.File;
+        // Generate base64 preview
+        try 
+        {
+            var buffer = new byte[selectedImage.Size];
+            using var stream = selectedImage.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            await stream.ReadAsync(buffer);
+            imagePreviewUrl = $"data:{selectedImage.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Image preview error: {ex.Message}";
+        }
+    }
+
+    private void ClearImage()
+    {
+        selectedImage = null;
+        imagePreviewUrl = null;
+    }
+
+    private async Task CreatePost()
+    {
+        if (string.IsNullOrWhiteSpace(newPostContent) || currentUserId == null || isPosting) return;
+
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn đăng bài này không?");
+        if (!confirmed) return;
+
+        isPosting = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            string? uploadedImageUrl = null;
+
+            if (selectedImage != null)
+            {
+                try
+                {
+                    using var stream = selectedImage.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024); // 5MB max
+                    uploadedImageUrl = await AwsS3.UploadImageAsync(stream, selectedImage.Name);
+                }
+                catch (Exception awsEx)
+                {
+                    Console.WriteLine($"AWS S3 Upload failed: {awsEx.Message}. Falling back to local storage...");
+                    
+                    // Fallback to local wwwroot folder
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "forum");
+                    Directory.CreateDirectory(uploadsFolder);
+                    var fileName = $"{Guid.NewGuid()}_{selectedImage.Name}";
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+                    
+                    using (var localStream = System.IO.File.Create(filePath))
+                    using (var uploadStream = selectedImage.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024))
+                    {
+                        await uploadStream.CopyToAsync(localStream);
+                    }
+                    
+                    uploadedImageUrl = $"/uploads/forum/{fileName}";
+                }
+            }
+
+            var post = new ForumPost
+            {
+                UserId = currentUserId.Value,
+                Content = newPostContent,
+                ImageUrl = uploadedImageUrl,
+                Category = selectedCategory == "All" ? "General" : selectedCategory,
+                CreatedAt = DateTime.Now
+            };
+
+            DbContext.ForumPosts.Add(post);
+            await DbContext.SaveChangesAsync();
+
+            newPostContent = "";
+            ClearImage();
+            await LoadPosts();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error posting: {ex.Message}";
+            Console.WriteLine($"Error posting: {ex.ToString()}");
+        }
+        finally
+        {
+            isPosting = false;
+        }
+    }
+
+    private void SetCategory(string category)
+    {
+        selectedCategory = category;
+    }
+
+    private bool HasLiked(ForumPost post) => userLikedPostIds.Contains(post.PostId);
+
+    private async Task ToggleLike(ForumPost post)
+    {
+        if (currentUserId == null) return;
+
+        var existingLike = await DbContext.ForumLikes
+            .FirstOrDefaultAsync(l => l.UserId == currentUserId && l.PostId == post.PostId);
+
+        if (existingLike != null)
+        {
+            DbContext.ForumLikes.Remove(existingLike);
+            post.LikeCount--;
+            userLikedPostIds.Remove(post.PostId);
+        }
+        else
+        {
+            var like = new ForumLike
+            {
+                PostId = post.PostId,
+                UserId = currentUserId.Value
+            };
+            DbContext.ForumLikes.Add(like);
+            post.LikeCount++;
+            userLikedPostIds.Add(post.PostId);
+        }
+
+        await DbContext.SaveChangesAsync();
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.Now - dateTime;
+        if (span.TotalDays > 365) return $"{(int)(span.TotalDays / 365)} years ago";
+        if (span.TotalDays > 30) return $"{(int)(span.TotalDays / 30)} months ago";
+        if (span.TotalDays > 7) return $"{(int)(span.TotalDays / 7)} weeks ago";
+        if (span.TotalDays > 1) return $"{(int)span.TotalDays} days ago";
+        if (span.TotalHours > 1) return $"{(int)span.TotalHours} hours ago";
+        if (span.TotalMinutes > 1) return $"{(int)span.TotalMinutes} minutes ago";
+        return "Just now";
+    }
+}
+
