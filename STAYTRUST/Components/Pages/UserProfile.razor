@@ -1,150 +1,207 @@
 @page "/user-profile"
+@page "/user-profile/{UserId:int}"
 @layout STAYTRUST.Components.Layout.CommunityLayout
+@using STAYTRUST.Models
+@using STAYTRUST.Data
+@using STAYTRUST.Services
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext DbContext
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="bg-[#0f2320] min-h-screen font-display text-slate-100 selection:bg-primary/30">
     <div class="relative flex h-auto min-h-[calc(100vh-64px)] w-full flex-col overflow-x-hidden">
 
         <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 lg:px-8">
-            <!-- Profile Header -->
-            <div class="relative mb-8">
-                <div class="h-64 lg:h-80 w-full rounded-2xl overflow-hidden relative group">
-                    <img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="Aerial view of Da Nang" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL0YPsA6u3nXmn5KPFPrNVaVbOT5vpD6qsbaf2PBpaTBMIkoPflJN2She3d9N9UNFxTiD6_z4b4QmnpcC2zdc40zrXXnPM8lZ3DBtmhCqx1YeKbZQQzSgIAETjVdPb7Y43DKlWa654mxZR1jNwuLsYrlw1yeJmPzF68bvcbAN_av8cJccXLUXTJ3cDcyT1QpxIGTtHiZjQ5ISMV6sSxGcN3rb_J7wFjX8fmtiJd8N05-Wksi8NUNtfZuUGl7j6e_ICEMVZbUFFO8w"/>
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#0f2320] via-[#0f2320]/40 to-transparent"></div>
+            @if (isLoading)
+            {
+                <div class="flex items-center justify-center py-20">
+                    <div class="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                 </div>
-                <div class="absolute -bottom-16 left-8 right-8 flex flex-col md:flex-row items-end gap-6">
-                    <div class="relative">
-                        <div class="size-32 md:size-40 rounded-3xl border-4 border-[#0f2320] overflow-hidden shadow-2xl glass-card">
-                            <img class="w-full h-full object-cover" data-alt="Portrait of Phan Nguyễn Gia Huy" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlItsZtP48vC77HSqbtMdVAB8Raf8iaB9jBayU8SQeJdiDIT7CeKy_r_X2O6DEtsdSvlp73_bwqyFqWFSTZDaxBoGVR5nGLfOzFZ5ggulWaus7cCHjoNbtE1ixk4Pi9_J9bd3Xq0DnPl-mZJkiHaM_Mp8jtxYEGmwfnRXAwGeHkE9lfrTNApOr7Qd3ED9McEFebZFwpEjMBWg2YMYML_PcVsKLNfDLi3HJkkHSo17fFMG4a5ms5WD-Q-d1Bgqf63d1k4Cwc5Fj-78"/>
-                        </div>
-                        <div class="absolute -bottom-2 -right-2 bg-primary rounded-full p-1.5 border-4 border-[#0f2320]">
-                            <span class="material-symbols-outlined text-white text-sm">verified</span>
-                        </div>
-                    </div>
-                    <div class="flex-1 flex flex-col md:flex-row justify-between items-start md:items-end pb-4 gap-4">
-                        <div>
-                            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Phan Nguyễn Gia Huy</h1>
-                            <div class="flex items-center gap-3 mt-1">
-                                <span class="flex items-center gap-1 text-primary font-bold">
-                                    <span class="material-symbols-outlined text-base">shield</span>
-                                    Trust Score: 980
-                                </span>
-                                <span class="px-2 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Elite Member</span>
-                                <span class="text-slate-400 text-sm flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-sm">location_on</span>
-                                    Da Nang, Vietnam
-                                </span>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <button class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-lg">edit</span>
-                                Edit Profile
-                            </button>
-                            <button class="p-2.5 glass-card rounded-xl hover:bg-white/10 transition-colors">
-                                <span class="material-symbols-outlined">share</span>
-                            </button>
-                        </div>
-                    </div>
+            }
+            else if (targetUser == null)
+            {
+                <div class="bg-red-500/10 border border-red-500/20 text-red-100 p-8 rounded-3xl text-center mt-10">
+                    <span class="material-symbols-outlined text-4xl text-red-500 mb-4">error</span>
+                    <h2 class="text-xl font-bold mb-2">User Not Found</h2>
+                    <p class="text-sm opacity-70">The profile you are looking for does not exist.</p>
                 </div>
-            </div>
-
-            <!-- Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-24">
-                <!-- Left Column -->
-                <aside class="lg:col-span-3 space-y-6">
-                    <div class="glass-card rounded-2xl p-5">
-                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">person</span>
-                            Personal Info
-                        </h3>
-                        <p class="text-sm text-slate-400 leading-relaxed mb-6">
-                            Passionate traveler and early adopter of decentralized living. I believe trust is the foundation...
-                        </p>
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3 text-sm">
-                                <span class="material-symbols-outlined text-slate-500">calendar_today</span>
-                                <span class="text-slate-300">Joined October 2021</span>
+            }
+            else
+            {
+                <!-- Profile Header -->
+                <div class="relative mb-8">
+                    <div class="h-64 lg:h-80 w-full rounded-2xl overflow-hidden relative group">
+                        <img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="Cover Image" src="https://images.unsplash.com/photo-1542361345-89e58247f2d5?q=80&w=2070&auto=format&fit=crop"/>
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0f2320] via-[#0f2320]/40 to-transparent"></div>
+                    </div>
+                    <div class="absolute -bottom-16 left-8 right-8 flex flex-col md:flex-row items-end gap-6">
+                        <div class="relative">
+                            <div class="size-32 md:size-40 rounded-full border-4 border-[#0f2320] overflow-hidden shadow-2xl glass-card bg-slate-800">
+                                <img class="w-full h-full object-cover" src="@(targetUser.UserProfile?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={targetUser.FullName}")"/>
                             </div>
-                        </div>
-                    </div>
-                    <!-- Achievements -->
-                    <div class="glass-card rounded-2xl p-5">
-                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">military_tech</span>
-                            Top Achievements
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
-                                <div class="size-10 rounded-lg bg-gradient-to-br from-[#00d1b2] to-[#00a58e] flex items-center justify-center text-white">
-                                    <span class="material-symbols-outlined">verified_user</span>
+                            @if (targetUser.Role == "Admin" || targetUser.Role == "Landlord")
+                            {
+                                <div class="absolute -bottom-2 -right-2 bg-primary rounded-full p-1.5 border-4 border-[#0f2320]">
+                                    <span class="material-symbols-outlined text-white text-sm">verified</span>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-bold">Verified Tenant</p>
-                                    <p class="text-[11px] text-slate-400">12 successful rentals</p>
+                            }
+                        </div>
+                        <div class="flex-1 flex flex-col md:flex-row justify-between items-start md:items-end pb-4 gap-4">
+                            <div>
+                                <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">@targetUser.FullName</h1>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="px-2 py-0.5 rounded @(GetRoleColorClass(targetUser.Role)) text-[10px] font-bold uppercase tracking-wider">
+                                        @targetUser.Role
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(targetUser.UserProfile?.Address))
+                                    {
+                                        <span class="text-slate-400 text-sm flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-sm">location_on</span>
+                                            @targetUser.UserProfile.Address
+                                        </span>
+                                    }
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Middle Column -->
-                <section class="lg:col-span-6 space-y-6">
-                    <div class="flex border-b border-white/5 pb-1 gap-8 mb-4">
-                        <button class="text-primary font-bold border-b-2 border-primary pb-3 px-1">Recent Activity</button>
-                        <button class="text-slate-400 font-medium hover:text-white pb-3 px-1 transition-colors">Community Posts</button>
-                        <button class="text-slate-400 font-medium hover:text-white pb-3 px-1 transition-colors">Reviews</button>
-                    </div>
-
-                    <!-- Post 1 -->
-                    <div class="glass-card rounded-2xl overflow-hidden">
-                        <div class="p-5">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="size-10 rounded-full overflow-hidden">
-                                        <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDib9iz7NgZD0IQB9T_QAjvG9jKqJYXA4bpGcoGLP7MsI3YQs5DFJZpe5bDYRnRKc23mN9MWgIWKDdpYjyCzcdOgKpsxithoIKdIPqgNi_bEp03xA8Uf4yPqhto87kb1gm2-SRzZyXdeR4SAeWzbVYjRUBkfa-brHm0ePbsJQjX5bD7HOa5ok8nmaetg1MisrF3ArFSDDuRS6HTYx0EzEOKfen51U7MhgmdBYl9TVg7UaFyuqa9BiZKYUrFm2LZGZSKorKwROs1k2k"/>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold">Phan Nguyễn Gia Huy</p>
-                                        <p class="text-[11px] text-slate-400">2 hours ago in <span class="text-primary">#VietnamLiving</span></p>
-                                    </div>
-                                </div>
-                                <button class="text-slate-500 hover:text-white transition-colors">
-                                    <span class="material-symbols-outlined">more_horiz</span>
+                            <div class="flex gap-3">
+                                @if (isCurrentUser)
+                                {
+                                    <a href="/profile" class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-lg">edit</span>
+                                        Edit Profile
+                                    </a>
+                                }
+                                <button class="p-2.5 glass-card rounded-xl hover:bg-white/10 transition-colors">
+                                    <span class="material-symbols-outlined">share</span>
                                 </button>
                             </div>
-                            <p class="text-slate-300 text-sm leading-relaxed mb-4">
-                                Just moved into this amazing apartment in Da Nang. The Staytrust verification process made it so much smoother.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-24">
+                    <!-- Left Column -->
+                    <aside class="lg:col-span-3 space-y-6">
+                        <div class="glass-card rounded-2xl p-5">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">person</span>
+                                Personal Info
+                            </h3>
+                            <p class="text-sm text-slate-400 leading-relaxed mb-6">
+                                Passionate member of Staytrust platform aiming for a transparent rental experience.
                             </p>
-                            <div class="rounded-xl overflow-hidden h-64 border border-white/5">
-                                <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGEGAulAmSNny1qsr6DcYpNnZ_MSyahHcZYXk2G70nA9SVHA0erhkutg_l0K_MGCJpIxoTGH0BhKTyb07J0rtkA0g2aREYJ8nehk4JUPwQaqRVEZF_aclZuFYIXMGyRh4L5F1tYkcAn9vgl0lL_qBEwn9rPI9FAmqm4veEdRqJcs13dHwvQJc8_J4z5YeJqB2B1W5ZYWvTUebpTUSGJxbsCerAB48mPCPtOjTtoS8dfSxTi_JW5sAzM6sC38E1iLaS_csmrOEcMsY"/>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3 text-sm">
+                                    <span class="material-symbols-outlined text-slate-500">calendar_today</span>
+                                    <span class="text-slate-300">Joined @(targetUser.CreatedAt?.ToString("MMMM yyyy") ?? "Unknown")</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(targetUser.Phone))
+                                {
+                                    <div class="flex items-center gap-3 text-sm">
+                                        <span class="material-symbols-outlined text-slate-500">phone</span>
+                                        <span class="text-slate-300">@targetUser.Phone</span>
+                                    </div>
+                                }
                             </div>
                         </div>
-                    </div>
-                </section>
-
-                <!-- Right Column -->
-                <aside class="lg:col-span-3 space-y-6">
-                    <div class="glass-card rounded-2xl overflow-hidden">
-                        <div class="p-5 border-b border-white/5">
-                            <h3 class="text-lg font-bold flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary">home_work</span>
-                                My Rented Home
+                        <!-- Achievements -->
+                        <div class="glass-card rounded-2xl p-5">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">military_tech</span>
+                                Top Achievements
                             </h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                                    <div class="size-10 rounded-lg bg-gradient-to-br from-[#00d1b2] to-[#00a58e] flex items-center justify-center text-white">
+                                        <span class="material-symbols-outlined">verified_user</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold">Verified Member</p>
+                                        <p class="text-[11px] text-slate-400">Identity protected</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="relative h-40">
-                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5XXD3RHhGc8h2U90sz3K6Ig9VR5VOMIG8NU9SgQ2FPwZ7qY62xe5CfJ_YiMEvBtOF-NfBw7WzqlmLdXuS21dlGtAYTi-On8_BbF0l158TkDWAP0Ea5Q7PeSghTp0hCdL3XrpZDve9gqk5sbPQ3of5d25gaDJqGtOyqxHyr7C5plK50jHGpXGb_yGW_JVtMb6DlQZI-cMjtHOsfp2_AQE-bwuoglkPjHvWr7VVbmlMWzLu42nrMb6GAeVqermqke5Y0xJMVmv78Fc"/>
-                            <div class="absolute top-3 right-3 px-2 py-1 bg-primary text-background-dark text-[10px] font-extrabold rounded uppercase">Active</div>
+                    </aside>
+
+                    <!-- Middle Column -->
+                    <section class="lg:col-span-6 space-y-6">
+                        <div class="flex border-b border-white/5 pb-1 gap-8 mb-4">
+                            <button class="text-primary font-bold border-b-2 border-primary pb-3 px-1">Recent Activity</button>
                         </div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-sm">Altamira Ocean Residences</h4>
-                            <p class="text-xs text-slate-400 mb-3">Da Nang City, Vietnam</p>
-                            <button class="w-full mt-4 py-2 border border-primary/30 rounded-xl text-primary text-xs font-bold hover:bg-primary hover:text-background-dark transition-all">
-                                View Details
-                            </button>
+                        
+                        @if (userPosts == null || !userPosts.Any())
+                        {
+                            <div class="glass-card rounded-2xl overflow-hidden p-8 text-center border border-white/5 border-dashed">
+                                <span class="material-symbols-outlined text-4xl text-slate-600 mb-2">history</span>
+                                <p class="text-slate-400 text-sm">No recent activity to display.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var post in userPosts)
+                            {
+                                <div class="glass-card rounded-2xl overflow-hidden mb-6">
+                                    <div class="p-5">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="h-10 w-10 rounded-full bg-slate-800 p-0.5 border border-primary/30">
+                                                    <img class="w-full h-full rounded-full object-cover" src="@(targetUser.UserProfile?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={targetUser.FullName}")"/>
+                                                </div>
+                                                <div>
+                                                    <h3 class="font-bold text-slate-100 flex items-center gap-2">@targetUser.FullName</h3>
+                                                    <p class="text-xs text-slate-500">@GetTimeAgo(post.CreatedAt)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-slate-300 text-sm leading-relaxed mb-4">
+                                            @post.Content
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(post.ImageUrl))
+                                        {
+                                            <div class="rounded-xl overflow-hidden border border-white/5">
+                                                <img class="w-full h-auto object-cover" src="@post.ImageUrl"/>
+                                            </div>
+                                        }
+                                        
+                                        <div class="flex items-center gap-6 mt-4 pt-4 border-t border-white/5">
+                                            <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined text-lg">thumb_up</span>
+                                                <span class="text-xs font-semibold">@post.LikeCount</span>
+                                            </button>
+                                            <button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined text-lg">chat_bubble</span>
+                                                <span class="text-xs font-semibold">@post.CommentCount</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </section>
+
+                    <!-- Right Column -->
+                    <aside class="lg:col-span-3 space-y-6">
+                        <div class="glass-card rounded-2xl overflow-hidden">
+                            <div class="p-5 border-b border-white/5">
+                                <h3 class="text-lg font-bold flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary">home_work</span>
+                                    My Platform
+                                </h3>
+                            </div>
+                            <div class="relative h-40">
+                                <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2070&auto=format&fit=crop"/>
+                                <div class="absolute top-3 right-3 px-2 py-1 bg-primary text-background-dark text-[10px] font-extrabold rounded uppercase">Active</div>
+                            </div>
+                            <div class="p-5">
+                                <h4 class="font-bold text-sm">Staytrust User</h4>
+                                <p class="text-xs text-slate-400 mb-3">Da Nang, Vietnam</p>
+                            </div>
                         </div>
-                    </div>
-                </aside>
-            </div>
+                    </aside>
+                </div>
+            }
         </main>
         
         <footer class="mt-20 py-8 border-t border-white/5 bg-[#0f2320]/50 px-4 sm:px-6 lg:px-20 text-center">
@@ -157,3 +214,67 @@
         </footer>
     </div>
 </div>
+
+@code {
+    [Parameter]
+    public int? UserId { get; set; }
+
+    private User? targetUser;
+    private List<ForumPost> userPosts = new();
+    private bool isLoading = true;
+    private bool isCurrentUser = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var claimsUser = authState.User;
+        int currentUserId = 0;
+
+        if (claimsUser.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                        ?? claimsUser.FindFirst("sub")?.Value 
+                        ?? claimsUser.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            int.TryParse(userIdStr, out currentUserId);
+        }
+
+        int targetId = UserId ?? currentUserId;
+
+        if (targetId > 0)
+        {
+            targetUser = await DbContext.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserId == targetId);
+
+            isCurrentUser = (targetId == currentUserId);
+
+            userPosts = await DbContext.ForumPosts
+                .Where(p => p.UserId == targetId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        isLoading = false;
+    }
+
+    private string GetTimeAgo(DateTime past)
+    {
+        var ts = DateTime.Now - past;
+        if (ts.TotalMinutes < 1) return "Just now";
+        if (ts.TotalHours < 1) return $"{(int)ts.TotalMinutes}m ago";
+        if (ts.TotalDays < 1) return $"{(int)ts.TotalHours}h ago";
+        if (ts.TotalDays < 30) return $"{(int)ts.TotalDays}d ago";
+        return past.ToString("MMM dd, yyyy");
+    }
+
+    private string GetRoleColorClass(string? role)
+    {
+        return role switch
+        {
+            "Admin" => "bg-red-500/20 text-red-400",
+            "Landlord" => "bg-amber-500/20 text-amber-400",
+            _ => "bg-emerald-500/20 text-emerald-400"
+        };
+    }
+}
