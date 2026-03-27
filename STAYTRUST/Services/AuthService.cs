@@ -64,7 +64,29 @@ namespace STAYTRUST.Services
                 return null;
             }
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
+            bool isPasswordCorrect = false;
+            
+            if (string.IsNullOrEmpty(user.Password))
+            {
+                return null;
+            }
+
+            // A typical BCrypt hash starts with $2a$, $2b$, or $2y$ (60 chars)
+            if (user.Password.StartsWith("$2") && user.Password.Length >= 60)
+            {
+                try {
+                    isPasswordCorrect = BCrypt.Net.BCrypt.Verify(password, user.Password);
+                } catch {
+                    // Fallback to plain text if the hash is malformed despite $2 prefix
+                    isPasswordCorrect = (password == user.Password);
+                }
+            }
+            else
+            {
+                isPasswordCorrect = (password == user.Password);
+            }
+
+            if (!isPasswordCorrect)
             {
                 return null;
             }

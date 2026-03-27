@@ -3,7 +3,7 @@
 @using STAYTRUST.Data
 @using Microsoft.EntityFrameworkCore
 @inject AuthenticationStateProvider AuthStateProvider
-@inject AppDbContext DbContext
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Nav
 
 <!-- ========== NAVBAR ========== -->
@@ -26,6 +26,10 @@
             <div class="hidden md:flex items-center gap-8">
                 <a href="/landlord/dashboard" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Dashboard</a>
                 <a href="/landlord/properties" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Properties</a>
+                @if (isPrimaryLandlord)
+                {
+                    <a href="/landlord/managers" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Managers</a>
+                }
                 <a href="/landlord/prime" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Prime Plans</a>
                 <a href="/landlord/features" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Features</a>
                 <a href="/community" class="text-gray-300 hover:text-cyan-400 transition-colors font-semibold">Forum</a>
@@ -43,7 +47,7 @@
                         <img src="@(userAvatarUrl ?? $"https://ui-avatars.com/api/?name={userFullName}")" alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-cyan-500/30" />
                         <div class="hidden md:block text-left">
                             <div class="text-sm font-semibold">@userFullName</div>
-                            <div class="text-xs text-gray-400">Landlord</div>
+                            <div class="text-xs text-gray-400">@(isPrimaryLandlord ? "Landlord" : "Property Manager")</div>
                         </div>
                     </button>
                     @if (showUserMenu)
@@ -76,6 +80,7 @@
 
 @code {
     private bool showUserMenu = false;
+    private bool isPrimaryLandlord = true;
     private string userFullName = "User";
     private string userInitials = "U";
     private string userAvatarUrl = "";
@@ -93,7 +98,8 @@
 
             if (int.TryParse(userIdStr, out int userId))
             {
-                var dbUser = await DbContext.Users
+                using var dbContext = DbFactory.CreateDbContext();
+                var dbUser = await dbContext.Users
                     .Include(u => u.UserProfile)
                     .FirstOrDefaultAsync(u => u.UserId == userId);
 
@@ -101,6 +107,7 @@
                 {
                     userFullName = dbUser.FullName;
                     userAvatarUrl = dbUser.UserProfile?.AvatarUrl;
+                    isPrimaryLandlord = dbUser.LandlordId == null;
                 }
             }
         }
@@ -116,6 +123,14 @@
             return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
 
         return $"{parts[0][0]}{parts[parts.Length - 1][0]}".ToUpper();
+    }
+
+    private void HandleLogout()
+    {
+        // Clear the auth token and redirect to login
+        Nav.NavigateTo("/auth", forceLoad: true);
+    }
+}
     }
 
     private void HandleLogout()
