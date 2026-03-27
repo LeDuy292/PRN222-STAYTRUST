@@ -1,0 +1,398 @@
+@page "/landlord/managers"
+@rendermode InteractiveServer
+@using STAYTRUST.Models
+@using STAYTRUST.Data
+@using Microsoft.EntityFrameworkCore
+@using STAYTRUST.Components.Pages.LandLord
+@using System.Security.Claims
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<PageTitle>Manage Property Managers | STAYTRUST Landlord</PageTitle>
+
+<div class="min-h-screen bg-[#0a0f18] text-slate-200">
+    <HeaderLandlord />
+
+    <main class="pt-24 pb-12 px-6 max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div>
+                <h1 class="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                    <i class="fas fa-users-cog text-cyan-400"></i>
+                    Staff & Permissions
+                </h1>
+                <p class="text-slate-400 mt-2">Delegate property management to your trusted staff and sub-landlords.</p>
+            </div>
+            <button @onclick="OpenAddModal" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center gap-2">
+                <i class="fas fa-user-plus"></i>
+                Add New Manager
+            </button>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="flex flex-col items-center justify-center py-20 gap-4">
+                <div class="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+                <p class="text-slate-500 font-bold animate-pulse text-sm uppercase tracking-widest">Loading staff data...</p>
+            </div>
+        }
+        else
+        {
+            <!-- Managers Table -->
+            <div class="backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl bg-white/5">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[11px] uppercase tracking-[0.2em] font-black border-b border-white/5 bg-black/20">
+                                <th class="px-8 py-5">Staff Member</th>
+                                <th class="px-8 py-5">Username</th>
+                                <th class="px-8 py-5">Role</th>
+                                <th class="px-8 py-5">Managed Assets</th>
+                                <th class="px-8 py-5 text-center">Status</th>
+                                <th class="px-8 py-5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            @if (managers.Any())
+                            {
+                                @foreach (var manager in managers)
+                                {
+                                    <tr class="hover:bg-white/5 transition-colors group">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-4">
+                                                <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-white/10 text-cyan-400 font-bold">
+                                                    @manager.FullName[0]
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm font-bold text-white group-hover:text-cyan-400">@manager.FullName</div>
+                                                    <div class="text-[10px] text-slate-500">Joined @manager.CreatedAt?.ToString("MMM dd, yyyy")</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-sm font-medium">@manager.UserName</td>
+                                        <td class="px-8 py-6">
+                                            <span class="px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase border border-blue-500/20">
+                                                Sub-Landlord
+                                            </span>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="text-sm font-bold text-slate-300">
+                                                @(manager.Rooms?.Count ?? 0) Rooms Assigned
+                                            </div>
+                                            <div class="text-[10px] text-slate-500 truncate max-w-[150px]">
+                                                @string.Join(", ", manager.Rooms?.Select(r => r.Title) ?? new List<string>())
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/10">
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td class="px-8 py-6 text-right">
+                                            <div class="flex justify-end gap-2">
+                                                <button class="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button @onclick="() => DeleteManager(manager.UserId)" class="p-2 hover:bg-rose-500/10 rounded-lg text-slate-400 hover:text-rose-400 transition-all">
+                                                    <i class="fas fa-user-minus"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="px-8 py-20 text-center">
+                                        <div class="flex flex-col items-center gap-4 text-slate-500 italic">
+                                            <i class="fas fa-user-shield text-4xl opacity-20"></i>
+                                            <p>No sub-managers assigned yet. Start delegating rooms to your staff.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </main>
+</div>
+
+<!-- Add Manager Modal -->
+@if (showModal)
+{
+    <div class="fixed inset-0 z-[100] flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @onclick="() => showModal = false"></div>
+        <div class="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl relative z-10 overflow-hidden animate-scale-in">
+            <div class="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                    <i class="fas fa-user-plus text-cyan-400"></i>
+                    Register New Staff
+                </h3>
+                <button @onclick="() => showModal = false" class="text-slate-500 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Full Name</label>
+                        <input @bind="newManager.FullName" type="text" placeholder="e.g. David Manager" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-all" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Email Address</label>
+                        <input @bind="newManager.Email" type="email" placeholder="manager@example.com" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-all" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Phone Number</label>
+                        <input @bind="newManager.Phone" type="text" placeholder="0987xxx" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-all" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Username</label>
+                        <input @bind="newManager.UserName" type="text" placeholder="dmanager" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-all" />
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Assign Managed Rooms</label>
+                        <span class="text-[10px] font-bold text-cyan-500">@selectedRoomIds.Count Selected</span>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto bg-slate-900/50 rounded-xl border border-white/5 p-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                        @foreach (var room in landlordRooms)
+                        {
+                            <label class="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-slate-900 hover:bg-slate-800 transition-all cursor-pointer">
+                                <input type="checkbox" checked="@selectedRoomIds.Contains(room.RoomId)" @onchange="(e) => ToggleRoom(room.RoomId, (bool)e.Value)" class="w-4 h-4 rounded bg-slate-900 border-white/10 text-cyan-500 focus:ring-offset-slate-900" />
+                                <div class="text-xs">
+                                    <div class="font-bold text-white">@room.Title</div>
+                                    <div class="text-[10px] text-slate-500 truncate">@room.Address</div>
+                                </div>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium flex items-center gap-3">
+                        <i class="fas fa-exclamation-circle text-lg"></i>
+                        @errorMessage
+                    </div>
+                }
+            </div>
+
+            <div class="px-8 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-end gap-4">
+                <button @onclick="() => showModal = false" class="px-6 py-2.5 text-slate-400 hover:text-white font-bold transition-all">Cancel</button>
+                <button @onclick="HandleAddManager" class="px-8 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all">
+                    Authorize Staff
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Credentials Modal -->
+@if (showCredsModal)
+{
+    <div class="fixed inset-0 z-[110] flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div>
+        <div class="bg-slate-900 border border-cyan-500/50 rounded-3xl w-full max-w-md p-10 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative z-10 animate-fade-in-up">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+                    <i class="fas fa-check-circle text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white">Staff Authorized!</h3>
+                <p class="text-slate-400 mt-2 text-sm leading-relaxed">Account has been created successfully. Please send these credentials to your manager.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-5 rounded-2xl bg-black/40 border border-white/5">
+                    <label class="text-[10px] font-black uppercase text-slate-600 tracking-widest block mb-2">Username</label>
+                    <div class="text-white font-mono text-lg flex items-center justify-between">
+                        @newManager.UserName
+                        <i class="far fa-copy text-slate-600 text-sm"></i>
+                    </div>
+                </div>
+                <div class="p-5 rounded-2xl bg-black/40 border border-white/5">
+                    <label class="text-[10px] font-black uppercase text-slate-600 tracking-widest block mb-1">Temporary Password</label>
+                    <div class="text-cyan-400 font-mono text-lg flex items-center justify-between tracking-widest">
+                        @generatedPassword
+                        <i class="far fa-copy text-slate-600 text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <button @onclick="() => showCredsModal = false" class="w-full mt-10 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-cyan-900/50 transition-all active:scale-95">
+                Got It
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<User> managers = new();
+    private List<Room> landlordRooms = new();
+    private List<int> selectedRoomIds = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool showCredsModal = false;
+    private string? errorMessage = null;
+    private int landlordId;
+
+    private User newManager = new();
+    private string generatedPassword = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                         ?? user.FindFirst("sub")?.Value 
+                         ?? user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (int.TryParse(userIdStr, out landlordId))
+            {
+                await LoadData();
+            }
+            else
+            {
+                Nav.NavigateTo("/login");
+            }
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        try
+        {
+            using var db = DbFactory.CreateDbContext();
+            
+            // Get managers linked to this landlord
+            managers = await db.Users
+                .AsNoTracking()
+                .Where(u => u.LandlordId == landlordId && u.Role == "Landlord")
+                .ToListAsync();
+
+            // Get rooms owned by this landlord
+            landlordRooms = await db.Rooms
+                .AsNoTracking()
+                .Where(r => r.LandlordId == landlordId)
+                .ToListAsync();
+
+            // Fill rooms for each manager
+            foreach(var mgr in managers)
+            {
+                mgr.Rooms = landlordRooms.Where(r => r.ManagedByUserId == mgr.UserId).ToList();
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenAddModal()
+    {
+        newManager = new User { Role = "Landlord", LandlordId = landlordId, Status = true };
+        selectedRoomIds.Clear();
+        errorMessage = null;
+        showModal = true;
+    }
+
+    private void ToggleRoom(int roomId, bool isSelected)
+    {
+        if (isSelected) 
+            selectedRoomIds.Add(roomId);
+        else 
+            selectedRoomIds.Remove(roomId);
+    }
+
+    private string GenerateRandomStaffPass()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var random = new Random();
+        var result = new char[8];
+        for (int i = 0; i < 8; i++) result[i] = chars[random.Next(chars.Length)];
+        return "STAFF-" + new string(result);
+    }
+
+    private async Task HandleAddManager()
+    {
+        if (string.IsNullOrWhiteSpace(newManager.FullName) || string.IsNullOrWhiteSpace(newManager.UserName) || string.IsNullOrWhiteSpace(newManager.Email))
+        {
+            errorMessage = "Please fill in all basic information.";
+            return;
+        }
+
+        try
+        {
+            using var db = DbFactory.CreateDbContext();
+
+            // Check if username exists
+            bool exists = await db.Users.AnyAsync(u => u.UserName == newManager.UserName || u.Email == newManager.Email);
+            if (exists)
+            {
+                errorMessage = "Username or Email already in use.";
+                return;
+            }
+
+            generatedPassword = GenerateRandomStaffPass();
+            newManager.Password = generatedPassword; // Stored as plain text per user request
+            newManager.CreatedAt = DateTime.Now;
+
+            db.Users.Add(newManager);
+            await db.SaveChangesAsync();
+
+            // Update assigned rooms
+            if (selectedRoomIds.Any())
+            {
+                var roomsToUpdate = await db.Rooms.Where(r => selectedRoomIds.Contains(r.RoomId)).ToListAsync();
+                foreach (var r in roomsToUpdate) r.ManagedByUserId = newManager.UserId;
+                await db.SaveChangesAsync();
+            }
+
+            showModal = false;
+            showCredsModal = true;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"System Error: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteManager(int id)
+    {
+        try
+        {
+            using var db = DbFactory.CreateDbContext();
+            var mgr = await db.Users.FindAsync(id);
+            if (mgr != null && mgr.LandlordId == landlordId)
+            {
+                // Unassign rooms first
+                var rooms = await db.Rooms.Where(r => r.ManagedByUserId == id).ToListAsync();
+                foreach(var r in rooms) r.ManagedByUserId = null;
+                
+                db.Users.Remove(mgr);
+                await db.SaveChangesAsync();
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

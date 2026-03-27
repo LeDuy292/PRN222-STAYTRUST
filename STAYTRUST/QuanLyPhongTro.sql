@@ -26,6 +26,7 @@ CREATE TABLE Users (
     [Password] VARCHAR(255) NOT NULL,
     [Role] VARCHAR(20) CHECK (Role IN ('Tenant', 'Landlord', 'Admin')),
     [Status] BIT DEFAULT 1,
+    LandlordId INT NULL, -- Link staff to landlord
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
@@ -72,6 +73,7 @@ CREATE TABLE Rooms (
     -- Timestamps
     CreatedAt DATETIME DEFAULT GETDATE(),
     UpdatedAt DATETIME DEFAULT GETDATE(),
+    ManagedByUserId INT NULL, -- Assigned manager
     CONSTRAINT FK_Room_Landlord
         FOREIGN KEY (LandlordId) REFERENCES Users(UserId)
 );
@@ -644,5 +646,34 @@ VALUES
 (1, 4, N'Great to hear the verification process is working well for you.', DATEADD(MINUTE, -30, GETDATE())),
 (2, 6, N'Try joining some local expat groups on Facebook, they are very active.', DATEADD(HOUR, -4, GETDATE())),
 (3, 2, N'Very important advice. The deposit protection clause is a game changer.', DATEADD(HOUR, -20, GETDATE()));
+
+GO
+
+-- =============================================
+-- DASHBOARD & PAYMENT TRACKING UPDATES (2026)
+-- =============================================
+-- This section ensures the Landlord Dashboard has 
+-- relevant data for the current year (March 2026).
+
+-- 1. Extend and Activate Contracts up to Dec 2026
+UPDATE RentalContracts 
+SET 
+    StartDate = '2025-01-01', 
+    EndDate = '2026-12-31', 
+    Status = 'Active';
+
+-- 2. Update Invoices to March 2026 (The current month in the demo)
+UPDATE Invoices 
+SET 
+    Month = '2026-03', 
+    CreatedAt = '2026-03-20';
+
+-- 3. Set half of the invoices to 'Paid' and half to 'Unpaid' 
+UPDATE Invoices SET Status = 'Paid' WHERE InvoiceId % 2 = 0;
+UPDATE Invoices SET Status = 'Unpaid' WHERE InvoiceId % 2 != 0;
+
+-- 4. Specific adjustments for realistic dashboard numbers (Modify RoomPrice since TotalAmount is computed)
+UPDATE Invoices SET RoomPrice = 25000000, ElectricFee = 500000, WaterFee = 200000, Status = 'Paid' WHERE InvoiceId = 1;
+UPDATE Invoices SET RoomPrice = 15000000, ElectricFee = 300000, WaterFee = 100000, Status = 'Unpaid' WHERE InvoiceId = 2;
 
 GO

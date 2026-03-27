@@ -1,6 +1,14 @@
 @page "/landlord/dashboard"
 @rendermode InteractiveServer
 @inject NavigationManager Nav
+@using STAYTRUST.Models
+@using STAYTRUST.Data
+@using System.Linq
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDbContextFactory<AppDbContext> DbFactory
 
 <PageTitle>Dashboard - STAYTRUST</PageTitle>
 
@@ -39,7 +47,7 @@
                     <i class="fas fa-calendar-alt text-slate-300"></i>
                 </button>
                 <div class="h-6 w-px mx-2" style="background:rgba(255,255,255,0.1)"></div>
-                <p class="text-xs font-medium text-slate-400">Monday, Mar 9</p>
+                <p class="text-xs font-medium text-slate-400">@DateTime.Now.ToString("dddd, MMM d")</p>
             </div>
         </header>
 
@@ -80,7 +88,7 @@
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
                 <p class="text-slate-400 text-xs font-medium uppercase tracking-wider">Monthly Revenue</p>
                 <div class="flex items-end justify-between mt-2">
-                    <h3 class="text-3xl font-bold text-white">₫@(stats.MonthlyRevenue)k</h3>
+                    <h3 class="text-3xl font-bold text-white">₫@stats.MonthlyRevenue.ToString("N0")</h3>
                     <span class="text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1"
                           style="background:rgba(52,211,153,0.1)">
                         <i class="fas fa-arrow-up text-xs"></i> 8%
@@ -126,30 +134,59 @@
                 </div>
 
                 <!-- SVG Chart -->
-                <div class="flex-1 relative flex items-end w-full pb-4">
-                    <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 200"
-                         style="filter: drop-shadow(0 0 15px rgba(19,91,236,0.3))">
-                        <defs>
-                            <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                                <stop offset="0%" stop-color="#135bec" stop-opacity="0.3"></stop>
-                                <stop offset="100%" stop-color="#135bec" stop-opacity="0"></stop>
-                            </linearGradient>
-                        </defs>
-                        <path d="M0,150 Q100,140 200,170 T400,100 T600,80 T800,120 L800,200 L0,200 Z"
-                              fill="url(#chartGradient)"></path>
-                        <path d="M0,150 Q100,140 200,170 T400,100 T600,80 T800,120"
-                              fill="none" stroke="#135bec" stroke-linecap="round" stroke-width="3"></path>
-                        <circle cx="400" cy="100" fill="#135bec" r="4" stroke="white" stroke-width="2"></circle>
-                    </svg>
-                    <!-- Tooltip -->
-                    <div class="absolute left-1/2 top-12 -translate-x-1/2 backdrop-blur-xl border rounded-lg px-4 py-2 flex flex-col items-center pointer-events-none shadow-2xl"
-                         style="background:rgba(255,255,255,0.03); border-color:rgba(19,91,236,0.5)">
-                        <span class="text-slate-400 font-bold uppercase" style="font-size:10px">August</span>
-                        <span class="text-sm font-bold text-white">₫48,200.000</span>
-                    </div>
+                <div class="flex-1 relative flex items-end w-full pb-4 px-2">
+                    @if (chartData.Count > 0)
+                    {
+                        var maxVal = Math.Max((double)chartData.Max(x => x.Amount), 1);
+                        var points = string.Join(" ", chartData.Select((d, i) => $"{(i * 800 / Math.Max(1, chartData.Count - 1))},{180 - ((double)d.Amount / maxVal * 130)}"));
+                        var areaPath = $"M0,200 L{points} L800,200 Z";
+                        var linePath = $"M{points}";
+
+                        <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 200"
+                             style="filter: drop-shadow(0 0 15px rgba(19,91,236,0.2))">
+                            <defs>
+                                <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#135bec" stop-opacity="0.3"></stop>
+                                    <stop offset="100%" stop-color="#135bec" stop-opacity="0"></stop>
+                                </linearGradient>
+                            </defs>
+                            <path d="@areaPath" fill="url(#chartGradient)"></path>
+                            <path d="@linePath" fill="none" stroke="#135bec" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+                            
+                            @for (int i = 0; i < chartData.Count; i++)
+                            {
+                                var d = chartData[i];
+                                var x = i * 800 / Math.Max(1, chartData.Count - 1);
+                                var y = 180 - ((double)d.Amount / maxVal * 130);
+                                <circle cx="@x" cy="@y" fill="#135bec" r="4" stroke="white" stroke-width="2"></circle>
+                                
+                                @if (i == chartData.Count - 1)
+                                {
+                                    <!-- Dynamic Tooltip -->
+                                    <foreignObject x="@(x - 60)" y="@(y - 55)" width="120" height="50">
+                                        <div class="backdrop-blur-xl border rounded-lg px-2 py-1 flex flex-col items-center shadow-2xl"
+                                             style="background:rgba(255,255,255,0.03); border-color:rgba(19,91,236,0.5)">
+                                            <span class="text-slate-400 font-bold uppercase" style="font-size:10px">@d.MonthName</span>
+                                            <span class="text-xs font-bold text-white">₫@d.Amount.ToString("N0")</span>
+                                        </div>
+                                    </foreignObject>
+                                }
+                            }
+                        </svg>
+                    }
+                    else
+                    {
+                        <div class="w-full h-full flex items-center justify-center text-slate-500 italic text-sm">
+                            Insufficient data for trends
+                        </div>
+                    }
+
                     <!-- X Axis Labels -->
                     <div class="absolute bottom-0 w-full flex justify-between px-2" style="font-size:10px; color:#64748b; font-weight:700">
-                        <span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>SEP</span><span>NOV</span>
+                        @foreach (var d in chartData)
+                        {
+                            <span>@d.MonthName.Substring(0, 3).ToUpper()</span>
+                        }
                     </div>
                 </div>
             </div>
@@ -183,19 +220,120 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-2 h-2 rounded-full bg-slate-700"></div>
-                        <span class="text-xs text-slate-300 font-medium">Vacant (4)</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-blue-400 opacity-60"></div>
-                        <span class="text-xs text-slate-300 font-medium">Maintenance (2)</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-slate-500"></div>
-                        <span class="text-xs text-slate-300 font-medium">Reserved (0)</span>
+                        <span class="text-xs text-slate-300 font-medium">Vacant (@(stats.TotalRooms - stats.OccupiedRooms))</span>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- ========== PAYMENT STATUS TRACKING (PROPERTY-FIRST) ========== -->
+        <section id="payment-tracking" 
+                 class="backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl bg-white/5 transition-all duration-500 @(isFullExpanded ? "fixed inset-8 z-[200] !m-0 bg-black/95" : "")">
+            
+            <div class="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <div>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                        <i class="fas fa-file-invoice-dollar text-cyan-400"></i>
+                        Payment Status Tracking
+                    </h3>
+                    @if (selectedBuilding == null)
+                    {
+                        <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Select a property to view room details</p>
+                    }
+                    else
+                    {
+                        <div class="flex items-center gap-2 mt-1">
+                            <button @onclick="() => selectedBuilding = null" class="text-xs text-cyan-500 hover:underline font-bold uppercase tracking-widest">Properties</button>
+                            <i class="fas fa-chevron-right text-[10px] text-slate-600"></i>
+                            <span class="text-xs text-slate-300 font-bold uppercase tracking-widest">@selectedBuilding</span>
+                        </div>
+                    }
+                </div>
+                <div class="flex gap-3">
+                    <button class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold border border-white/10">Export CSV</button>
+                    <button class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-lg shadow-cyan-500/20">Generate Bills</button>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto @(isFullExpanded ? "h-[calc(100vh-280px)]" : "max-h-[600px]") px-8 py-8 transition-all">
+                @if (selectedBuilding == null)
+                {
+                    <!-- PROPERTY GRID -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                        @foreach (var buildingName in buildingInvoices.Keys)
+                        {
+                            var bInvoices = buildingInvoices[buildingName];
+                            var unpaid = bInvoices.Count(i => i.Status != "Paid");
+                            <div @onclick="() => SelectBuilding(buildingName)" 
+                                 class="p-6 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-cyan-500/30 transition-all cursor-pointer group relative overflow-hidden active:scale-95">
+                                <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl group-hover:bg-cyan-500/10 transition-all"></div>
+                                <h4 class="text-lg font-black text-white group-hover:text-cyan-400 uppercase tracking-tight">@buildingName</h4>
+                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1 truncate">@bInvoices.FirstOrDefault()?.Contract?.Room?.Address</p>
+                                
+                                <div class="mt-8 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em]">Invoices</p>
+                                        <p class="text-xs font-bold text-slate-400 mt-1">@unpaid Unpaid</p>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-600 group-hover:text-cyan-400 transition-all border border-transparent group-hover:border-white/10">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- FLOOR-WISE ROOM LIST -->
+                    <div class="flex flex-col gap-10 animate-fade-in-up">
+                        @foreach (var floorGroup in filteredAndGroupedInvoices)
+                        {
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4 mb-2">
+                                    <div class="px-3 py-1 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-widest rounded-md shadow-lg shadow-cyan-500/20">Floor @floorGroup.Key</div>
+                                    <div class="flex-1 h-[1px] bg-gradient-to-r from-cyan-500/30 to-transparent"></div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @foreach (var inv in floorGroup.OrderBy(i => i.Contract?.Room?.Title))
+                                    {
+                                        <div class="flex items-center justify-between px-6 py-5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/5 transition-all group hover:border-white/10">
+                                            <div class="flex items-center gap-5">
+                                                <div class="w-12 h-12 rounded-2xl border border-white/10 bg-slate-900/50 flex items-center justify-center text-cyan-400 font-black text-lg group-hover:scale-110 transition-all shadow-inner">
+                                                    @(inv.Contract?.Tenant?.FullName?.FirstOrDefault() ?? 'U')
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-black text-white uppercase tracking-tight">Room <span class="text-cyan-400">@inv.Contract?.Room?.Title</span></p>
+                                                    <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">@inv.Contract?.Tenant?.FullName</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col items-end gap-3 text-right">
+                                                <div class="text-right">
+                                                    <p class="text-[9px] text-slate-600 font-black tracking-widest uppercase">Amount</p>
+                                                    <p class="text-sm font-black text-white">₫@inv.TotalAmount?.ToString("N0")</p>
+                                                </div>
+                                                @if (inv.Status == "Paid") {
+                                                    <span class="px-3 py-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[9px] font-black uppercase tracking-widest">PAID</span>
+                                                } else {
+                                                    <span class="px-3 py-1 rounded-lg border border-rose-500/20 bg-rose-500/5 text-rose-400 text-[9px] font-black uppercase tracking-widest">UNPAID</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            
+            <div class="p-6 bg-white/5 border-t border-white/10">
+                <button @onclick="ToggleFullHistory" class="w-full py-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white transition-all shadow-inner">
+                    @(isFullExpanded ? "Back to Dashboard" : "View Full Transaction History")
+                </button>
+            </div>
+        </section>
 
         <!-- ========== PRIORITY ISSUES ========== -->
         <section class="backdrop-blur-xl border border-white/10 rounded-xl p-6 mb-4"
@@ -245,8 +383,138 @@
 
 @code {
     private string searchTerm = "";
+    private int landlordId;
+    private DashboardStats stats = new(0, 0, 0, 0);
+    private List<Invoice> recentInvoices = new();
+    private List<MonthlyRevenueData> chartData = new();
+    private List<Invoice> allInvoices = new();
+    private Dictionary<string, List<Invoice>> buildingInvoices = new();
+    private string? selectedBuilding = null;
+    private bool isFullExpanded = false;
 
-    private readonly DashboardStats stats = new(124, 118, 42.5, 95.1);
+    private IEnumerable<IGrouping<int, Invoice>> filteredAndGroupedInvoices {
+        get {
+            var filtered = allInvoices;
+            if (selectedBuilding != null)
+                filtered = allInvoices.Where(i => GetBuildingName(i.Contract?.Room?.Address) == selectedBuilding).ToList();
+            
+            return filtered.GroupBy(i => i.Contract?.Room?.Floor ?? 0).OrderByDescending(g => g.Key);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            var userIdStr = user.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                         ?? user.FindFirst("sub")?.Value 
+                         ?? user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out landlordId))
+            {
+                await LoadDashboardData();
+            }
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try 
+        {
+            using var dbContext = DbFactory.CreateDbContext();
+
+            // Get Current User info to check if they are a manager
+            var currentUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == landlordId);
+            bool isManager = currentUser?.LandlordId != null;
+
+            // Fetch Rooms (Owner sees all, Manager sees assigned only)
+            IQueryable<Room> roomsQuery = dbContext.Rooms.AsNoTracking();
+            
+            if (isManager)
+                roomsQuery = roomsQuery.Where(r => r.ManagedByUserId == landlordId);
+            else
+                roomsQuery = roomsQuery.Where(r => r.LandlordId == landlordId);
+
+            var rooms = await roomsQuery.ToListAsync();
+
+            int totalRooms = rooms.Count;
+            var roomIds = rooms.Select(r => r.RoomId).ToList();
+
+            if (roomIds.Count > 0)
+            {
+                // Fetch Active Contracts to count occupied rooms
+                var activeContractsCount = await dbContext.RentalContracts
+                    .AsNoTracking()
+                    .Where(c => roomIds.Contains(c.RoomId) && c.Status == "Active")
+                    .Select(c => c.RoomId)
+                    .Distinct()
+                    .CountAsync();
+                    
+                int occupiedRooms = activeContractsCount;
+                double occupancyRate = totalRooms > 0 ? (double)occupiedRooms / totalRooms * 100 : 0;
+
+                // Fetch Recent Invoices across all landlord's rooms
+                recentInvoices = await dbContext.Invoices
+                    .AsNoTracking()
+                    .Include(i => i.Contract)
+                        .ThenInclude(c => c.Room)
+                    .Include(i => i.Contract)
+                        .ThenInclude(c => c.Tenant)
+                    .Where(i => roomIds.Contains(i.Contract.RoomId))
+                    .OrderByDescending(i => i.CreatedAt)
+                    .Take(7)
+                    .ToListAsync();
+
+                decimal monthlyRev = await dbContext.Invoices
+                    .AsNoTracking()
+                    .Where(i => roomIds.Contains(i.Contract.RoomId) && i.Status == "Paid" && i.CreatedAt.Month == DateTime.Now.Month && i.CreatedAt.Year == DateTime.Now.Year)
+                    .SumAsync(i => i.TotalAmount ?? 0);
+
+                stats = new DashboardStats(totalRooms, occupiedRooms, (double)monthlyRev, Math.Round(occupancyRate, 1));
+
+                // Populate Chart Data for Last 6 Months
+                chartData.Clear();
+                var now = DateTime.Now;
+                for (int i = 5; i >= 0; i--)
+                {
+                    var date = now.AddMonths(-i);
+                    var monthStart = new DateTime(date.Year, date.Month, 1);
+                    var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                    var rev = await dbContext.Invoices
+                        .AsNoTracking()
+                        .Where(inv => roomIds.Contains(inv.Contract.RoomId) && inv.Status == "Paid" && inv.CreatedAt >= monthStart && inv.CreatedAt <= monthEnd)
+                        .SumAsync(inv => inv.TotalAmount ?? 0);
+
+                    chartData.Add(new MonthlyRevenueData(date.ToString("MMMM"), rev));
+                }
+
+                // Invoices for Property-First View
+                allInvoices = await dbContext.Invoices.AsNoTracking()
+                    .Include(i => i.Contract).ThenInclude(c => c.Room)
+                    .Include(i => i.Contract).ThenInclude(c => c.Tenant)
+                    .Where(i => roomIds.Contains(i.Contract.RoomId))
+                    .OrderByDescending(i => i.CreatedAt).ToListAsync();
+
+                buildingInvoices = allInvoices.GroupBy(i => GetBuildingName(i.Contract?.Room?.Address)).ToDictionary(g => g.Key, g => g.ToList());
+                recentInvoices = allInvoices.Take(7).ToList();
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
+
+    private string GetBuildingName(string? address) => !string.IsNullOrEmpty(address) ? address.Split(',').First().Trim() : "Standalone Property";
+
+    private void ToggleFullHistory() => isFullExpanded = !isFullExpanded;
+
+    private void SelectBuilding(string b) { selectedBuilding = b; StateHasChanged(); }
 
     private readonly List<IssueItem> priorityIssues = new()
     {
@@ -257,6 +525,8 @@
     };
 
     private record DashboardStats(int TotalRooms, int OccupiedRooms, double MonthlyRevenue, double OccupancyRate);
+
+    private record MonthlyRevenueData(string MonthName, decimal Amount);
 
     private record IssueItem(
         int Id, string Title, string Reporter, string Time, string Priority,

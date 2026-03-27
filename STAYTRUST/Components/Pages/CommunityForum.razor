@@ -13,7 +13,26 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
-<div class="w-full">
+@if (isLoading)
+{
+    <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a2540]/80 backdrop-blur-md">
+        <div class="relative">
+            <div class="h-24 w-24 rounded-full border-t-4 border-b-4 border-primary animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="h-16 w-16 rounded-full border-r-4 border-l-4 border-cyan-400 animate-spin-slow"></div>
+            </div>
+        </div>
+        <h2 class="mt-8 text-2xl font-bold text-white tracking-widest animate-pulse uppercase">Loading Community</h2>
+        <div class="mt-4 flex gap-2">
+            <div class="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+            <div class="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></div>
+        </div>
+    </div>
+}
+
+<div class="w-full @(isLoading ? "opacity-0" : "animate-in fade-in duration-700")">
+
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Main Content Area -->
@@ -255,6 +274,7 @@
     private string? imagePreviewUrl;
     private bool isPosting = false;
     private string? errorMessage = null;
+    private bool isLoading = true;
     private bool showEmojis = false;
 
     protected override async Task OnInitializedAsync()
@@ -288,14 +308,18 @@
         }
 
         await LoadPosts();
+        isLoading = false;
+        StateHasChanged();
     }
 
     private async Task LoadPosts()
     {
         posts = await DbContext.ForumPosts
+            .AsNoTracking()
             .Include(p => p.User)
                 .ThenInclude(u => u.UserProfile)
             .OrderByDescending(p => p.CreatedAt)
+            .Take(15) // Pagination: only load first 15 posts for fast initial render
             .ToListAsync();
     }
 

@@ -23,6 +23,8 @@ namespace STAYTRUST.Models
         [StringLength(20)]
         public string? Role { get; set; }
 
+        public int? LandlordId { get; set; }
+
         public bool? Status { get; set; }
 
 
