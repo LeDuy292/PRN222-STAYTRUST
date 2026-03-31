@@ -5,6 +5,7 @@
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @rendermode InteractiveServer
 
 <nav class="absolute top-0 left-0 right-0 z-50 w-full px-4 lg:px-40 py-5">
@@ -39,10 +40,17 @@
                 <!-- Sidebar / Summary -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-xl">
-                        <div class="size-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-white text-4xl font-black shadow-lg shadow-emerald-500/20 mb-6">
-                            @FullName?[0].ToString().ToUpper()
+                        <div class="size-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center overflow-hidden text-white text-4xl font-black shadow-lg shadow-emerald-500/20 mb-6">
+                            @if (!string.IsNullOrEmpty(model?.AvatarUrl))
+                            {
+                                <img src="@model.AvatarUrl" class="w-full h-full object-cover" />
+                            }
+                            else
+                            {
+                                @(model?.FullName?.FirstOrDefault().ToString().ToUpper() ?? "U")
+                            }
                         </div>
-                        <h2 class="text-xl font-bold text-white mb-1">@FullName</h2>
+                        <h2 class="text-xl font-bold text-white mb-1">@model?.FullName</h2>
                         <p class="text-slate-500 text-sm font-medium mb-4">@user.Email</p>
                         <div class="inline-flex px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
                             @user.Role
@@ -77,21 +85,24 @@
                             </div>
                         }
 
-                        <form @onsubmit="HandleUpdate" class="space-y-8">
+                        <EditForm Model="model" OnValidSubmit="HandleUpdate" class="space-y-8">
+                            <DataAnnotationsValidator />
                             <!-- Section: Personal -->
                             <div>
                                 <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                                     <span class="size-1.5 rounded-full bg-emerald-400"></span>
-                                    Core Identity
+                                    Thông Tin Cá Nhân
                                 </h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Full Name</label>
-                                        <input @bind="FullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" required />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Họ và Tên</label>
+                                        <InputText @bind-Value="model.FullName" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <ValidationMessage For="@(() => model.FullName)" class="text-[11px] text-red-500 mt-1" />
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
-                                        <input @bind="Phone" type="tel" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" required />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Số điện thoại</label>
+                                        <InputText @bind-Value="model.Phone" type="tel" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <ValidationMessage For="@(() => model.Phone)" class="text-[11px] text-red-500 mt-1" />
                                     </div>
                                 </div>
                             </div>
@@ -100,34 +111,45 @@
                             <div>
                                 <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-3 pt-4">
                                     <span class="size-1.5 rounded-full bg-emerald-400"></span>
-                                    Extended Metadata
+                                    Dữ liệu Khác (Tùy chọn)
                                 </h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Identity Number (CCCD)</label>
-                                        <input @bind="IdentityNumber" type="text" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Căn Cước Công Dân</label>
+                                        <InputText @bind-Value="model.IdentityNumber" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Gender</label>
-                                        <select @bind="Gender" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer">
-                                            <option value="" class="bg-[#0c1117]">Select Gender</option>
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Giới tính</label>
+                                        <InputSelect @bind-Value="model.Gender" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer">
+                                            <option value="" class="bg-[#0c1117]">Chọn Giới Tính</option>
                                             <option value="Nam" class="bg-[#0c1117]">Nam</option>
                                             <option value="Nữ" class="bg-[#0c1117]">Nữ</option>
                                             <option value="Other" class="bg-[#0c1117]">Khác</option>
-                                        </select>
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => model.Gender)" class="text-[11px] text-red-500 mt-1" />
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Date of Birth</label>
-                                        <input @bind="DateOfBirth" type="date" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Ngày sinh</label>
+                                        <InputDate @bind-Value="model.DateOfBirth" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <ValidationMessage For="@(() => model.DateOfBirth)" class="text-[11px] text-red-500 mt-1" />
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Avatar URL (Optional)</label>
-                                        <input @bind="AvatarUrl" type="url" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" placeholder="https://..." />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Ảnh Đại Diện (JPG/PNG)</label>
+                                        <InputFile OnChange="HandleImageUpload" accept=".jpg,.jpeg,.png" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white text-sm outline-none focus:border-emerald-500/50 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer" />
+                                        @if (!string.IsNullOrEmpty(imageErrorMessage))
+                                        {
+                                            <p class="text-[11px] text-red-500 mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">error</span> @imageErrorMessage</p>
+                                        }
+                                        @if (!string.IsNullOrEmpty(model.AvatarUrl) && model.AvatarFile != null)
+                                        {
+                                            <p class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">check_circle</span> Đã định kèm ảnh hợp lệ.</p>
+                                        }
                                     </div>
                                 </div>
                                 <div class="space-y-2 mt-6">
-                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Permanent Address</label>
-                                    <textarea @bind="Address" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all min-h-[100px]" placeholder="Enter your full address..."></textarea>
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Địa chỉ thường trú</label>
+                                    <InputTextArea @bind-Value="model.Address" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all min-h-[100px]" placeholder="Nhập địa chỉ của bạn..."></InputTextArea>
+                                    <ValidationMessage For="@(() => model.Address)" class="text-[11px] text-red-500 mt-1" />
                                 </div>
                             </div>
 
@@ -135,15 +157,15 @@
                                 @if (isSubmitting)
                                 {
                                     <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
-                                    <span>Syncing Metadata...</span>
+                                    <span>Đang cập nhật Data...</span>
                                 }
                                 else
                                 {
-                                    <span>Sync Profile</span>
+                                    <span>Lưu thay đổi</span>
                                     <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">database</span>
                                 }
                             </button>
-                        </form>
+                        </EditForm>
                     </div>
                 </div>
             </div>
@@ -175,14 +197,52 @@
     private string? statusMessage;
     private bool isError = false;
 
-    // Form fields
-    private string? FullName;
-    private string? Phone;
-    private DateOnly? DateOfBirth;
-    private string? Gender;
-    private string? IdentityNumber;
-    private string? Address;
-    private string? AvatarUrl;
+    private STAYTRUST.Models.DTOs.UpdateProfileDto model = new();
+    private string? imageErrorMessage;
+
+    // Handlers
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        imageErrorMessage = null;
+        var file = e.File;
+        if (file == null) return;
+
+        if (file.ContentType != "image/jpeg" && file.ContentType != "image/png")
+        {
+            imageErrorMessage = "Chỉ chấp nhận file định dạng JPG hoặc PNG.";
+            return;
+        }
+
+        if (file.Size > 2 * 1024 * 1024)
+        {
+            imageErrorMessage = "Dung lượng ảnh quá lớn. Tối đa 2MB.";
+            return;
+        }
+
+        model.AvatarFile = file;
+        model.AvatarUrl = file.Name;
+        StateHasChanged();
+    }
+
+    private async Task<string?> UploadFileToServerAsync(Microsoft.AspNetCore.Components.Forms.IBrowserFile file)
+    {
+        if (file == null) return null;
+
+        var folderInfo = System.IO.Path.Combine(Env.WebRootPath, "images", "avatars");
+        if (!System.IO.Directory.Exists(folderInfo))
+        {
+            System.IO.Directory.CreateDirectory(folderInfo);
+        }
+
+        var extension = System.IO.Path.GetExtension(file.Name);
+        var newFileName = $"{System.Guid.NewGuid()}{extension}";
+        var absolutePath = System.IO.Path.Combine(folderInfo, newFileName);
+
+        await using var stream = new System.IO.FileStream(absolutePath, System.IO.FileMode.Create);
+        await file.OpenReadStream(2 * 1024 * 1024).CopyToAsync(stream);
+
+        return $"/images/avatars/{newFileName}";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -200,15 +260,15 @@
                 user = await UserService.GetUserWithProfileAsync(userId);
                 if (user != null)
                 {
-                    FullName = user.UserName;
-                    Phone = user.Phone;
+                    model.FullName = user.FullName ?? user.UserName ?? "";
+                    model.Phone = user.Phone ?? "";
                     if (user.UserProfile != null)
                     {
-                        DateOfBirth = user.UserProfile.DateOfBirth;
-                        Gender = user.UserProfile.Gender;
-                        IdentityNumber = user.UserProfile.IdentityNumber;
-                        Address = user.UserProfile.Address;
-                        AvatarUrl = user.UserProfile.AvatarUrl;
+                        model.DateOfBirth = user.UserProfile.DateOfBirth;
+                        model.Gender = user.UserProfile.Gender;
+                        model.IdentityNumber = user.UserProfile.IdentityNumber;
+                        model.Address = user.UserProfile.Address;
+                        model.AvatarUrl = user.UserProfile.AvatarUrl;
                     }
                 }
             }
@@ -225,28 +285,37 @@
         statusMessage = null;
         isError = false;
 
+        if (model.AvatarFile != null)
+        {
+            var savedPathUrl = await UploadFileToServerAsync(model.AvatarFile);
+            if (savedPathUrl != null) 
+            {
+               model.AvatarUrl = savedPathUrl; 
+            }
+        }
+
         var profileUpdate = new STAYTRUST.Models.UserProfile
         {
             UserId = user.UserId,
-            DateOfBirth = DateOfBirth,
-            Gender = Gender,
-            IdentityNumber = IdentityNumber,
-            Address = Address,
-            AvatarUrl = AvatarUrl
+            DateOfBirth = model.DateOfBirth,
+            Gender = model.Gender,
+            IdentityNumber = model.IdentityNumber,
+            Address = model.Address,
+            AvatarUrl = model.AvatarUrl
         };
 
-        var result = await UserService.UpdateUserProfileAsync(user.UserId, FullName ?? "", Phone ?? "", profileUpdate);
+        var result = await UserService.UpdateUserProfileAsync(user.UserId, model.FullName ?? "", model.Phone ?? "", profileUpdate);
 
         if (result)
         {
-            statusMessage = "Information synchronized successfully across all nodes.";
+            statusMessage = "Cập nhật thông tin và cập nhật Profile trên Hệ thống thành công.";
             // Subtle delay to show success
             await Task.Delay(1000);
-            // Optionally redirect or stay
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
         else
         {
-            statusMessage = "Synchronization failed. Please check your data connectivity.";
+            statusMessage = "Lưu dữ liệu thất bại. Vui lòng thử lại sau.";
             isError = true;
         }
 

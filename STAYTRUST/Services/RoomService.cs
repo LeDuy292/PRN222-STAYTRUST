@@ -9,6 +9,7 @@ namespace STAYTRUST.Services
         Task<List<Room>> GetAllRoomsAsync();
         Task<Room?> GetRoomByIdAsync(int id);
         Task<List<Room>> SearchRoomsAsync(string? address, decimal? minPrice, decimal? maxPrice, double? minArea);
+        Task<List<STAYTRUST.Models.DTOs.RoomMapDto>> SearchRoomsForMapAsync(decimal? minPrice, decimal? maxPrice);
         Task<Room?> GetRoomDetailWithFeedbacksAsync(int id);
         Task<bool> CreateRoomAsync(Room room);
         Task<bool> UpdateRoomAsync(Room room);
@@ -48,6 +49,39 @@ namespace STAYTRUST.Services
                 .Include(r => r.Landlord)
                 .Include(r => r.RoomImages)
                 .FirstOrDefaultAsync(r => r.RoomId == id);
+        }
+
+        public async Task<List<STAYTRUST.Models.DTOs.RoomMapDto>> SearchRoomsForMapAsync(decimal? minPrice, decimal? maxPrice)
+        {
+            using var context = await _factory.CreateDbContextAsync();
+            var query = context.Rooms.AsQueryable();
+
+            if (minPrice.HasValue)
+                query = query.Where(r => r.Price >= minPrice.Value);
+            if (maxPrice.HasValue)
+                query = query.Where(r => r.Price <= maxPrice.Value);
+
+            var rooms = await query.ToListAsync();
+            
+            var dtos = new List<STAYTRUST.Models.DTOs.RoomMapDto>();
+            foreach (var r in rooms)
+            {
+                // Consistent random based on RoomId
+                var random = new System.Random(r.RoomId);
+                double lat = 16.0350 + (random.NextDouble() * (16.0750 - 16.0350));
+                double lng = 108.1950 + (random.NextDouble() * (108.2450 - 108.1950));
+
+                dtos.Add(new STAYTRUST.Models.DTOs.RoomMapDto
+                {
+                    RoomId = r.RoomId,
+                    Title = r.Title ?? "Phòng trọ",
+                    Price = r.Price,
+                    Latitude = lat,
+                    Longitude = lng,
+                    Amenities = new List<string> { "Wifi", "Điều hòa" }
+                });
+            }
+            return dtos;
         }
 
         public async Task<List<Room>> SearchRoomsAsync(string? address, decimal? minPrice, decimal? maxPrice, double? minArea)

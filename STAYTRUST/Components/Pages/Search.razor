@@ -120,9 +120,9 @@
         </aside>
         <!-- Main Content Area -->
         <div class="flex-1 relative">
-            <div id="map" class="absolute inset-0 bg-[#0d1a19]"></div>
+            <div id="map" class="absolute inset-0 bg-[#0d1a19] z-0"></div>
             <!-- Scrollable Property Cards -->
-            <div class="absolute inset-y-0 right-0 w-[420px] z-20 pointer-events-none p-6">
+            <div class="absolute inset-y-0 right-0 w-[420px] z-[500] pointer-events-none p-6">
                 <div class="h-full overflow-y-auto hide-scrollbar pointer-events-auto space-y-4 pr-2">
                     @if (isLoading)
                     {
@@ -226,6 +226,7 @@
     private Task<AuthenticationState>? AuthStateTask { get; set; }
 
     private List<Room>? rooms;
+    private List<STAYTRUST.Models.DTOs.RoomMapDto>? mapRooms;
     private List<int> favoriteRoomIds = new();
     private bool isLoading = true;
 
@@ -257,7 +258,20 @@
 
         // Load all available rooms
         rooms = await RoomService.SearchRoomsAsync(null, null, null, null);
+        mapRooms = await RoomService.SearchRoomsForMapAsync(minPrice, maxPrice);
         isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("RoomMap.initMap", "map");
+            if (mapRooms != null)
+            {
+                await JSRuntime.InvokeVoidAsync("RoomMap.updateMarkers", mapRooms);
+            }
+        }
     }
 
     private async Task ApplyFilters()
@@ -265,6 +279,10 @@
         isLoading = true;
         var addr = !string.IsNullOrWhiteSpace(filterAddress) ? filterAddress : searchQuery;
         rooms = await RoomService.SearchRoomsAsync(addr, minPrice, maxPrice, minArea);
+        
+        mapRooms = await RoomService.SearchRoomsForMapAsync(minPrice, maxPrice);
+        await JSRuntime.InvokeVoidAsync("RoomMap.updateMarkers", mapRooms);
+
         isLoading = false;
     }
 
@@ -276,6 +294,8 @@
         maxPrice = null;
         minArea = null;
         rooms = await RoomService.SearchRoomsAsync(null, null, null, null);
+        mapRooms = await RoomService.SearchRoomsForMapAsync(minPrice, maxPrice);
+        await JSRuntime.InvokeVoidAsync("RoomMap.updateMarkers", mapRooms);
     }
 
     private async Task HandleSearchKeyDown(KeyboardEventArgs e)

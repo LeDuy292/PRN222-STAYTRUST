@@ -144,9 +144,23 @@ public class RentalService : IRentalService
     {
         if (feedback == null) return false;
         
+        // Backend Validation: Chặn đánh giá ảo
+        bool canFeedback = await CanFeedbackAsync(feedback.UserId, feedback.RoomId);
+        if (!canFeedback)
+        {
+            throw new UnauthorizedAccessException("Bạn cần thuê phòng này và hoàn tất hợp đồng trước khi được phép đánh giá.");
+        }
+
         using var context = await _factory.CreateDbContextAsync();
         context.Feedbacks.Add(feedback);
         await context.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<bool> CanFeedbackAsync(int userId, int roomId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.RentalContracts
+            .AnyAsync(r => r.TenantId == userId && r.RoomId == roomId && (r.Status == "Completed" || r.Status == "Paid" || r.Status == "Terminated"));
     }
 }

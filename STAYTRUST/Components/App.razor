@@ -24,6 +24,9 @@
     <script>
         goongMap.init('@Configuration["GoongSettings:MaptilesKey"]', '@Configuration["GoongSettings:RestApiKey"]');
     </script>
+    
+    <!-- Leaflet CSS (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -95,7 +98,10 @@
     <!-- Photo Sphere Viewer JS (Three.js bundled) -->
     <script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@@photo-sphere-viewer/core@5/index.min.js"></script>
+    <!-- Leaflet JS (OpenStreetMap) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="js/room360.js"></script>
+    <script src="js/mapSearch.js"></script>
 </body>
 
 </html>

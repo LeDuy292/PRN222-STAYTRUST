@@ -265,22 +265,35 @@
                         }
 
                         <!-- Add Review Form -->
-                        <div class="glass-card rounded-2xl p-6 space-y-4">
-                            <h4 class="text-sm font-bold uppercase tracking-widest text-[#13ecda]">Leave a Review</h4>
-                            <div class="flex gap-2">
-                                @for (int i = 1; i <= 5; i++)
+                        @if (canFeedback)
+                        {
+                            <div class="glass-card rounded-2xl p-6 space-y-4">
+                                <h4 class="text-sm font-bold uppercase tracking-widest text-[#13ecda]">Leave a Review</h4>
+                                @if (!string.IsNullOrEmpty(reviewErrorMessage))
                                 {
-                                    int rating = i;
-                                    <button @onclick="() => newRating = rating" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all @(newRating >= rating ? "bg-yellow-400/20 border-yellow-400 text-yellow-400" : "bg-white/5 border-white/10 text-white/30 hover:border-yellow-400/50")">
-                                        <span class="material-symbols-outlined">star</span>
-                                    </button>
+                                    <div class="p-3 bg-red-500/20 text-red-500 rounded-xl text-sm border border-red-500/30">@reviewErrorMessage</div>
                                 }
+                                <div class="flex gap-2">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        int rating = i;
+                                        <button @onclick="() => newRating = rating" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all @(newRating >= rating ? "bg-yellow-400/20 border-yellow-400 text-yellow-400" : "bg-white/5 border-white/10 text-white/30 hover:border-yellow-400/50")">
+                                            <span class="material-symbols-outlined">star</span>
+                                        </button>
+                                    }
+                                </div>
+                                <textarea @bind="newComment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[100px] focus:border-[#13ecda]/50 focus:ring-0 transition-all text-white text-sm" placeholder="Share your experience..."></textarea>
+                                <button @onclick="SubmitReview" disabled="@isSubmittingReview" class="px-6 py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm hover:bg-[#10d4c4] transition-all disabled:opacity-50">
+                                    @(isSubmittingReview ? "Submitting..." : "Submit Review")
+                                </button>
                             </div>
-                            <textarea @bind="newComment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[100px] focus:border-[#13ecda]/50 focus:ring-0 transition-all text-white text-sm" placeholder="Share your experience..."></textarea>
-                            <button @onclick="SubmitReview" disabled="@isSubmittingReview" class="px-6 py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm hover:bg-[#10d4c4] transition-all disabled:opacity-50">
-                                @(isSubmittingReview ? "Submitting..." : "Submit Review")
-                            </button>
-                        </div>
+                        }
+                        else
+                        {
+                            <div class="glass-card rounded-2xl p-6 text-center">
+                                <p class="text-[#92c9c5] text-sm font-medium">Bạn cần thuê phòng này để có thể đánh giá.</p>
+                            </div>
+                        }
                     </section>
                 </div>
                 <!-- Sidebar Right (1/3) -->
@@ -461,6 +474,7 @@
     private int newRating = 5;
     private string newComment = "";
     private bool isSubmittingReview;
+    private bool canFeedback;
 
     // Messaging
     private bool showMessageModal;
@@ -491,6 +505,7 @@
                 {
                     currentUserId = uid;
                     isFavorite = await FavoriteService.IsFavoriteAsync(uid, RoomId);
+                    canFeedback = await RentalService.CanFeedbackAsync(uid, RoomId);
                 }
             }
         }
@@ -554,6 +569,8 @@
         isFavorite = added;
     }
 
+    private string reviewErrorMessage = "";
+
     private async Task SubmitReview()
     {
         if (currentUserId == null)
@@ -563,6 +580,7 @@
         }
 
         isSubmittingReview = true;
+        reviewErrorMessage = "";
         var feedback = new Feedback
         {
             RoomId = RoomId,
@@ -572,16 +590,31 @@
             CreatedAt = DateTime.Now
         };
 
-        var success = await RentalService.SubmitFeedbackAsync(feedback);
-        if (success)
+        try
         {
-            // Reload room to show new review
-            Room = await RoomService.GetRoomDetailWithFeedbacksAsync(RoomId);
-            newComment = "";
-            newRating = 5;
-            await JSRuntime.InvokeVoidAsync("alert", "Cảm ơn bạn đã gửi đánh giá!");
+            var success = await RentalService.SubmitFeedbackAsync(feedback);
+            if (success)
+            {
+                // Reload room to show new review
+                Room = await RoomService.GetRoomDetailWithFeedbacksAsync(RoomId);
+                newComment = "";
+                newRating = 5;
+                await JSRuntime.InvokeVoidAsync("alert", "Cảm ơn bạn đã gửi đánh giá!");
+            }
         }
-        isSubmittingReview = false;
+        catch (UnauthorizedAccessException ex)
+        {
+            reviewErrorMessage = ex.Message;
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+        }
+        catch (Exception)
+        {
+            reviewErrorMessage = "Có lỗi xảy ra khi gửi đánh giá.";
+        }
+        finally
+        {
+            isSubmittingReview = false;
+        }
     }
 
     private async Task OpenMessageModal()

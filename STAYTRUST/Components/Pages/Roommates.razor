@@ -74,12 +74,24 @@
 
 <!-- Match Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    @foreach (var user in potentialRoommates)
+    @foreach (var user in potentialRoommates ?? Enumerable.Empty<User>())
     {
-        var age = user.UserProfile?.DateOfBirth != null 
-            ? (DateTime.Now.Year - user.UserProfile.DateOfBirth.Value.Year) 
-            : 0;
-        var avatar = string.IsNullOrEmpty(user.UserProfile?.AvatarUrl) ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(user.UserName ?? "User")}&background=random" : user.UserProfile.AvatarUrl;
+        if (user == null) continue;
+
+        int age = 0;
+        if (user.UserProfile?.DateOfBirth != null)
+        {
+            var dob = user.UserProfile.DateOfBirth.Value;
+            var today = DateTime.Today;
+            age = today.Year - dob.Year;
+            if (dob > DateOnly.FromDateTime(today.AddYears(-age))) age--;
+        }
+
+        var userNameToAvatar = string.IsNullOrWhiteSpace(user.UserName) ? "User" : user.UserName;
+        var avatar = string.IsNullOrEmpty(user.UserProfile?.AvatarUrl) 
+            ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(userNameToAvatar)}&background=random" 
+            : user.UserProfile.AvatarUrl;
+            
         var address = string.IsNullOrEmpty(user.UserProfile?.Address) ? "Vietnam" : user.UserProfile.Address;
 
         <STAYTRUST.Components.Roommate.RoommateCard 
@@ -169,7 +181,7 @@
     
     protected override async Task OnInitializedAsync()
     {
-        potentialRoommates = await UserService.GetPotentialRoommatesAsync();
+        potentialRoommates = await UserService.GetPotentialRoommatesAsync() ?? new();
     }
     
     // Filter Selections

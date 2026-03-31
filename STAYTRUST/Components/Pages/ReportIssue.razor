@@ -36,6 +36,13 @@
         else
         {
             <div class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md shadow-2xl">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm font-medium flex items-center gap-2">
+                        <span class="material-symbols-outlined">error</span>
+                        @errorMessage
+                    </div>
+                }
                 <EditForm Model="@report" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
                     
@@ -87,6 +94,7 @@
     private Report report = new Report();
     private bool isSubmitting = false;
     private bool isSuccess = false;
+    private string errorMessage = "";
 
     private async Task HandleSubmit()
     {
@@ -109,7 +117,7 @@
         }
         catch (Exception ex)
         {
-            // Handle error logic if needed
+            errorMessage = "Lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.";
         }
         finally
         {

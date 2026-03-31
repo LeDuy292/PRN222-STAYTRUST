@@ -79,7 +79,8 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -149,8 +150,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IRoomService, RoomService>(); // If this exists elsewhere
-// builder.Services.AddControllers(); - already added above
+builder.Services.AddScoped<IRoomService, RoomService>();
 
 var app = builder.Build();
 

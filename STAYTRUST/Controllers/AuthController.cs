@@ -1,3 +1,7 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using STAYTRUST.Services;
 
@@ -58,6 +62,48 @@ namespace STAYTRUST.Controllers
             });
 
             // Get user role to determine redirect URL
+            var userRole = await _authService.GetUserRoleAsync(email);
+            if (userRole == "Landlord")
+            {
+                return Redirect("/landlord/home");
+            }
+
+            return Redirect("/");
+        }
+
+        [HttpGet("login-google")]
+        public IActionResult LoginGoogle()
+        {
+            var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleResponse") };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("google-response")]
+        public async Task<IActionResult> GoogleResponse()
+        {
+            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            if (!result.Succeeded || result.Principal == null)
+                return Redirect("/login?error=google-auth-failed");
+
+            var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+            var name = result.Principal.FindFirst(ClaimTypes.Name)?.Value ?? "Google User";
+
+            if (string.IsNullOrEmpty(email))
+                return Redirect("/login?error=google-email-missing");
+
+            var token = await _authService.AuthenticateGoogleUserAsync(email, name);
+
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(30)
+            });
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
             var userRole = await _authService.GetUserRoleAsync(email);
             if (userRole == "Landlord")
             {
