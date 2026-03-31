@@ -149,7 +149,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IRoomService, RoomService>(); // If this exists elsewhere
+builder.Services.AddScoped<IRoomService, RoomService>();
 // builder.Services.AddControllers(); - already added above
 
 var app = builder.Build();

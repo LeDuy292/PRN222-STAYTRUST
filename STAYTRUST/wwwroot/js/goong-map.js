@@ -1,5 +1,6 @@
 window.goongMap = {
     maps: {},
+    markers: {},
     maptilesKey: '',
     restApiKey: '',
 
@@ -28,6 +29,11 @@ window.goongMap = {
         const map = this.maps[elementId];
         if (!map) return;
 
+        if (this.markers[elementId]) {
+            this.markers[elementId].forEach(m => m.remove());
+        }
+        this.markers[elementId] = [];
+
         properties.forEach(prop => {
             const el = document.createElement('div');
             el.className = 'marker';
@@ -40,9 +46,10 @@ window.goongMap = {
                                 </div>
                             </div>`;
 
-            new goongjs.Marker(el)
+            const marker = new goongjs.Marker(el)
                 .setLngLat([prop.lng, prop.lat])
                 .addTo(map);
+            this.markers[elementId].push(marker);
         });
     },
 

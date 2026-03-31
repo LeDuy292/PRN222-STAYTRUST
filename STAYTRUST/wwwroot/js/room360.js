@@ -29,9 +29,7 @@ window.Room360 = (function () {
                     navbar: ['zoom', 'fullscreen'],
                     defaultZoomLvl: 50,
                     touchmoveTwoFingers: true,
-                    loadingTxt: 'Đang tải ảnh 360°...',
-                    autorotateDelay: 2000,
-                    autorotateSpeed: '1rpm',
+                    loadingTxt: 'Đang tải ảnh 360°...'
                 });
 
                 // Listen for ready event

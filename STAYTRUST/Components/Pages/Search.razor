@@ -50,9 +50,22 @@
                     <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <span class="material-symbols-outlined text-[#13ecda] text-xl">search</span>
                     </div>
-                    <input @bind="searchQuery" @bind:event="oninput" @onkeydown="HandleSearchKeyDown"
+                    <input @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearchKeyUp"
                            class="block w-full pl-11 pr-4 py-2 bg-[#193331] border-none rounded-xl text-sm focus:ring-1 focus:ring-[#13ecda] placeholder-[#92c9c5]"
                            placeholder="Search by location or name..." type="text" />
+                    
+                    @if (suggestions != null && suggestions.Any() && isDropdownOpen)
+                    {
+                        <ul class="absolute top-full left-0 w-full bg-[#193331] border border-[#234845] rounded-xl mt-1 max-h-60 overflow-y-auto z-[60] shadow-lg hide-scrollbar">
+                            @foreach (var suggestion in suggestions)
+                            {
+                                <li class="px-4 py-3 text-sm text-white hover:bg-[#13ecda]/20 cursor-pointer border-b border-[#234845] last:border-b-0"
+                                    @onclick="() => SelectSuggestion(suggestion.description)">
+                                    @suggestion.description
+                                </li>
+                            }
+                        </ul>
+                    }
                 </div>
             </div>
         </div>
@@ -236,6 +249,15 @@
     private double? minArea;
     private int? currentUserId;
 
+    public class GoongSuggestion
+    {
+        public string description { get; set; } = string.Empty;
+        public string place_id { get; set; } = string.Empty;
+    }
+
+    private List<GoongSuggestion> suggestions = new();
+    private bool isDropdownOpen = false;
+
     protected override async Task OnInitializedAsync()
     {
         // Get current user ID
@@ -266,6 +288,7 @@
         var addr = !string.IsNullOrWhiteSpace(filterAddress) ? filterAddress : searchQuery;
         rooms = await RoomService.SearchRoomsAsync(addr, minPrice, maxPrice, minArea);
         isLoading = false;
+        await UpdateMapMarkersAsync();
     }
 
     private async Task ResetFilters()
@@ -276,14 +299,96 @@
         maxPrice = null;
         minArea = null;
         rooms = await RoomService.SearchRoomsAsync(null, null, null, null);
+        await UpdateMapMarkersAsync();
+        await JSRuntime.InvokeVoidAsync("goongMap.flyTo", "map", 16.0544, 108.2022, 12);
     }
 
-    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
+            isDropdownOpen = false;
             filterAddress = searchQuery;
             await ApplyFilters();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(searchQuery) || searchQuery.Length < 2)
+        {
+            suggestions.Clear();
+            isDropdownOpen = false;
+            return;
+        }
+
+        try
+        {
+            suggestions = await JSRuntime.InvokeAsync<List<GoongSuggestion>>("goongMap.getSuggestions", searchQuery);
+            isDropdownOpen = suggestions != null && suggestions.Any();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error getting suggestions: " + ex.Message);
+            suggestions.Clear();
+            isDropdownOpen = false;
+        }
+    }
+
+    private async Task SelectSuggestion(string description)
+    {
+        searchQuery = description;
+        filterAddress = description;
+        suggestions.Clear();
+        isDropdownOpen = false;
+        await ApplyFilters();
+
+        try
+        {
+            var coord = await JSRuntime.InvokeAsync<System.Text.Json.JsonElement?>("goongMap.geocode", description);
+            if (coord != null && coord.Value.ValueKind != System.Text.Json.JsonValueKind.Null)
+            {
+                if (coord.Value.TryGetProperty("lat", out var latEl) && coord.Value.TryGetProperty("lng", out var lngEl))
+                {
+                    double lat = latEl.GetDouble();
+                    double lng = lngEl.GetDouble();
+                    await JSRuntime.InvokeVoidAsync("goongMap.flyTo", "map", lat, lng, 13);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error geocoding location: " + ex.Message);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(500); // Wait for scripts to load and layout to settle
+            await JSRuntime.InvokeVoidAsync("goongMap.initSearchMap", "map", 16.0544, 108.2022, 12);
+            await UpdateMapMarkersAsync();
+        }
+    }
+
+    private async Task UpdateMapMarkersAsync()
+    {
+        if (rooms == null) return;
+        
+        // Mocking coordinates near Da Nang center because Room model lacks Latitude/Longitude
+        var mapData = rooms.Select(r => new
+        {
+            lat = 16.0340 + ((r.RoomId * 13) % 100) * 0.001, 
+            lng = 108.1922 + ((r.RoomId * 7) % 100) * 0.001,
+            price = r.Price.ToString("N0")
+        }).ToList();
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("goongMap.addMarkers", "map", mapData);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Failed to update map markers: " + ex.Message);
         }
     }
 

@@ -308,9 +308,19 @@
                             </div>
                         </div>
                         <div class="py-6">
-                            <button @onclick="HandleBooking" disabled="@isBooking" class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                @(isBooking ? "Processing..." : "Instant Book Now")
-                            </button>
+                            @if (Room.Status == "Available")
+                            {
+                                <button @onclick="OpenContractModal" disabled="@isBooking" class="glow-button w-full rounded-2xl bg-[#13ecda] py-4 text-center text-base font-bold text-[#102220] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    @(isBooking ? "Ðang xử lý..." : "Thuê phòng")
+                                </button>
+                            }
+                            else
+                            {
+                                <button disabled class="w-full rounded-2xl bg-[#193331]/80 py-4 text-center text-base font-bold text-gray-400 opacity-80 cursor-not-allowed flex items-center justify-center gap-2 border border-white/5">
+                                    <span class="material-symbols-outlined text-xl">block</span>
+                                    Phòng đã được thuê
+                                </button>
+                            }
                         </div>
                         @if (!string.IsNullOrEmpty(bookingMessage))
                         {
@@ -446,6 +456,42 @@
     </div>
 }
 
+<!-- Contract Modal -->
+@if (showContractModal)
+{
+    <div class="fixed inset-0 z-[400] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+        <div class="glass-card w-full max-w-2xl rounded-3xl p-8 border border-white/10 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold">Hợp đồng thuê phòng</h3>
+                <button @onclick="CloseContractModal" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto pr-4 mb-6 text-sm text-[#92c9c5] space-y-4">
+                <h4 class="font-bold text-white text-base">CÁC ĐIỀU KHOẢN VÀ ĐIỀU KIỆN</h4>
+                <p>1. **Thời hạn thuê**: Hợp đồng thuê này có hiệu lực kể từ ngày xác nhận. Bạn phải tuân thủ điều khoản chấm dứt nếu muốn kết thúc hợp đồng sớm.</p>
+                <p>2. **Trả phòng**: Nếu bạn muốn trả phòng, bạn **phải thông báo trước 15 ngày** và **phải thanh toán toàn bộ các khoản nợ** (tiền thuê, điện, nước, internet, v.v.) thì mới được phép trả phòng. Hệ thống sẽ không cho phép trả phòng nếu còn hóa đơn chưa thanh toán.</p>
+                <p>3. **Tiền thuê và tiện ích**: Bạn đồng ý thanh toán tiền thuê phòng và các dịch vụ tiện ích đầy đủ và đúng hạn hàng tháng theo hóa đơn đã được gửi.</p>
+                <p>4. **Quy định tòa nhà**: Tuân thủ các quy định chung của tòa nhà (không được nuôi thú cưng tùy tiện, không gây tiếng ồn lớn sau 22h, v.v.).</p>
+                <p class="text-white font-medium mt-4">Bằng việc đánh dấu vào ô bên dưới, bạn xác nhận đã đọc, hiểu rõ và đồng ý với tất cả các điều khoản nêu trên.</p>
+            </div>
+            
+            <div class="mt-auto">
+                <label class="flex items-center gap-3 cursor-pointer mb-6">
+                    <input type="checkbox" @bind="agreedToTerms" class="w-5 h-5 rounded border-gray-300 text-[#13ecda] focus:ring-[#13ecda] bg-black/50" />
+                    <span class="text-sm font-medium select-none text-white">Tôi đã đọc kỹ và đồng ý với thỏa thuận hợp đồng</span>
+                </label>
+                
+                <button @onclick="HandleBooking" disabled="@(!agreedToTerms || isBooking)" class="w-full py-4 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-base hover:bg-[#10d4c4] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">assignment_turned_in</span>
+                    @(isBooking ? "Đang xử lý..." : "Xác nhận thuê")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public int RoomId { get; set; }
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
@@ -456,6 +502,8 @@
     private bool isBooking;
     private bool isFavorite;
     private int? currentUserId;
+    private bool showContractModal;
+    private bool agreedToTerms;
 
     // Review
     private int newRating = 5;
@@ -496,11 +544,8 @@
         }
     }
 
-    private async Task HandleBooking()
+    private async Task OpenContractModal()
     {
-        isBooking = true;
-        bookingMessage = null;
-
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -516,7 +561,6 @@
         if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
         {
             bookingMessage = "Không thể xác định thông tin người dùng.";
-            isBooking = false;
             return;
         }
 
@@ -524,19 +568,50 @@
         {
             bookingMessage = "Bạn hiện đang thuê một phòng khác. Vui lòng trả phòng trước khi thuê phòng mới.";
             bookingSuccess = false;
-            isBooking = false;
             return;
         }
 
-        var contract = await RentalService.CreateRentalContractAsync(userId, RoomId);
-        if (contract != null)
+        showContractModal = true;
+        agreedToTerms = false;
+        bookingMessage = null;
+    }
+
+    private void CloseContractModal()
+    {
+        showContractModal = false;
+    }
+
+    private async Task HandleBooking()
+    {
+        if (!agreedToTerms) return;
+        
+        isBooking = true;
+        bookingMessage = null;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? user.FindFirst("sub")?.Value;
+
+        if (int.TryParse(userIdStr, out int userId))
         {
-            bookingMessage = "Đặt phòng thành công! Bạn có thể xem hợp đồng trong phần 'My Rentals'.";
-            bookingSuccess = true;
+            var contract = await RentalService.CreateRentalContractAsync(userId, RoomId);
+            if (contract != null)
+            {
+                bookingMessage = "Đặt phòng thành công! Bạn có thể xem hợp đồng và thanh toán trong phần 'My Rentals'.";
+                bookingSuccess = true;
+                showContractModal = false;
+            }
+            else
+            {
+                bookingMessage = "Đặt phòng thất bại. Có thể phòng này đã được thuê hoặc có lỗi xảy ra.";
+                bookingSuccess = false;
+            }
         }
         else
         {
-            bookingMessage = "Đặt phòng thất bại. Có thể phòng này đã được thuê hoặc có lỗi xảy ra.";
+            bookingMessage = "Không thể xác định thông tin người dùng.";
             bookingSuccess = false;
         }
 

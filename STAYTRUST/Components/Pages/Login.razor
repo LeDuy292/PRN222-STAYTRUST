@@ -287,14 +287,12 @@
         
         try 
         {
-            /*
             var response = await JS.InvokeAsync<string>("getRecaptchaResponse");
             if (string.IsNullOrEmpty(response))
             {
                 ErrorMessage = "Please verify that you are not a robot before signing in.";
                 return;
             }
-            */
 
             isSubmitting = true;
             StateHasChanged();
