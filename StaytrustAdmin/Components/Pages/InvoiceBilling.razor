@@ -1,0 +1,215 @@
+@page "/billing"
+@layout MainLayout
+
+<PageTitle>Staytrust Admin - Invoice & Billing</PageTitle>
+
+<!-- Header -->
+<header class="h-16 border-b border-neutral-border bg-neutral-dark flex items-center justify-between px-8 shrink-0">
+    <div class="flex items-center gap-4 flex-1">
+        <div class="relative w-full max-w-md">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+            <input class="w-full pl-10 pr-4 py-2 bg-background-dark/50 border border-neutral-border rounded-lg focus:ring-2 focus:ring-primary text-sm outline-none" placeholder="Search transactions, users, or IDs..." type="text" />
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <button class="p-2 text-slate-500 hover:bg-accent-dark/20 rounded-lg relative">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="absolute top-2 right-2 size-2 bg-primary rounded-full border-2 border-background-dark"></span>
+        </button>
+        <button class="p-2 text-slate-500 hover:bg-accent-dark/20 rounded-lg">
+            <span class="material-symbols-outlined">settings</span>
+        </button>
+    </div>
+</header>
+
+<div class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+    <!-- Page Title -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="space-y-1">
+            <h1 class="text-4xl font-extrabold tracking-tight">Invoice &amp; Billing</h1>
+            <p class="text-slate-500">Manage system-wide transactions, fees, and payouts.</p>
+        </div>
+        <div class="flex gap-3">
+            <button class="flex items-center gap-2 px-4 py-2 bg-accent-dark text-slate-100 rounded-lg font-bold text-sm hover:opacity-80 transition-opacity">
+                <span class="material-symbols-outlined text-sm">download</span>
+                Export CSV
+            </button>
+            <button class="flex items-center gap-2 px-4 py-2 bg-primary text-background-dark rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-sm">add</span>
+                Create Invoice
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-6 bg-surface-dark border border-neutral-border rounded-xl space-y-2">
+            <p class="text-sm font-medium text-slate-500">Total Revenue</p>
+            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold">$128,450.00</span><span class="text-xs font-bold text-emerald-500">+12%</span></div>
+        </div>
+        <div class="p-6 bg-surface-dark border border-neutral-border rounded-xl space-y-2">
+            <p class="text-sm font-medium text-slate-500">System Fees (10%)</p>
+            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold">$12,845.00</span><span class="text-xs font-bold text-emerald-500">+8.4%</span></div>
+        </div>
+        <div class="p-6 bg-surface-dark border border-neutral-border rounded-xl space-y-2">
+            <p class="text-sm font-medium text-slate-500">Landlord Payouts</p>
+            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold">$115,605.00</span><span class="text-xs font-bold text-emerald-500">+14.1%</span></div>
+        </div>
+        <div class="p-6 bg-surface-dark border border-neutral-border rounded-xl space-y-2">
+            <p class="text-sm font-medium text-slate-500">Pending Transfers</p>
+            <div class="flex items-baseline gap-2"><span class="text-2xl font-bold">$4,230.50</span><span class="text-xs font-medium text-slate-400">Steady</span></div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-surface-dark border border-neutral-border rounded-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-border flex flex-wrap gap-4 items-center justify-between bg-background-dark/20">
+            <div class="flex gap-1">
+                <button class="px-4 py-2 text-sm font-bold border-b-2 border-primary text-primary">All Transactions</button>
+                <button class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-100">Paid</button>
+                <button class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-100">Overdue</button>
+                <button class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-100">Processing</button>
+            </div>
+            <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neutral-border text-xs font-bold">
+                <span class="material-symbols-outlined text-sm">filter_list</span> Filter
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-background-dark/30">
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Invoice ID</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">User</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Amount</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Type</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Date</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-border/30">
+                    @foreach (var inv in invoices)
+                    {
+                        <tr class="hover:bg-primary/5 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sm">@inv.Id</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xs">@inv.Initials</div>
+                                    <div>
+                                        <p class="text-sm font-bold">@inv.Name</p>
+                                        <p class="text-xs text-slate-500">@inv.Email</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-bold">@inv.Amount</span>
+                                    <span class="text-[10px] text-slate-400">@inv.Fee</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded @inv.TypeCss text-[10px] font-bold uppercase">@inv.Type</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">@inv.Date</td>
+                            <td class="px-6 py-4">
+                                <span class="flex items-center gap-1.5 text-xs font-bold @inv.StatusColor">
+                                    <span class="size-1.5 rounded-full @inv.StatusDotCss"></span>
+                                    @inv.Status
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-slate-400">
+                                <button class="hover:text-primary"><span class="material-symbols-outlined">more_horiz</span></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-4 border-t border-neutral-border flex items-center justify-between">
+            <p class="text-xs text-slate-500">Showing 1-4 of 2,405 transactions</p>
+            <div class="flex gap-2">
+                <button class="p-1 border border-neutral-border rounded hover:bg-accent-dark/20">
+                    <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <button class="p-1 border border-neutral-border rounded hover:bg-accent-dark/20">
+                    <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fee Breakdown + Quick Settlement -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 p-8 bg-surface-dark border border-neutral-border rounded-xl space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold">Payout Distribution Detail</h3>
+                <span class="text-xs font-medium text-slate-400">Current Month Cycle</span>
+            </div>
+            <div class="space-y-4">
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Total Gross Volume</span>
+                        <span class="font-bold">$128,450.00</span>
+                    </div>
+                    <div class="w-full bg-accent-dark h-2 rounded-full overflow-hidden flex">
+                        <div class="h-full bg-primary" style="width: 10%"></div>
+                        <div class="h-full bg-primary/40" style="width: 90%"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <div class="size-3 rounded-full bg-primary"></div>
+                            <span class="text-sm font-bold">Staytrust Fees</span>
+                        </div>
+                        <div class="p-4 bg-background-dark/50 rounded-lg">
+                            <p class="text-2xl font-bold text-primary">$12,845.00</p>
+                            <p class="text-xs text-slate-500 mt-1">Calculated as 10% flat platform fee.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <div class="size-3 rounded-full bg-primary/40"></div>
+                            <span class="text-sm font-bold">Landlord Net Payout</span>
+                        </div>
+                        <div class="p-4 bg-background-dark/50 rounded-lg">
+                            <p class="text-2xl font-bold">$115,605.00</p>
+                            <p class="text-xs text-slate-500 mt-1">Final amount disbursed after platform deduction.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 bg-primary text-background-dark rounded-xl flex flex-col justify-between overflow-hidden relative">
+            <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl opacity-10">payments</span>
+            <div class="space-y-4 relative z-10">
+                <div class="size-12 bg-background-dark/10 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined">account_balance_wallet</span>
+                </div>
+                <h3 class="text-xl font-bold">Quick Settlement</h3>
+                <p class="text-sm opacity-80 leading-relaxed">Initiate bulk payouts for all processed transactions this week. Ensure all landlord KYC checks are complete before proceeding.</p>
+            </div>
+            <button class="w-full py-3 bg-background-dark text-white rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors mt-8 relative z-10">
+                Run Payout Script
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private record Invoice(string Id, string Initials, string Name, string Email, string Amount, string Fee, string Type, string Date, string Status,
+        string TypeCss, string StatusColor, string StatusDotCss);
+
+    private List<Invoice> invoices = new()
+    {
+        new("#INV-8821","JD","Jane Doe","jane@example.com","$2,450.00","Fee: $245.00","Rent","Oct 24, 2023","Paid",
+            "bg-blue-500/20 text-blue-300","text-emerald-500","bg-emerald-500"),
+        new("#INV-8822","MS","Mike Smith","mike@outlook.com","$1,200.00","Fee: $120.00","Deposit","Oct 23, 2023","Processing",
+            "bg-purple-500/20 text-purple-300","text-amber-500","bg-amber-500"),
+        new("#INV-8823","RK","Robert King","robert.k@gmail.com","$150.00","Fee: $15.00","Service","Oct 20, 2023","Overdue",
+            "bg-orange-500/20 text-orange-300","text-rose-500","bg-rose-500"),
+        new("#INV-8824","LW","Lisa Wong","lisa.w@me.com","$3,100.00","Fee: $310.00","Rent","Oct 19, 2023","Paid",
+            "bg-blue-500/20 text-blue-300","text-emerald-500","bg-emerald-500"),
+    };
+}

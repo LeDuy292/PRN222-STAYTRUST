@@ -1,0 +1,604 @@
+@page "/"
+@using StaytrustAdmin.Models
+@using StaytrustAdmin.Services
+@inject IDashboardService DashboardService
+@layout MainLayout
+
+<PageTitle>Staytrust Admin - System Statistics</PageTitle>
+
+<!-- Header -->
+<header class="h-16 bg-neutral-dark border-b border-neutral-border flex items-center justify-between px-6 shrink-0">
+    <div>
+        <h2 class="text-lg font-bold tracking-tight">System Statistics</h2>
+        <p class="text-xs text-slate-500">Real-time data from your database</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button class="flex items-center gap-2 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-2 rounded-xl hover:bg-primary/20 transition-all"
+                @onclick="RefreshAllAsync">
+            <span class="material-symbols-outlined text-sm @(isLoading ? "animate-spin" : "")">refresh</span>
+            Refresh
+        </button>
+        <div class="flex items-center gap-2 ml-2">
+            <div class="size-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-sm">person</span>
+            </div>
+            <div>
+                <p class="text-xs font-bold">Admin</p>
+                <p class="text-[10px] text-primary font-bold">System Root</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="flex-1 overflow-y-auto p-6 lg:p-8 custom-scrollbar">
+
+    <!-- ====== SECTION 1: KPI CARDS ====== -->
+    <div class="mb-3">
+        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-base">dashboard</span>
+            Key Performance Indicators
+        </h3>
+    </div>
+
+    @if (kpi == null)
+    {
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            @for (int i = 0; i < 4; i++) {
+                <div class="bg-surface-dark border border-neutral-border rounded-2xl p-6 animate-pulse h-28"></div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <!-- Total Users -->
+            <a href="/users" class="group bg-surface-dark border border-primary/10 hover:border-primary/40 rounded-2xl p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 block">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary transition-all">
+                        <span class="material-symbols-outlined text-primary group-hover:text-background-dark text-lg transition-all">group</span>
+                    </div>
+                    <span class="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+@kpi.NewUsersThisMonth this mo.</span>
+                </div>
+                <div class="text-3xl font-black mb-0.5">@kpi.TotalUsers.ToString("N0")</div>
+                <div class="text-xs text-slate-500 font-medium">Total Users</div>
+            </a>
+
+            <!-- Active Rooms -->
+            <a href="/listings" class="group bg-surface-dark border border-blue-500/10 hover:border-blue-500/40 rounded-2xl p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5 block">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500 transition-all">
+                        <span class="material-symbols-outlined text-blue-400 group-hover:text-white text-lg transition-all">apartment</span>
+                    </div>
+                    <span class="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">+@kpi.NewRoomsThisMonth this mo.</span>
+                </div>
+                <div class="text-3xl font-black mb-0.5">@kpi.TotalActiveRooms.ToString("N0")</div>
+                <div class="text-xs text-slate-500 font-medium">Active Rooms</div>
+            </a>
+
+            <!-- Active Contracts -->
+            <div class="group bg-surface-dark border border-amber-500/10 hover:border-amber-500/40 rounded-2xl p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center group-hover:bg-amber-500 transition-all">
+                        <span class="material-symbols-outlined text-amber-400 group-hover:text-white text-lg transition-all">contract</span>
+                    </div>
+                    <span class="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">+@kpi.NewContractsThisMonth this mo.</span>
+                </div>
+                <div class="text-3xl font-black mb-0.5">@kpi.TotalActiveContracts.ToString("N0")</div>
+                <div class="text-xs text-slate-500 font-medium">Active Contracts</div>
+            </div>
+
+            <!-- Revenue -->
+            <div class="group bg-surface-dark border border-emerald-500/10 hover:border-emerald-500/40 rounded-2xl p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500 transition-all">
+                        <span class="material-symbols-outlined text-emerald-400 group-hover:text-white text-lg transition-all">payments</span>
+                    </div>
+                    <span class="text-xs font-bold @(kpi.RevenueGrowthPct >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-red-400 bg-red-400/10") px-2 py-0.5 rounded-full">
+                        @(kpi.RevenueGrowthPct >= 0 ? "↑" : "↓") @Math.Abs(kpi.RevenueGrowthPct)%
+                    </span>
+                </div>
+                <div class="text-2xl font-black mb-0.5 text-emerald-400">@kpi.RevenueThisMonth.ToString("N0")<span class="text-xs font-normal text-slate-500"> đ</span></div>
+                <div class="text-xs text-slate-500 font-medium">Revenue This Month</div>
+            </div>
+        </div>
+    }
+
+    <!-- ====== SECTION 2: MONTHLY GROWTH CHARTS ====== -->
+    <div class="mb-3">
+        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-base">show_chart</span>
+            12-Month Growth Trends
+        </h3>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10">
+        <!-- Users Chart -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase">New Users / Month</p>
+                    <p class="text-xl font-black text-primary">@monthlyUsers.Sum(x => x.Count).ToString("N0") <span class="text-xs text-slate-500 font-normal">total</span></p>
+                </div>
+                <span class="material-symbols-outlined text-primary/30 text-4xl">group_add</span>
+            </div>
+            <div class="flex items-end gap-1 h-24">
+                @{
+                    var maxU = monthlyUsers.Any() ? monthlyUsers.Max(x => x.Count) : 1;
+                    maxU = maxU == 0 ? 1 : maxU;
+                }
+                @foreach (var pt in monthlyUsers)
+                {
+                    var heightPct = (double)pt.Count / maxU * 100;
+                    <div class="flex-1 flex flex-col items-center gap-1 group/bar cursor-default" title="@pt.Month: @pt.Count users">
+                        <div class="w-full bg-primary/20 rounded-t-sm hover:bg-primary transition-all" style="height: @(heightPct)%"></div>
+                    </div>
+                }
+                @if (!monthlyUsers.Any())
+                {
+                    <div class="w-full flex items-center justify-center text-slate-600 text-xs">No data</div>
+                }
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-600 mt-2">
+                <span>@(monthlyUsers.FirstOrDefault()?.Month ?? "")</span>
+                <span>@(monthlyUsers.LastOrDefault()?.Month ?? "")</span>
+            </div>
+        </div>
+
+        <!-- Contracts Chart -->
+        <div class="bg-surface-dark border border-amber-500/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase">New Contracts / Month</p>
+                    <p class="text-xl font-black text-amber-400">@monthlyContracts.Sum(x => x.Count).ToString("N0") <span class="text-xs text-slate-500 font-normal">total</span></p>
+                </div>
+                <span class="material-symbols-outlined text-amber-400/30 text-4xl">contract</span>
+            </div>
+            <div class="flex items-end gap-1 h-24">
+                @{
+                    var maxC = monthlyContracts.Any() ? monthlyContracts.Max(x => x.Count) : 1;
+                    maxC = maxC == 0 ? 1 : maxC;
+                }
+                @foreach (var pt in monthlyContracts)
+                {
+                    var heightPct = (double)pt.Count / maxC * 100;
+                    <div class="flex-1 flex flex-col items-center group/bar cursor-default" title="@pt.Month: @pt.Count">
+                        <div class="w-full bg-amber-400/20 rounded-t-sm hover:bg-amber-400 transition-all" style="height: @(heightPct)%"></div>
+                    </div>
+                }
+                @if (!monthlyContracts.Any())
+                {
+                    <div class="w-full flex items-center justify-center text-slate-600 text-xs">No data</div>
+                }
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-600 mt-2">
+                <span>@(monthlyContracts.FirstOrDefault()?.Month ?? "")</span>
+                <span>@(monthlyContracts.LastOrDefault()?.Month ?? "")</span>
+            </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="bg-surface-dark border border-emerald-500/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase">Revenue / Month (VND)</p>
+                    <p class="text-xl font-black text-emerald-400">@monthlyRevenue.Sum(x => x.Amount).ToString("N0") <span class="text-xs text-slate-500 font-normal">đ total</span></p>
+                </div>
+                <span class="material-symbols-outlined text-emerald-400/30 text-4xl">payments</span>
+            </div>
+            <div class="flex items-end gap-1 h-24">
+                @{
+                    var maxR = monthlyRevenue.Any() ? (double)monthlyRevenue.Max(x => x.Amount) : 1;
+                    maxR = maxR == 0 ? 1 : maxR;
+                }
+                @foreach (var pt in monthlyRevenue)
+                {
+                    var heightPct = (double)pt.Amount / maxR * 100;
+                    <div class="flex-1 flex flex-col items-center group/bar cursor-default" title="@pt.Month: @pt.Amount.ToString("N0")đ">
+                        <div class="w-full bg-emerald-400/20 rounded-t-sm hover:bg-emerald-400 transition-all" style="height: @(heightPct)%"></div>
+                    </div>
+                }
+                @if (!monthlyRevenue.Any())
+                {
+                    <div class="w-full flex items-center justify-center text-slate-600 text-xs">No data</div>
+                }
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-600 mt-2">
+                <span>@(monthlyRevenue.FirstOrDefault()?.Month ?? "")</span>
+                <span>@(monthlyRevenue.LastOrDefault()?.Month ?? "")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== SECTION 3: ROOM STATS ====== -->
+    <div class="mb-3">
+        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-base">apartment</span>
+            Room Statistics
+        </h3>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10">
+        <!-- Room by Status -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <h4 class="text-sm font-bold mb-4">By Status</h4>
+            <div class="space-y-2.5">
+                @{
+                    var statusTotal = roomsByStatus.Sum(x => x.Count);
+                    statusTotal = statusTotal == 0 ? 1 : statusTotal;
+                }
+                @foreach (var s in roomsByStatus)
+                {
+                    var pct = (double)s.Count / statusTotal * 100;
+                    var css = s.Status switch {
+                        "Active" or "Available" => "bg-emerald-400",
+                        "Rented"               => "bg-blue-400",
+                        "Pending"              => "bg-amber-400",
+                        "Hidden" or "Expired"  => "bg-red-400",
+                        _                      => "bg-slate-500"
+                    };
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-300">@s.Status</span>
+                            <span class="text-slate-500">@s.Count (@pct.ToString("F0")%)</span>
+                        </div>
+                        <div class="w-full h-2 bg-background-dark rounded-full overflow-hidden">
+                            <div class="h-full @css rounded-full transition-all" style="width: @(pct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        </div>
+                    </div>
+                }
+                @if (!roomsByStatus.Any()) { <p class="text-slate-600 text-sm">No data</p> }
+            </div>
+        </div>
+
+        <!-- Room by Type -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <h4 class="text-sm font-bold mb-4">By Type</h4>
+            <div class="space-y-2.5">
+                @{
+                    var typeTotal = roomsByType.Sum(x => x.Count);
+                    typeTotal = typeTotal == 0 ? 1 : typeTotal;
+                }
+                @foreach (var t in roomsByType)
+                {
+                    var pct = (double)t.Count / typeTotal * 100;
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-300">@t.Type</span>
+                            <span class="text-slate-500">@t.Count (@pct.ToString("F0")%)</span>
+                        </div>
+                        <div class="w-full h-2 bg-background-dark rounded-full overflow-hidden">
+                            <div class="h-full bg-primary rounded-full" style="width: @(pct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        </div>
+                    </div>
+                }
+                @if (!roomsByType.Any()) { <p class="text-slate-600 text-sm">No data</p> }
+            </div>
+        </div>
+
+        <!-- Top Rooms -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <div class="flex gap-2 mb-4">
+                <button class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all @(topRoomTab == "views" ? "bg-primary text-background-dark" : "text-slate-400 hover:text-slate-200 border border-neutral-border")"
+                        @onclick='() => topRoomTab = "views"'>👁 Most Viewed</button>
+                <button class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all @(topRoomTab == "fav" ? "bg-primary text-background-dark" : "text-slate-400 hover:text-slate-200 border border-neutral-border")"
+                        @onclick='() => topRoomTab = "fav"'>❤ Most Faved</button>
+            </div>
+            <div class="space-y-3">
+                @{
+                    var topList = topRoomTab == "views" ? topViewedRooms : topFavoriteRooms;
+                }
+                @foreach (var (room, idx) in topList.Select((r, i) => (r, i + 1)))
+                {
+                    <div class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black @(idx == 1 ? "bg-amber-400 text-background-dark" : idx == 2 ? "bg-slate-400 text-background-dark" : idx == 3 ? "bg-amber-700 text-white" : "bg-background-dark text-slate-500")">@idx</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold truncate text-slate-200" title="@room.Title">@room.Title</p>
+                            <p class="text-[10px] text-slate-600 truncate">@room.LandlordName</p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <p class="text-xs font-black text-primary">@(topRoomTab == "views" ? room.Views.ToString("N0") : room.FavoriteCount.ToString())</p>
+                            <p class="text-[10px] text-slate-600">⭐ @room.Rating.ToString("F1")</p>
+                        </div>
+                    </div>
+                }
+                @if (!topList.Any()) { <p class="text-slate-600 text-sm">No data</p> }
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== SECTION 4: FINANCE ====== -->
+    <div class="mb-3">
+        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-base">account_balance_wallet</span>
+            Financial Overview
+        </h3>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-10">
+        <!-- Invoice Summary -->
+        @if (finance != null)
+        {
+            <div class="bg-surface-dark border border-emerald-500/10 rounded-2xl p-5">
+                <h4 class="text-sm font-bold mb-5">Invoice Status</h4>
+                <div class="grid grid-cols-2 gap-4 mb-5">
+                    <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+                        <div class="text-emerald-400 text-2xl font-black">@finance.TotalRevenuePaid.ToString("N0")<span class="text-xs font-normal text-slate-500"> đ</span></div>
+                        <div class="text-xs text-slate-500 mt-1">Collected (@finance.PaidInvoices invoices)</div>
+                    </div>
+                    <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                        <div class="text-red-400 text-2xl font-black">@finance.TotalUnpaid.ToString("N0")<span class="text-xs font-normal text-slate-500"> đ</span></div>
+                        <div class="text-xs text-slate-500 mt-1">Unpaid (@finance.UnpaidInvoices invoices)</div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                        <span class="text-slate-400">Payment Success Rate</span>
+                        @{
+                            var totalPay = finance.SuccessPayments + finance.FailedPayments;
+                            var successPct = totalPay == 0 ? 0.0 : Math.Round((double)finance.SuccessPayments / totalPay * 100, 1);
+                        }
+                        <span class="text-emerald-400">@successPct%</span>
+                    </div>
+                    <div class="w-full h-3 bg-background-dark rounded-full overflow-hidden flex">
+                        <div class="h-full bg-emerald-400 transition-all" style="width: @(successPct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        <div class="h-full bg-red-400 flex-1"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-600">
+                        <span>✓ @finance.SuccessPayments success</span>
+                        <span>✗ @finance.FailedPayments failed</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Top Landlord Revenue -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <h4 class="text-sm font-bold mb-4">🏆 Top Landlords by Revenue</h4>
+            <div class="space-y-3">
+                @foreach (var (l, idx) in topLandlordRevenue.Select((x, i) => (x, i + 1)))
+                {
+                    <div class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black @(idx == 1 ? "bg-amber-400 text-background-dark" : "bg-background-dark text-slate-500")">@idx</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold truncate text-slate-200">@l.FullName</p>
+                            <p class="text-[10px] text-slate-600">@l.RoomCount rooms</p>
+                        </div>
+                        <div class="text-xs font-black text-emerald-400">@l.TotalRevenue.ToString("N0")<span class="text-[10px] text-slate-600 font-normal"> đ</span></div>
+                    </div>
+                }
+                @if (!topLandlordRevenue.Any()) { <p class="text-slate-600 text-sm">No revenue data yet.</p> }
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== SECTION 5: USER STATS ====== -->
+    <div class="mb-3">
+        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-base">people</span>
+            User Statistics
+        </h3>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-10">
+        <!-- User by Role -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <h4 class="text-sm font-bold mb-4">User Distribution by Role</h4>
+            @{
+                var roleTotal = usersByRole.Sum(x => x.Count);
+                roleTotal = roleTotal == 0 ? 1 : roleTotal;
+                var roleColors = new Dictionary<string, string> {
+                    ["Tenant"]   = "bg-emerald-400",
+                    ["Landlord"] = "bg-blue-400",
+                    ["Admin"]    = "bg-purple-400",
+                };
+            }
+            <div class="space-y-3 mb-4">
+                @foreach (var r in usersByRole)
+                {
+                    var pct = (double)r.Count / roleTotal * 100;
+                    var css = roleColors.GetValueOrDefault(r.Role, "bg-slate-400");
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-300">@r.Role</span>
+                            <span class="text-slate-500">@r.Count <span class="text-slate-600">(@pct.ToString("F0")%)</span></span>
+                        </div>
+                        <div class="w-full h-2.5 bg-background-dark rounded-full overflow-hidden">
+                            <div class="h-full @css rounded-full" style="width: @(pct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <!-- Legend pills -->
+            <div class="flex gap-2 flex-wrap">
+                @foreach (var r in usersByRole) {
+                    var css = roleColors.GetValueOrDefault(r.Role, "bg-slate-400");
+                    <span class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                        <span class="w-2 h-2 rounded-full @css inline-block"></span>
+                        @r.Role
+                    </span>
+                }
+            </div>
+        </div>
+
+        <!-- Top Landlords -->
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+            <h4 class="text-sm font-bold mb-4">🏠 Top Landlords by Room Count</h4>
+            <div class="space-y-3">
+                @foreach (var (l, idx) in topLandlordRooms.Select((x, i) => (x, i + 1)))
+                {
+                    <div class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black @(idx == 1 ? "bg-amber-400 text-background-dark" : "bg-background-dark text-slate-500")">@idx</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold truncate text-slate-200">@l.FullName</p>
+                            <p class="text-[10px] text-slate-600 truncate">@l.Email</p>
+                        </div>
+                        <div class="text-xs font-black text-primary">@l.RoomCount <span class="text-slate-500 font-normal">rooms</span></div>
+                    </div>
+                }
+                @if (!topLandlordRooms.Any()) { <p class="text-slate-600 text-sm">No landlords found.</p> }
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== SECTION 6: ACTIVITY ALERTS ====== -->
+    <div class="mb-3">
+        <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-red-400 text-base">warning</span>
+            Activity Alerts — Requires Attention
+        </h3>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+        <!-- Expiring Contracts -->
+        <div class="bg-surface-dark border @(expiringContracts.Any() ? "border-amber-500/40" : "border-neutral-border") rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-amber-400 text-xl">schedule</span>
+                <h4 class="text-sm font-bold">Expiring Contracts <span class="text-amber-400 ml-1">(@expiringContracts.Count)</span></h4>
+            </div>
+            @if (!expiringContracts.Any())
+            {
+                <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold py-4">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    No contracts expiring in 30 days
+                </div>
+            }
+            else
+            {
+                <div class="space-y-2.5">
+                    @foreach (var c in expiringContracts)
+                    {
+                        <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                            <p class="text-xs font-bold text-slate-200 truncate">@c.RoomTitle</p>
+                            <p class="text-[10px] text-slate-500 mt-0.5">@c.TenantName</p>
+                            <div class="flex items-center gap-1 mt-1.5">
+                                <span class="material-symbols-outlined text-amber-400 text-sm">timer</span>
+                                <span class="text-[10px] font-black text-amber-400">@c.DaysLeft days left</span>
+                                <span class="text-[10px] text-slate-600 ml-auto">@c.EndDate?.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Overdue Invoices -->
+        <div class="bg-surface-dark border @(overdueInvoices.Any() ? "border-red-500/40" : "border-neutral-border") rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-red-400 text-xl">receipt_long</span>
+                <h4 class="text-sm font-bold">Overdue Invoices <span class="text-red-400 ml-1">(@overdueInvoices.Count)</span></h4>
+            </div>
+            @if (!overdueInvoices.Any())
+            {
+                <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold py-4">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    No overdue invoices
+                </div>
+            }
+            else
+            {
+                <div class="space-y-2.5">
+                    @foreach (var inv in overdueInvoices)
+                    {
+                        <div class="p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                            <p class="text-xs font-bold text-slate-200 truncate">@inv.RoomTitle</p>
+                            <p class="text-[10px] text-slate-500">@inv.TenantName &bull; @inv.Month</p>
+                            <div class="flex items-center mt-1.5">
+                                <span class="text-[10px] font-black text-red-400">@inv.TotalAmount.ToString("N0") đ unpaid</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Pending Reports -->
+        <div class="bg-surface-dark border @(pendingReports.Any() ? "border-purple-500/40" : "border-neutral-border") rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-purple-400 text-xl">flag</span>
+                <h4 class="text-sm font-bold">Pending Reports <span class="text-purple-400 ml-1">(@pendingReports.Count)</span></h4>
+            </div>
+            @if (!pendingReports.Any())
+            {
+                <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold py-4">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    No pending reports
+                </div>
+            }
+            else
+            {
+                <div class="space-y-2.5">
+                    @foreach (var rep in pendingReports)
+                    {
+                        <div class="p-3 bg-purple-500/5 border border-purple-500/20 rounded-xl">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-[10px] font-black uppercase bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded">@rep.ReportType</span>
+                            </div>
+                            <p class="text-xs text-slate-300 line-clamp-2 mt-1">@rep.Description</p>
+                            <p class="text-[10px] text-slate-600 mt-1">By @rep.CreatedBy &bull; @rep.CreatedAt.ToString("dd/MM HH:mm")</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    // ─── Data ─────────────────────────────────────────────────────────────────
+    private DashboardKpi?            kpi;
+    private List<MonthlyPoint>       monthlyUsers     = new();
+    private List<MonthlyPoint>       monthlyContracts = new();
+    private List<MonthlyPoint>       monthlyRevenue   = new();
+    private List<RoomStatusCount>    roomsByStatus    = new();
+    private List<RoomTypeCount>      roomsByType      = new();
+    private List<TopRoom>            topViewedRooms   = new();
+    private List<TopRoom>            topFavoriteRooms = new();
+    private FinanceSummary?          finance;
+    private List<TopLandlordRevenue> topLandlordRevenue = new();
+    private List<UserRoleCount>      usersByRole      = new();
+    private List<TopLandlordRooms>   topLandlordRooms = new();
+    private List<ExpiringContract>   expiringContracts = new();
+    private List<OverdueInvoice>     overdueInvoices  = new();
+    private List<PendingReport>      pendingReports   = new();
+
+    private bool   isLoading  = true;
+    private string topRoomTab = "views";
+
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync() => await RefreshAllAsync();
+
+    private async Task RefreshAllAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            await Task.WhenAll(
+                SafeLoad(() => DashboardService.GetKpiAsync(),              v => kpi = v),
+                SafeLoad(() => DashboardService.GetMonthlyUsersAsync(),     v => monthlyUsers = v),
+                SafeLoad(() => DashboardService.GetMonthlyContractsAsync(), v => monthlyContracts = v),
+                SafeLoad(() => DashboardService.GetMonthlyRevenueAsync(),   v => monthlyRevenue = v),
+                SafeLoad(() => DashboardService.GetRoomsByStatusAsync(),    v => roomsByStatus = v),
+                SafeLoad(() => DashboardService.GetRoomsByTypeAsync(),      v => roomsByType = v),
+                SafeLoad(() => DashboardService.GetTopViewedRoomsAsync(),   v => topViewedRooms = v),
+                SafeLoad(() => DashboardService.GetTopFavoriteRoomsAsync(), v => topFavoriteRooms = v),
+                SafeLoad(() => DashboardService.GetFinanceSummaryAsync(),   v => finance = v),
+                SafeLoad(() => DashboardService.GetTopLandlordRevenueAsync(), v => topLandlordRevenue = v),
+                SafeLoad(() => DashboardService.GetUsersByRoleAsync(),      v => usersByRole = v),
+                SafeLoad(() => DashboardService.GetTopLandlordRoomsAsync(), v => topLandlordRooms = v),
+                SafeLoad(() => DashboardService.GetExpiringContractsAsync(), v => expiringContracts = v),
+                SafeLoad(() => DashboardService.GetOverdueInvoicesAsync(),  v => overdueInvoices = v),
+                SafeLoad(() => DashboardService.GetPendingReportsAsync(),   v => pendingReports = v)
+            );
+        }
+        finally { isLoading = false; StateHasChanged(); }
+    }
+
+    // Helper: load without crashing the whole dashboard if one query fails
+    private static async Task SafeLoad<T>(Func<Task<T>> loader, Action<T> setter)
+    {
+        try { setter(await loader()); }
+        catch { /* silently ignore individual section failures */ }
+    }
+}

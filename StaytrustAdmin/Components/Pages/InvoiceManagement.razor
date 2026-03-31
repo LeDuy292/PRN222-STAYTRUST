@@ -1,0 +1,298 @@
+@page "/invoices"
+@layout MainLayout
+@using StaytrustAdmin.Models
+@using StaytrustAdmin.Services
+@inject IInvoiceManagementService InvoiceService
+
+<PageTitle>Staytrust Admin - Invoice Management</PageTitle>
+
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-8 border-b border-neutral-border bg-neutral-dark shrink-0">
+    <h2 class="text-xl font-bold text-slate-100">Invoice Management</h2>
+</header>
+
+<!-- Content -->
+<div class="flex-1 overflow-hidden p-6 flex flex-col md:flex-row gap-6 h-[calc(100vh-4rem)]">
+
+    <!-- Column 1: Landlords -->
+    <div class="w-full md:w-1/3 flex flex-col bg-surface-dark border border-neutral-border rounded-2xl overflow-hidden shadow-lg h-full">
+        <!-- Landlord Header & Search -->
+        <div class="p-4 border-b border-neutral-border bg-background-dark/50 shrink-0 space-y-3">
+            <h3 class="font-bold text-slate-200 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-lg">home_work</span>
+                Select Landlord
+            </h3>
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+                <input class="w-full bg-background-dark border-neutral-border border rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none text-slate-100 placeholder:text-slate-500 transition-all"
+                       placeholder="Search name, phone, email..."
+                       type="text"
+                       @bind="searchText"
+                       @bind:event="oninput"
+                       @onkeyup="OnSearchKeyPress" />
+            </div>
+        </div>
+
+        <!-- Landlord List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+            @if (isLoadingLandlords)
+            {
+                <div class="text-center p-4 text-slate-400 text-sm">Loading landlords...</div>
+            }
+            else if (landlords.Count == 0)
+            {
+                <div class="text-center p-4 text-slate-500 text-sm">No landlords found.</div>
+            }
+            else
+            {
+                @foreach (var landlord in landlords)
+                {
+                    var isSelected = (selectedLandlord?.UserId == landlord.UserId);
+                    <div class="p-3 rounded-xl border transition-all cursor-pointer @(isSelected ? "bg-primary/10 border-primary shadow-sm" : "bg-background-dark/30 border-neutral-border hover:bg-accent-dark/20")"
+                         @onclick="() => SelectLandlord(landlord)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex shrink-0 items-center justify-center font-bold text-xs @(isSelected ? "bg-primary text-white" : "bg-primary/20 text-primary")">
+                                @landlord.Initials
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-slate-200 truncate">@landlord.FullName</p>
+                                <p class="text-[11px] text-slate-400 truncate mt-0.5">@landlord.Phone • @landlord.Email</p>
+                            </div>
+                            <div class="shrink-0 flex flex-col items-end">
+                                <span class="bg-surface-dark px-2 py-0.5 rounded text-[10px] font-bold text-slate-300 border border-neutral-border">
+                                    @landlord.TotalRooms <span class="text-slate-500 font-normal">Rooms</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Column 2: Rooms -->
+    <div class="w-full md:w-1/3 flex flex-col bg-surface-dark border border-neutral-border rounded-2xl overflow-hidden shadow-lg h-full">
+        <!-- Room Header -->
+        <div class="p-4 border-b border-neutral-border bg-background-dark/50 shrink-0">
+            <h3 class="font-bold text-slate-200 flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-400 text-lg">meeting_room</span>
+                Rooms
+            </h3>
+            <p class="text-xs text-slate-400 mt-1 truncate">
+                @(selectedLandlord != null ? $"Showing rooms for {selectedLandlord.FullName}" : "Select a landlord to view rooms")
+            </p>
+        </div>
+
+        <!-- Room List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+            @if (selectedLandlord == null)
+            {
+                <div class="flex flex-col items-center justify-center h-full text-slate-500 p-6 text-center space-y-3">
+                    <span class="material-symbols-outlined text-4xl opacity-50">arrow_back</span>
+                    <p class="text-sm">Please select a landlord from the list on the left.</p>
+                </div>
+            }
+            else if (isLoadingRooms)
+            {
+                <div class="text-center p-4 text-slate-400 text-sm">Loading rooms...</div>
+            }
+            else if (rooms.Count == 0)
+            {
+                <div class="text-center p-4 text-slate-500 text-sm">No rooms found for this landlord.</div>
+            }
+            else
+            {
+                @foreach (var room in rooms)
+                {
+                    var isSelected = (selectedRoom?.RoomId == room.RoomId);
+                    <div class="p-4 rounded-xl border transition-all cursor-pointer @(isSelected ? "bg-emerald-500/10 border-emerald-500/50 shadow-sm" : "bg-background-dark/30 border-neutral-border hover:bg-accent-dark/20")"
+                         @onclick="() => SelectRoom(room)">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-sm font-bold text-slate-200">@room.Title</p>
+                            <span class="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold @(room.Status == "Rented" ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-600/20 text-slate-400")">
+                                @room.Status
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-primary font-mono bg-primary/10 px-2 py-1 rounded">@room.Price.ToString("N0")₫/mo</span>
+                            <span class="text-slate-400 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">receipt_long</span>
+                                @room.TotalInvoices invoices
+                            </span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Column 3: Invoices -->
+    <div class="w-full md:w-1/3 flex flex-col bg-surface-dark border border-neutral-border rounded-2xl overflow-hidden shadow-lg h-full">
+        <!-- Invoices Header -->
+        <div class="p-4 border-b border-neutral-border bg-background-dark/50 shrink-0 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-slate-200 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sky-400 text-lg">receipt_long</span>
+                    Invoices
+                </h3>
+                <p class="text-xs text-slate-400 mt-1 truncate">
+                    @(selectedRoom != null ? $"Showing invoices for {selectedRoom.Title}" : "Select a room to view invoices")
+                </p>
+            </div>
+        </div>
+
+        <!-- Invoices List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+            @if (selectedRoom == null)
+            {
+                <div class="flex flex-col items-center justify-center h-full text-slate-500 p-6 text-center space-y-3">
+                    <span class="material-symbols-outlined text-4xl opacity-50">arrow_back</span>
+                    <p class="text-sm">Please select a room to see its invoices.</p>
+                </div>
+            }
+            else if (isLoadingInvoices)
+            {
+                <div class="text-center p-4 text-slate-400 text-sm">Loading invoices...</div>
+            }
+            else if (invoices.Count == 0)
+            {
+                <div class="text-center p-4 text-slate-500 text-sm">No invoices found for this room.</div>
+            }
+            else
+            {
+                @foreach (var inv in invoices)
+                {
+                    <div class="p-4 rounded-xl border border-neutral-border bg-background-dark/40 hover:bg-accent-dark/10 transition-colors">
+                        <!-- Top Row: Month & Status -->
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-slate-400 text-xl">calendar_month</span>
+                                <span class="font-bold text-slate-200">@inv.Month</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold @(inv.Status == "Paid" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-red-500/20 text-red-400 border border-red-500/20")">
+                                @inv.Status
+                            </span>
+                        </div>
+
+                        <!-- Tenant info if available -->
+                        @if (!string.IsNullOrEmpty(inv.TenantName))
+                        {
+                            <div class="mb-3 p-2 bg-surface-dark rounded-lg border border-neutral-border/50 text-xs">
+                                <p class="text-slate-400">Tenant: <span class="text-slate-200 font-medium">@inv.TenantName</span></p>
+                                <p class="text-slate-400">Phone: <span class="text-slate-200">@inv.TenantPhone</span></p>
+                            </div>
+                        }
+
+                        <!-- Fee Breakdown -->
+                        <div class="space-y-1.5 text-xs text-slate-400 mb-4 font-mono w-full border-t border-b border-neutral-border py-3">
+                            <div class="flex justify-between">
+                                <span>Room:</span>
+                                <span class="text-slate-300">@inv.RoomPrice.ToString("N0")</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Electric:</span>
+                                <span class="text-slate-300">+ @inv.ElectricFee.ToString("N0")</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Water:</span>
+                                <span class="text-slate-300">+ @inv.WaterFee.ToString("N0")</span>
+                            </div>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="flex items-baseline justify-between pt-1">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</span>
+                            <span class="text-lg font-bold text-sky-400 font-mono">@inv.TotalAmount.ToString("N0") ₫</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private List<LandlordInvoiceSummary> landlords = new();
+    private List<RoomInvoiceSummary> rooms = new();
+    private List<RoomInvoiceDetail> invoices = new();
+
+    private LandlordInvoiceSummary? selectedLandlord;
+    private RoomInvoiceSummary? selectedRoom;
+
+    private bool isLoadingLandlords = false;
+    private bool isLoadingRooms = false;
+    private bool isLoadingInvoices = false;
+
+    private string searchText = "";
+    private System.Timers.Timer? _searchTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLandlordsAsync();
+    }
+
+    private void OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        _searchTimer?.Stop();
+        _searchTimer = new System.Timers.Timer(500);
+        _searchTimer.Elapsed += async (_, _) =>
+        {
+            _searchTimer.Stop();
+            await InvokeAsync(async () =>
+            {
+                selectedLandlord = null;
+                selectedRoom = null;
+                rooms.Clear();
+                invoices.Clear();
+                await LoadLandlordsAsync();
+            });
+        };
+        _searchTimer.Start();
+    }
+
+    private async Task LoadLandlordsAsync()
+    {
+        isLoadingLandlords = true;
+        StateHasChanged();
+
+        landlords = await InvoiceService.GetLandlordsAsync(searchText);
+
+        isLoadingLandlords = false;
+        StateHasChanged();
+    }
+
+    private async Task SelectLandlord(LandlordInvoiceSummary landlord)
+    {
+        if (selectedLandlord?.UserId == landlord.UserId) return;
+
+        selectedLandlord = landlord;
+        selectedRoom = null;
+        invoices.Clear();
+        rooms.Clear();
+        
+        isLoadingRooms = true;
+        StateHasChanged();
+
+        rooms = await InvoiceService.GetRoomsByLandlordAsync(landlord.UserId);
+
+        isLoadingRooms = false;
+        StateHasChanged();
+    }
+
+    private async Task SelectRoom(RoomInvoiceSummary room)
+    {
+        if (selectedRoom?.RoomId == room.RoomId) return;
+
+        selectedRoom = room;
+        invoices.Clear();
+        
+        isLoadingInvoices = true;
+        StateHasChanged();
+
+        invoices = await InvoiceService.GetInvoicesByRoomAsync(room.RoomId);
+
+        isLoadingInvoices = false;
+        StateHasChanged();
+    }
+}

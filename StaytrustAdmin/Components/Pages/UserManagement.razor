@@ -1,0 +1,591 @@
+@page "/users"
+@layout MainLayout
+@using StaytrustAdmin.Models
+@using StaytrustAdmin.Services
+@inject IUserService UserService
+
+<PageTitle>Staytrust Admin - User Management</PageTitle>
+
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-8 border-b border-neutral-border bg-neutral-dark shrink-0">
+    <h2 class="text-xl font-bold text-slate-100">User Management</h2>
+    <div class="flex items-center gap-4">
+        <button class="bg-primary hover:bg-primary/90 text-background-dark px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary/10"
+                @onclick="OpenCreateModal">
+            <span class="material-symbols-outlined text-lg">person_add</span>
+            Create User
+        </button>
+    </div>
+</header>
+
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+
+    @if (!string.IsNullOrEmpty(globalError))
+    {
+        <div class="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl flex items-center justify-between mb-6 shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined">error</span>
+                <p class="text-sm font-medium">@globalError</p>
+            </div>
+            <button class="hover:bg-red-500/20 p-1.5 rounded-lg transition-colors" @onclick="() => globalError = null">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="flex items-center justify-center h-64">
+            <div class="flex flex-col items-center gap-4">
+                <span class="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
+                <p class="text-slate-400 font-medium">Loading users...</p>
+            </div>
+        </div>
+    }
+    else if (loadError != null)
+    {
+        <div class="flex items-center justify-center h-64">
+            <div class="flex flex-col items-center gap-6 max-w-lg text-center">
+                <span class="material-symbols-outlined text-5xl text-red-400">cloud_off</span>
+                <div>
+                    <p class="text-red-400 font-bold mb-2">Cannot connect to database</p>
+                    <p class="text-slate-500 text-sm font-mono bg-surface-dark border border-neutral-border rounded-xl p-4 text-left break-all">@loadError</p>
+                </div>
+                <div class="text-slate-500 text-sm space-y-1">
+                    <p>Check <span class="text-slate-300 font-medium">appsettings.json</span> → <span class="text-primary font-mono">ConnectionStrings.DefaultConnection</span></p>
+                    <p>Common server names: <span class="text-slate-300 font-mono">localhost</span>, <span class="text-slate-300 font-mono">.\SQLEXPRESS</span>, <span class="text-slate-300 font-mono">(localdb)\MSSQLLocalDB</span></p>
+                </div>
+                <button class="bg-primary/10 text-primary px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/20 transition-all flex items-center gap-2"
+                        @onclick="async () => { await LoadUsersAsync(); await LoadStatsAsync(); }">
+                    <span class="material-symbols-outlined text-lg">refresh</span>
+                    Retry
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Stats Row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-surface-dark border border-neutral-border p-5 rounded-2xl flex flex-col gap-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Users</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl font-bold text-slate-100">@stats.Total</span>
+                    <span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">group</span>
+                </div>
+            </div>
+            <div class="bg-surface-dark border border-neutral-border p-5 rounded-2xl flex flex-col gap-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Landlords</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl font-bold text-primary">@stats.Landlords</span>
+                    <span class="material-symbols-outlined text-amber-400 bg-amber-400/10 p-2 rounded-lg">house</span>
+                </div>
+            </div>
+            <div class="bg-surface-dark border border-neutral-border p-5 rounded-2xl flex flex-col gap-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Tenants</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl font-bold text-slate-100">@stats.Tenants</span>
+                    <span class="material-symbols-outlined text-sky-400 bg-sky-400/10 p-2 rounded-lg">person</span>
+                </div>
+            </div>
+            <div class="bg-surface-dark border border-neutral-border p-5 rounded-2xl flex flex-col gap-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Active</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl font-bold text-emerald-400">@stats.Active</span>
+                    <span class="material-symbols-outlined text-emerald-400 bg-emerald-400/10 p-2 rounded-lg">check_circle</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-surface-dark border border-neutral-border rounded-2xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center">
+            <div class="relative flex-1 w-full">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">search</span>
+                <input class="w-full bg-background-dark/50 border-neutral-border border rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none text-slate-100 placeholder:text-slate-500 transition-all"
+                       placeholder="Search by name, email or username..."
+                       type="text"
+                       value="@searchText"
+                       @oninput="OnSearchChanged" />
+            </div>
+            <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                <select class="bg-background-dark/50 border border-neutral-border text-slate-300 text-sm rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-primary min-w-[140px] cursor-pointer"
+                        @bind="filterRole" @bind:after="LoadUsersAsync">
+                    <option value="">All Roles</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Landlord">Landlord</option>
+                    <option value="Tenant">Tenant</option>
+                </select>
+                <select class="bg-background-dark/50 border border-neutral-border text-slate-300 text-sm rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-primary min-w-[140px] cursor-pointer"
+                        @bind="filterStatusStr" @bind:after="LoadUsersAsync">
+                    <option value="">All Statuses</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-surface-dark border border-neutral-border rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[900px]">
+                    <thead>
+                        <tr class="bg-background-dark/30 border-b border-neutral-border">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Name</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Email</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Phone</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Role</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Joined</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-border/30">
+                        @if (users.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="px-6 py-16 text-center text-slate-500">
+                                    <span class="material-symbols-outlined text-4xl mb-2 block">person_search</span>
+                                    No users found.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var user in users)
+                        {
+                            <tr class="hover:bg-accent-dark/10 transition-colors group">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        @if (!string.IsNullOrEmpty(user.AvatarUrl))
+                                        {
+                                            <img src="@user.AvatarUrl" class="w-9 h-9 rounded-full object-cover" alt="avatar" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs @AvatarCss(user.Role)">
+                                                @user.Initials
+                                            </div>
+                                        }
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-200">@user.FullName</p>
+                                            <p class="text-[11px] text-slate-500">@@@user.UserName</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">@user.Email</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">@user.Phone</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider @RoleCss(user.Role)">@user.Role</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="flex items-center gap-1.5 text-xs font-medium @(user.Status ? "text-emerald-400" : "text-red-400")">
+                                        <span class="w-1.5 h-1.5 rounded-full @(user.Status ? "bg-emerald-400" : "bg-red-400")"></span>
+                                        @user.StatusLabel
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">@user.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right space-x-1">
+                                    <!-- Edit -->
+                                    <button class="p-2 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-all"
+                                            title="Edit" @onclick="() => OpenEditModal(user)">
+                                        <span class="material-symbols-outlined text-xl">edit</span>
+                                    </button>
+                                    <!-- Toggle Status -->
+                                    @if (user.Status)
+                                    {
+                                        <button class="p-2 rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                                title="Deactivate" @onclick="() => ConfirmToggle(user)">
+                                            <span class="material-symbols-outlined text-xl">block</span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="p-2 rounded-lg text-slate-500 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all"
+                                                title="Activate" @onclick="() => ConfirmToggle(user)">
+                                            <span class="material-symbols-outlined text-xl">check_circle</span>
+                                        </button>
+                                    }
+                                    <!-- Delete -->
+                                    <button class="p-2 rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                                            title="Delete" @onclick="() => ConfirmDelete(user)">
+                                        <span class="material-symbols-outlined text-xl">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="px-6 py-4 flex items-center justify-between border-t border-neutral-border bg-background-dark/20">
+                <p class="text-sm text-slate-400">
+                    Showing <span class="text-slate-200 font-semibold">@((currentPage - 1) * pageSize + 1)</span>
+                    –
+                    <span class="text-slate-200 font-semibold">@Math.Min(currentPage * pageSize, totalCount)</span>
+                    of <span class="text-slate-200 font-semibold">@totalCount</span> users
+                </p>
+                <div class="flex items-center gap-2">
+                    <button class="p-2 rounded-lg border border-neutral-border text-slate-400 hover:bg-accent-dark/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            disabled="@(currentPage == 1)" @onclick="PrevPage">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        var pg = i;
+                        <button class="w-8 h-8 rounded-lg text-sm font-bold transition-all @(pg == currentPage ? "bg-primary text-background-dark" : "text-slate-400 hover:bg-accent-dark/20")"
+                                @onclick="() => GoToPage(pg)">@pg</button>
+                    }
+                    <button class="p-2 rounded-lg border border-neutral-border text-slate-400 hover:bg-accent-dark/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            disabled="@(currentPage == totalPages || totalPages == 0)" @onclick="NextPage">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ================== MODALS ================== -->
+
+<!-- Create / Edit Modal -->
+@if (showFormModal)
+{
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @onclick="CloseModals">
+        <div class="bg-surface-dark border border-neutral-border rounded-3xl w-full max-w-lg shadow-2xl" @onclick:stopPropagation>
+            <div class="flex items-center justify-between p-6 border-b border-neutral-border">
+                <h3 class="text-lg font-bold text-slate-100">@(isEditing ? "Edit User" : "Create New User")</h3>
+                <button class="text-slate-400 hover:text-slate-100 transition-colors" @onclick="CloseModals">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-4 py-3">@formError</div>
+                }
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Full Name *</label>
+                        <input class="@InputCss" placeholder="Nguyen Van A" @bind="formUser.FullName" />
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Username *</label>
+                        <input class="@InputCss" placeholder="nguyenvana" @bind="formUser.UserName" />
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Phone *</label>
+                        <input class="@InputCss" placeholder="0901234567" @bind="formUser.Phone" />
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Email *</label>
+                        <input class="@InputCss" type="email" placeholder="user@example.com" @bind="formUser.Email" />
+                    </div>
+                    @if (!isEditing)
+                    {
+                        <div class="col-span-2">
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Password *</label>
+                            <input class="@InputCss" type="password" placeholder="••••••••" @bind="formUser.Password" />
+                        </div>
+                    }
+                    <div>
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Role</label>
+                        <select class="@InputCss" @bind="formUser.Role">
+                            <option value="Tenant">Tenant</option>
+                            <option value="Landlord">Landlord</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Gender</label>
+                        <select class="@InputCss" @bind="formUser.Gender">
+                            <option value="">Select...</option>
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Address</label>
+                        <input class="@InputCss" placeholder="123 Nguyen Hue, HCMC" @bind="formUser.Address" />
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 p-6 border-t border-neutral-border">
+                <button class="flex-1 py-3 rounded-xl border border-neutral-border text-slate-300 hover:bg-accent-dark/20 transition-all font-medium text-sm"
+                        @onclick="CloseModals">Cancel</button>
+                <button class="flex-1 py-3 rounded-xl bg-primary text-background-dark font-bold text-sm hover:bg-primary/90 transition-all"
+                        @onclick="SaveUser" disabled="@isSaving">
+                    @(isSaving ? "Saving..." : (isEditing ? "Save Changes" : "Create User"))
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Confirm Toggle Status Dialog -->
+@if (showToggleConfirm && selectedUser != null)
+{
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @onclick="CloseModals">
+        <div class="bg-surface-dark border border-neutral-border rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center" @onclick:stopPropagation>
+            <span class="material-symbols-outlined text-5xl @(selectedUser.Status ? "text-red-400" : "text-emerald-400") mb-4 block">
+                @(selectedUser.Status ? "block" : "check_circle")
+            </span>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">
+                @(selectedUser.Status ? "Deactivate" : "Activate") Account?
+            </h3>
+            <p class="text-sm text-slate-400 mb-6">
+                User <span class="text-slate-200 font-semibold">@selectedUser.FullName</span> will be
+                @(selectedUser.Status ? "deactivated and cannot log in." : "reactivated.")
+            </p>
+            <div class="flex gap-3">
+                <button class="flex-1 py-3 rounded-xl border border-neutral-border text-slate-300 hover:bg-accent-dark/20 transition-all font-medium text-sm"
+                        @onclick="CloseModals">Cancel</button>
+                <button class="flex-1 py-3 rounded-xl @(selectedUser.Status ? "bg-red-500 hover:bg-red-600" : "bg-emerald-500 hover:bg-emerald-600") text-white font-bold text-sm transition-all"
+                        @onclick="ExecuteToggle">Confirm</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Confirm Delete Dialog -->
+@if (showDeleteConfirm && selectedUser != null)
+{
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @onclick="CloseModals">
+        <div class="bg-surface-dark border border-neutral-border rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center" @onclick:stopPropagation>
+            <span class="material-symbols-outlined text-5xl text-red-400 mb-4 block">delete_forever</span>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">Delete User?</h3>
+            <p class="text-sm text-slate-400 mb-6">
+                This will permanently delete <span class="text-slate-200 font-semibold">@selectedUser.FullName</span>. This action cannot be undone.
+            </p>
+            <div class="flex gap-3">
+                <button class="flex-1 py-3 rounded-xl border border-neutral-border text-slate-300 hover:bg-accent-dark/20 transition-all font-medium text-sm"
+                        @onclick="CloseModals">Cancel</button>
+                <button class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all"
+                        @onclick="ExecuteDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ─── State ────────────────────────────────────────────────────────────────
+    private List<User> users = new();
+    private bool isLoading = true;
+    private string? loadError;          // hiển thị lỗi DB thay vì loading mãi
+    private int totalCount;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+
+    private string searchText = "";
+    private string filterRole = "";
+    private string filterStatusStr = "";
+    private bool? FilterStatus => filterStatusStr switch { "true" => true, "false" => false, _ => null };
+
+    private string? globalError;
+    private (int Total, int Admins, int Landlords, int Tenants, int Active) stats;
+
+    // ─── Modal State ──────────────────────────────────────────────────────────
+    private bool showFormModal;
+    private bool showToggleConfirm;
+    private bool showDeleteConfirm;
+    private bool isEditing;
+    private bool isSaving;
+    private string formError = "";
+    private User formUser = new();
+    private User? selectedUser;
+
+    // ─── CSS helpers ──────────────────────────────────────────────────────────
+    private string InputCss => "w-full bg-background-dark/50 border border-neutral-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-slate-600 transition-all";
+
+    private static string RoleCss(string role) => role switch
+    {
+        "Admin"    => "bg-purple-500/10 text-purple-400 border border-purple-500/20",
+        "Landlord" => "bg-primary/10 text-primary border border-primary/20",
+        _          => "bg-slate-600/20 text-slate-300"
+    };
+
+    private static string AvatarCss(string role) => role switch
+    {
+        "Admin"    => "bg-purple-500/20 text-purple-400",
+        "Landlord" => "bg-primary/20 text-primary",
+        _          => "bg-sky-500/20 text-sky-400"
+    };
+
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        // Chạy tuần tự để lỗi được bắt đúng cách
+        await LoadUsersAsync();
+        await LoadStatsAsync();
+    }
+
+    // ─── Data Loading ─────────────────────────────────────────────────────────
+    private async Task LoadUsersAsync()
+    {
+        isLoading = true;
+        loadError = null;
+        try
+        {
+            var (list, count) = await UserService.GetUsersAsync(
+                searchText, filterRole, FilterStatus, currentPage, pageSize);
+            users = list;
+            totalCount = count;
+        }
+        catch (Exception ex)
+        {
+            loadError = ex.Message;
+            users = new();
+            totalCount = 0;
+            StateHasChanged();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadStatsAsync()
+    {
+        stats = await UserService.GetUserStatsAsync();
+        StateHasChanged();
+    }
+
+    // ─── Search ───────────────────────────────────────────────────────────────
+    private System.Timers.Timer? _searchTimer;
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? "";
+        _searchTimer?.Stop();
+        _searchTimer = new System.Timers.Timer(400);
+        _searchTimer.Elapsed += async (_, _) =>
+        {
+            _searchTimer.Stop();
+            currentPage = 1;
+            await InvokeAsync(async () => { await LoadUsersAsync(); StateHasChanged(); });
+        };
+        _searchTimer.Start();
+    }
+
+    // ─── Pagination ───────────────────────────────────────────────────────────
+    private async Task PrevPage() { currentPage--; await LoadUsersAsync(); }
+    private async Task NextPage() { currentPage++; await LoadUsersAsync(); }
+    private async Task GoToPage(int p) { currentPage = p; await LoadUsersAsync(); }
+
+    // ─── Modal: Create ────────────────────────────────────────────────────────
+    private void OpenCreateModal()
+    {
+        formUser = new User();
+        isEditing = false;
+        formError = "";
+        showFormModal = true;
+    }
+
+    // ─── Modal: Edit ──────────────────────────────────────────────────────────
+    private void OpenEditModal(User user)
+    {
+        formUser = new User
+        {
+            UserId = user.UserId, FullName = user.FullName, UserName = user.UserName,
+            Email = user.Email, Phone = user.Phone, Role = user.Role, Status = user.Status,
+            Gender = user.Gender, Address = user.Address, AvatarUrl = user.AvatarUrl
+        };
+        isEditing = true;
+        formError = "";
+        showFormModal = true;
+    }
+
+    // ─── Save ─────────────────────────────────────────────────────────────────
+    private async Task SaveUser()
+    {
+        formError = "";
+        if (string.IsNullOrWhiteSpace(formUser.FullName) ||
+            string.IsNullOrWhiteSpace(formUser.Email) ||
+            string.IsNullOrWhiteSpace(formUser.UserName) ||
+            string.IsNullOrWhiteSpace(formUser.Phone) ||
+            (!isEditing && string.IsNullOrWhiteSpace(formUser.Password)))
+        {
+            formError = "Please fill in all required fields.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (isEditing)
+                await UserService.UpdateUserAsync(formUser);
+            else
+                await UserService.CreateUserAsync(formUser);
+
+            showFormModal = false;
+            await LoadUsersAsync();
+            await LoadStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            formError = $"Error saving user: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ─── Toggle Status ────────────────────────────────────────────────────────
+    private void ConfirmToggle(User user) { selectedUser = user; showToggleConfirm = true; }
+
+    private async Task ExecuteToggle()
+    {
+        if (selectedUser == null) return;
+        globalError = null;
+        try
+        {
+            await UserService.ToggleStatusAsync(selectedUser.UserId, !selectedUser.Status);
+            await LoadUsersAsync();
+            await LoadStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            globalError = $"Error updating status: {ex.Message}";
+        }
+        finally
+        {
+            CloseModals();
+        }
+    }
+
+    // ─── Delete ───────────────────────────────────────────────────────────────
+    private void ConfirmDelete(User user) { selectedUser = user; showDeleteConfirm = true; }
+
+    private async Task ExecuteDelete()
+    {
+        if (selectedUser == null) return;
+        globalError = null;
+        try
+        {
+            await UserService.DeleteUserAsync(selectedUser.UserId);
+            await LoadUsersAsync();
+            await LoadStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            globalError = $"Cannot delete user: {ex.Message}";
+        }
+        finally
+        {
+            CloseModals();
+        }
+    }
+
+    // ─── Close all modals ─────────────────────────────────────────────────────
+    private void CloseModals()
+    {
+        showFormModal = false;
+        showToggleConfirm = false;
+        showDeleteConfirm = false;
+        selectedUser = null;
+    }
+}

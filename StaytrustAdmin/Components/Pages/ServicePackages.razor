@@ -1,0 +1,224 @@
+@page "/packages"
+@layout MainLayout
+
+<PageTitle>Staytrust Admin - Service Packages</PageTitle>
+
+<!-- Header -->
+<header class="h-16 border-b border-neutral-border px-8 flex items-center justify-between bg-neutral-dark shrink-0">
+    <div class="flex items-center gap-4 w-1/3">
+        <div class="relative w-full">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+            <input class="w-full bg-background-dark/50 border-neutral-border border rounded-lg pl-10 text-sm focus:ring-2 focus:ring-primary/50" placeholder="Search packages..." type="text" />
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <button class="p-2 text-slate-500 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <div class="h-8 w-[1px] bg-neutral-border"></div>
+        <button class="flex items-center gap-2 bg-primary text-background-dark px-4 py-2 rounded-lg text-sm font-bold hover:brightness-110 transition-all">
+            <span class="material-symbols-outlined text-lg">add</span>
+            <span>New Package</span>
+        </button>
+    </div>
+</header>
+
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+    <h1 class="text-2xl font-bold">Service Package Management</h1>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-surface-dark border border-neutral-border p-6 rounded-xl">
+            <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-sm font-medium">Total Subscribers</span>
+                <div class="p-2 bg-primary/10 rounded-lg">
+                    <span class="material-symbols-outlined text-primary">groups</span>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <h3 class="text-3xl font-bold">1,284</h3>
+                <span class="text-emerald-500 text-sm font-semibold flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-xs">trending_up</span>12%
+                </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Active across all 3 tiers</p>
+        </div>
+        <div class="bg-surface-dark border border-neutral-border p-6 rounded-xl">
+            <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-sm font-medium">Monthly Revenue</span>
+                <div class="p-2 bg-primary/10 rounded-lg">
+                    <span class="material-symbols-outlined text-primary">payments</span>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <h3 class="text-3xl font-bold">$42.5k</h3>
+                <span class="text-rose-500 text-sm font-semibold flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-xs">trending_down</span>3%
+                </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Current month billing cycle</p>
+        </div>
+        <div class="bg-surface-dark border border-neutral-border p-6 rounded-xl">
+            <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-sm font-medium">Conversion Rate</span>
+                <div class="p-2 bg-primary/10 rounded-lg">
+                    <span class="material-symbols-outlined text-primary">query_stats</span>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <h3 class="text-3xl font-bold">2.4%</h3>
+                <span class="text-emerald-500 text-sm font-semibold flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-xs">trending_up</span>0.5%
+                </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Free to Pro tier migration</p>
+        </div>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="bg-surface-dark border border-neutral-border rounded-xl overflow-hidden">
+        <div class="px-6 py-5 border-b border-neutral-border flex justify-between items-center">
+            <h2 class="text-lg font-bold">Active Subscription Plans</h2>
+            <div class="flex gap-2">
+                <button class="p-2 text-slate-400 hover:text-primary transition-colors border border-neutral-border rounded-lg">
+                    <span class="material-symbols-outlined text-lg">filter_list</span>
+                </button>
+                <button class="p-2 text-slate-400 hover:text-primary transition-colors border border-neutral-border rounded-lg">
+                    <span class="material-symbols-outlined text-lg">download</span>
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-background-dark/30 text-slate-500 text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4 font-semibold">Package Name</th>
+                        <th class="px-6 py-4 font-semibold">Monthly Price</th>
+                        <th class="px-6 py-4 font-semibold">Key Features</th>
+                        <th class="px-6 py-4 font-semibold">Subscribers</th>
+                        <th class="px-6 py-4 font-semibold">Status</th>
+                        <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-border/30">
+                    @foreach (var plan in plans)
+                    {
+                        <tr class="hover:bg-primary/5 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-8 rounded @plan.BadgeCss flex items-center justify-center font-bold text-xs">@plan.Initial</div>
+                                    <span class="font-medium">@plan.Name</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 font-medium">@plan.Price</td>
+                            <td class="px-6 py-4">
+                                <div class="flex gap-1 flex-wrap max-w-[200px]">
+                                    @foreach (var f in plan.Features)
+                                    {
+                                        <span class="px-2 py-0.5 bg-background-dark/50 rounded-full text-[10px]">@f</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 h-1.5 bg-background-dark rounded-full overflow-hidden">
+                                        <div class="h-full bg-primary" style="@($"width:{plan.BarWidth}%")"></div>
+                                    </div>
+                                    <span class="text-xs">@plan.Subscribers</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-lg uppercase tracking-wider border border-emerald-500/20">Active</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <button class="text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-lg">edit</span>
+                                </button>
+                                <button class="text-slate-400 hover:text-rose-500 transition-colors ml-2">
+                                    <span class="material-symbols-outlined text-lg">delete</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit Form + Recent Changes -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-surface-dark border border-neutral-border rounded-xl p-8">
+            <h3 class="text-xl font-bold mb-6">Edit Package Details</h3>
+            <form class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold opacity-80">Package Name</label>
+                        <input class="w-full bg-background-dark/50 border-neutral-border border rounded-lg text-sm px-3 py-2.5 focus:ring-primary focus:ring-1 outline-none" type="text" value="Pro Plan" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold opacity-80">Price ($ / Month)</label>
+                        <input class="w-full bg-background-dark/50 border-neutral-border border rounded-lg text-sm px-3 py-2.5 focus:ring-primary focus:ring-1 outline-none" type="number" value="149" />
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold opacity-80">Description</label>
+                    <textarea class="w-full bg-background-dark/50 border-neutral-border border rounded-lg text-sm px-3 py-2.5 focus:ring-primary focus:ring-1 outline-none" rows="3">Perfect for professional landlords with a growing portfolio.</textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t border-neutral-border">
+                    <button class="px-6 py-2 rounded-lg border border-neutral-border text-sm font-bold hover:bg-accent-dark/20 transition-colors" type="button">Discard</button>
+                    <button class="px-6 py-2 rounded-lg bg-primary text-background-dark text-sm font-bold hover:brightness-110 transition-all" type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-xl p-8 relative overflow-hidden group">
+                <div class="absolute -right-12 -top-12 size-48 bg-primary/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
+                <h3 class="text-xl font-bold mb-4 relative z-10">Plan Performance Tip</h3>
+                <p class="text-sm opacity-80 relative z-10 mb-6 leading-relaxed">The <b>Pro Plan</b> currently has the highest retention rate (98.4%). Consider highlighting it as the "Best Value".</p>
+                <div class="flex items-center gap-4 relative z-10">
+                    <button class="bg-background-dark text-primary border border-primary px-4 py-2 rounded-lg text-xs font-bold">View Analytics</button>
+                    <button class="text-xs font-bold underline">Dismiss</button>
+                </div>
+            </div>
+
+            <div class="bg-surface-dark border border-neutral-border rounded-xl p-8">
+                <h3 class="text-xl font-bold mb-6">Recent Plan Changes</h3>
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="size-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-blue-500 text-sm">history</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold">Price Adjustment: Basic Plan</p>
+                            <p class="text-xs opacity-60">Admin changed price from $39 to $49</p>
+                            <p class="text-[10px] opacity-40 mt-1">2 days ago • By Sarah Chen</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="size-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-emerald-500 text-sm">auto_awesome</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold">Feature Added: Elite Plan</p>
+                            <p class="text-xs opacity-60">"Legal Compliance Package" added to Elite</p>
+                            <p class="text-[10px] opacity-40 mt-1">1 week ago • By Mike Ross</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private record Plan(string Initial, string Name, string Price, List<string> Features, int Subscribers, int BarWidth, string BadgeCss);
+
+    private List<Plan> plans = new()
+    {
+        new("B","Basic Plan","$49.00", new(){"Up to 3 Properties","Email Support"}, 642, 65,"bg-surface-dark text-slate-300"),
+        new("P","Pro Plan","$149.00",  new(){"Up to 15 Properties","Priority Support","Analytics"}, 482, 85,"bg-primary/20 text-primary"),
+        new("E","Elite Plan","$499.00",new(){"Unlimited","Dedicated Manager"}, 160, 25,"bg-amber-500/20 text-amber-500"),
+    };
+}

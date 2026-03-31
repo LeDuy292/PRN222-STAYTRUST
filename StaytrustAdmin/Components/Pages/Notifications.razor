@@ -1,0 +1,617 @@
+@page "/notifications"
+@using StaytrustAdmin.Models
+@using StaytrustAdmin.Services
+@inject INotificationService NotificationService
+@layout MainLayout
+
+<PageTitle>Staytrust Admin - System Notifications</PageTitle>
+
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-6 border-b border-neutral-border bg-neutral-dark shrink-0">
+    <div>
+        <h1 class="text-lg font-bold">System Notifications</h1>
+        <p class="text-xs text-slate-500">Create, broadcast and manage system notifications</p>
+    </div>
+    <div class="flex gap-2">
+        <button class="flex items-center gap-2 text-sm font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-2 rounded-xl hover:bg-amber-400/20 transition-all"
+                @onclick="MarkAllRead">
+            <span class="material-symbols-outlined text-sm">done_all</span>
+            Mark All Read
+        </button>
+        <button class="flex items-center gap-2 text-sm font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-3 py-2 rounded-xl hover:bg-red-400/20 transition-all"
+                @onclick="() => showDeleteReadConfirm = true">
+            <span class="material-symbols-outlined text-sm">delete_sweep</span>
+            Clear Read
+        </button>
+    </div>
+</header>
+
+<div class="flex-1 overflow-y-auto p-6 lg:p-8 custom-scrollbar">
+
+    @if (!string.IsNullOrEmpty(globalMsg))
+    {
+        <div class="@globalMsgCss p-4 rounded-xl flex items-center justify-between mb-6 border">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined">@globalMsgIcon</span>
+                <p class="text-sm font-medium">@globalMsg</p>
+            </div>
+            <button @onclick="() => globalMsg = null" class="p-1 rounded hover:bg-black/10">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+    }
+
+    <!-- ===== STATS ROW ===== -->
+    @if (stats != null)
+    {
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary text-lg">send</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Total Sent</span>
+                </div>
+                <div class="text-3xl font-black">@stats.TotalSent.ToString("N0")</div>
+            </div>
+            <div class="bg-surface-dark border border-amber-500/20 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-amber-400 text-lg">mark_email_unread</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Unread</span>
+                </div>
+                <div class="text-3xl font-black text-amber-400">@stats.TotalUnread.ToString("N0")</div>
+            </div>
+            <div class="bg-surface-dark border border-emerald-500/20 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-emerald-400 text-lg">mark_email_read</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Read Rate</span>
+                </div>
+                <div class="text-3xl font-black text-emerald-400">@stats.ReadRate<span class="text-lg">%</span></div>
+                <div class="w-full h-1.5 bg-background-dark rounded-full mt-2 overflow-hidden">
+                    <div class="h-full bg-emerald-400 rounded-full transition-all" style="width: @(stats.ReadRate)%"></div>
+                </div>
+            </div>
+            <div class="bg-surface-dark border border-blue-500/20 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-blue-400 text-lg">today</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Sent Today</span>
+                </div>
+                <div class="text-3xl font-black text-blue-400">@stats.SentToday.ToString("N0")</div>
+            </div>
+        </div>
+    }
+
+    <!-- ===== SEND PANEL + TEMPLATES ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <!-- Left: Form gửi thông báo -->
+        <div class="lg:col-span-2 bg-surface-dark border border-primary/10 rounded-2xl p-6">
+            <!-- Tabs: Broadcast vs Send to User -->
+            <div class="flex gap-1 bg-background-dark/60 p-1 rounded-xl w-fit mb-6">
+                <button class="px-4 py-2 rounded-lg text-sm font-bold transition-all @(sendMode == "broadcast" ? "bg-primary text-background-dark" : "text-slate-400 hover:text-slate-200")"
+                        @onclick='() => sendMode = "broadcast"'>
+                    <span class="material-symbols-outlined text-sm align-middle mr-1">campaign</span>
+                    Broadcast
+                </button>
+                <button class="px-4 py-2 rounded-lg text-sm font-bold transition-all @(sendMode == "user" ? "bg-primary text-background-dark" : "text-slate-400 hover:text-slate-200")"
+                        @onclick='() => sendMode = "user"'>
+                    <span class="material-symbols-outlined text-sm align-middle mr-1">person</span>
+                    Send to User
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Title -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Title <span class="text-red-400">*</span></label>
+                    <input class="w-full bg-background-dark border border-neutral-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-600"
+                           placeholder="e.g. Scheduled Maintenance Tonight"
+                           @bind="newTitle" />
+                </div>
+
+                <!-- Message -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Message <span class="text-red-400">*</span></label>
+                    <textarea class="w-full bg-background-dark border border-neutral-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-600 resize-none"
+                              rows="4"
+                              placeholder="Your message to users..."
+                              @bind="newMessage"></textarea>
+                    <div class="text-right text-xs text-slate-600 mt-1">@newMessage.Length / 500</div>
+                </div>
+
+                <!-- Broadcast: Role Filter -->
+                @if (sendMode == "broadcast")
+                {
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Recipient Group</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            @foreach (var (label, val, icon) in recipientOpts)
+                            {
+                                <button class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-xs font-bold transition-all @(broadcastRole == val ? "bg-primary/10 border-primary text-primary" : "border-neutral-border text-slate-400 hover:border-primary/40")"
+                                        @onclick="() => broadcastRole = val">
+                                    <span class="material-symbols-outlined text-lg">@icon</span>
+                                    @label
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Send to User: User search -->
+                @if (sendMode == "user")
+                {
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Search User</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+                            <input class="w-full bg-background-dark border border-neutral-border rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-600"
+                                   placeholder="Search by name or email..."
+                                   value="@userSearchQuery"
+                                   @oninput="OnUserSearch" />
+                        </div>
+                        @if (userSearchResults.Any())
+                        {
+                            <div class="mt-2 bg-background-dark border border-neutral-border rounded-xl overflow-hidden divide-y divide-neutral-border/40 shadow-xl">
+                                @foreach (var u in userSearchResults)
+                                {
+                                    <button class="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-colors text-left @(selectedUserId == u.UserId ? "bg-primary/10" : "")"
+                                            @onclick="() => SelectUser(u)">
+                                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                            <span class="material-symbols-outlined text-primary text-sm">person</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-100">@u.FullName</p>
+                                            <p class="text-xs text-slate-500">@u.Email &bull; <span class="text-primary/80">@u.Role</span></p>
+                                        </div>
+                                        @if (selectedUserId == u.UserId)
+                                        {
+                                            <span class="material-symbols-outlined text-primary ml-auto">check_circle</span>
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        }
+                        @if (selectedUserId.HasValue && !string.IsNullOrEmpty(selectedUserName))
+                        {
+                            <div class="mt-2 flex items-center gap-2 text-xs text-primary font-bold bg-primary/10 border border-primary/20 px-3 py-2 rounded-xl">
+                                <span class="material-symbols-outlined text-sm">person_check</span>
+                                Sending to: @selectedUserName
+                                <button class="ml-auto text-slate-400 hover:text-red-400" @onclick="ClearUserSelection">
+                                    <span class="material-symbols-outlined text-sm">close</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Send Button -->
+                <button class="w-full bg-primary hover:brightness-110 text-background-dark font-black py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        @onclick="HandleSend" disabled="@isSending">
+                    @if (isSending)
+                    {
+                        <span class="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                        <span>Sending...</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined text-lg">send</span>
+                        <span>@(sendMode == "broadcast" ? "Send Broadcast" : "Send to User")</span>
+                    }
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Templates -->
+        <div class="space-y-4">
+            <div class="bg-surface-dark border border-primary/10 rounded-2xl p-5">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg text-primary">auto_awesome</span>
+                    Quick Templates
+                </h3>
+                <div class="space-y-2">
+                    @foreach (var t in templates)
+                    {
+                        <button class="w-full text-left p-3 rounded-xl border border-neutral-border hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                                @onclick="() => ApplyTemplate(t)">
+                            <p class="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">@t.Title</p>
+                            <p class="text-xs text-slate-600 mt-0.5 line-clamp-1">@t.Body</p>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Info tip -->
+            <div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-3">
+                <span class="material-symbols-outlined text-primary text-xl mt-0.5">tips_and_updates</span>
+                <div>
+                    <p class="text-xs font-bold text-primary mb-1">Pro Tip</p>
+                    <p class="text-xs text-slate-500 leading-relaxed">Notifications sent in the morning (8–11AM) get a higher read rate. Keep messages short and clear.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== NOTIFICATION HISTORY ===== -->
+    <div>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <h2 class="text-xl font-black">Notification History</h2>
+            <div class="flex items-center gap-3">
+                <!-- Search -->
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+                    <input class="bg-surface-dark border border-neutral-border rounded-xl pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all placeholder:text-slate-600 w-48"
+                           placeholder="Search..."
+                           value="@historySearch"
+                           @oninput="OnHistorySearch" />
+                </div>
+                <!-- Filter tabs -->
+                <div class="flex gap-1 bg-background-dark/60 p-1 rounded-xl text-xs font-bold">
+                    <button class="px-3 py-1.5 rounded-lg transition-all @(historyFilter == null ? "bg-primary text-background-dark" : "text-slate-400 hover:text-slate-200")"
+                            @onclick='() => SetHistoryFilter(null)'>All</button>
+                    <button class="px-3 py-1.5 rounded-lg transition-all @(historyFilter == false ? "bg-amber-500 text-background-dark" : "text-slate-400 hover:text-slate-200")"
+                            @onclick='() => SetHistoryFilter(false)'>Unread</button>
+                    <button class="px-3 py-1.5 rounded-lg transition-all @(historyFilter == true ? "bg-emerald-500 text-background-dark" : "text-slate-400 hover:text-slate-200")"
+                            @onclick='() => SetHistoryFilter(true)'>Read</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-surface-dark border border-primary/10 rounded-2xl overflow-hidden">
+            @if (isHistoryLoading)
+            {
+                <div class="flex items-center justify-center h-48">
+                    <span class="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
+                </div>
+            }
+            else if (!notifications.Any())
+            {
+                <div class="flex flex-col items-center justify-center h-48 text-slate-500 gap-3">
+                    <span class="material-symbols-outlined text-5xl opacity-30">notifications_off</span>
+                    <p>No notifications found.</p>
+                </div>
+            }
+            else
+            {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-neutral-border bg-background-dark/30">
+                                <th class="px-5 py-3 text-xs font-bold uppercase text-slate-500">Status</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase text-slate-500">Title</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase text-slate-500">Recipient</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase text-slate-500">Role</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase text-slate-500">Sent At</th>
+                                <th class="px-5 py-3 text-xs font-bold uppercase text-slate-500 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-border/20">
+                            @foreach (var n in notifications)
+                            {
+                                <tr class="hover:bg-primary/5 transition-colors @(n.IsRead ? "" : "bg-primary/3")">
+                                    <td class="px-5 py-3.5">
+                                        @if (n.IsRead)
+                                        {
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">
+                                                <span class="material-symbols-outlined text-xs">done</span> Read
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> Unread
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-5 py-3.5 max-w-xs">
+                                        <p class="font-semibold text-slate-100 truncate" title="@n.Title">@n.Title</p>
+                                        <p class="text-xs text-slate-500 truncate mt-0.5" title="@n.Message">@n.Message</p>
+                                    </td>
+                                    <td class="px-5 py-3.5">
+                                        <span class="font-medium text-slate-300">@(n.RecipientName ?? "—")</span>
+                                        @if (!string.IsNullOrEmpty(n.RecipientEmail))
+                                        {
+                                            <p class="text-xs text-slate-600">@n.RecipientEmail</p>
+                                        }
+                                    </td>
+                                    <td class="px-5 py-3.5">
+                                        <span class="@GetRoleBadge(n.RecipientRole) text-[10px] font-black uppercase px-2 py-0.5 rounded-full">@n.RecipientRole</span>
+                                    </td>
+                                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">
+                                        @n.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1">
+                                            @if (!n.IsRead)
+                                            {
+                                                <button class="p-1.5 rounded-lg hover:bg-emerald-500/20 text-slate-500 hover:text-emerald-400 transition-all" title="Mark as read"
+                                                        @onclick="() => MarkOneRead(n)">
+                                                    <span class="material-symbols-outlined text-sm">done</span>
+                                                </button>
+                                            }
+                                            <button class="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-all" title="Delete"
+                                                    @onclick="() => DeleteOne(n)">
+                                                <span class="material-symbols-outlined text-sm">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="px-5 py-3 bg-background-dark/20 border-t border-neutral-border/40 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">
+                        Showing @(((historyPage - 1) * historyPageSize) + 1)–@Math.Min(historyPage * historyPageSize, historyTotal) of @historyTotal
+                    </span>
+                    <div class="flex gap-2">
+                        <button class="px-3 py-1.5 rounded-xl border border-neutral-border text-xs font-bold disabled:opacity-40 hover:bg-accent-dark/20 transition-all"
+                                disabled="@(historyPage == 1)" @onclick="PrevPage">Previous</button>
+                        <button class="px-3 py-1.5 rounded-xl border border-neutral-border text-xs font-bold disabled:opacity-40 hover:bg-accent-dark/20 transition-all"
+                                disabled="@(historyPage >= historyTotalPages)" @onclick="NextPage">Next</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- =========== CONFIRM DELETE READ =========== -->
+@if (showDeleteReadConfirm)
+{
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @onclick="() => showDeleteReadConfirm = false">
+        <div class="bg-surface-dark border border-neutral-border rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center" @onclick:stopPropagation>
+            <span class="material-symbols-outlined text-5xl text-red-400 mb-3 block">delete_sweep</span>
+            <h3 class="text-lg font-bold mb-1">Delete All Read?</h3>
+            <p class="text-sm text-slate-400 mb-6">This will permanently delete all notifications that have been read. This cannot be undone.</p>
+            <div class="flex gap-3">
+                <button class="flex-1 py-3 rounded-xl border border-neutral-border text-slate-300 font-medium text-sm"
+                        @onclick="() => showDeleteReadConfirm = false">Cancel</button>
+                <button class="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm"
+                        @onclick="DeleteAllRead">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ─── State ────────────────────────────────────────────────────────────────
+    private NotificationStats? stats;
+    private List<NotificationItem> notifications = new();
+    private bool isHistoryLoading = true;
+    private bool isSending = false;
+    private bool showDeleteReadConfirm = false;
+
+    // Send form
+    private string sendMode      = "broadcast";
+    private string newTitle      = "";
+    private string newMessage    = "";
+    private string broadcastRole = "all";
+
+    // Send to User
+    private string userSearchQuery = "";
+    private List<(int UserId, string FullName, string Email, string Role)> userSearchResults = new();
+    private int?   selectedUserId;
+    private string selectedUserName = "";
+
+    // History
+    private string historySearch  = "";
+    private bool?  historyFilter;
+    private int    historyPage     = 1;
+    private int    historyPageSize = 15;
+    private int    historyTotal;
+    private int    historyTotalPages => (int)Math.Ceiling((double)historyTotal / historyPageSize);
+
+    // Global message
+    private string? globalMsg;
+    private string  globalMsgCss  = "";
+    private string  globalMsgIcon = "";
+
+    // ─── Recipient Options (icon, label, value) ───────────────────────────────
+    private readonly (string Label, string Val, string Icon)[] recipientOpts =
+    {
+        ("All Users",  "all",      "group"),
+        ("Tenants",    "tenant",   "person"),
+        ("Landlords",  "landlord", "real_estate_agent"),
+        ("Admins",     "admin",    "admin_panel_settings"),
+    };
+
+    // ─── Templates ───────────────────────────────────────────────────────────
+    private readonly (string Title, string Body)[] templates =
+    {
+        ("🚧 System Maintenance",      "The system will be down for scheduled maintenance from 2AM–4AM tonight. Please save your work."),
+        ("🎉 Welcome to Staytrust",    "Welcome! Explore thousands of verified rental listings near you. Start your search today."),
+        ("⚠️ Account Security Alert",  "We detected a login from a new device. If this wasn't you, please change your password immediately."),
+        ("📋 Policy Update",           "Our Terms of Service have been updated. Please review the changes at your earliest convenience."),
+        ("💳 Payment Reminder",        "You have an outstanding invoice due in 3 days. Please complete payment to avoid service interruption."),
+    };
+
+    // ─── Lifecycle ───────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadStatsAsync(), LoadHistoryAsync());
+    }
+
+    // ─── Stats ───────────────────────────────────────────────────────────────
+    private async Task LoadStatsAsync()
+    {
+        try { stats = await NotificationService.GetStatsAsync(); }
+        catch { /* silently fail stats */ }
+    }
+
+    // ─── Send ─────────────────────────────────────────────────────────────────
+    private async Task HandleSend()
+    {
+        if (string.IsNullOrWhiteSpace(newTitle) || string.IsNullOrWhiteSpace(newMessage))
+        {
+            ShowMsg("Please fill in Title and Message.", false);
+            return;
+        }
+        if (sendMode == "user" && !selectedUserId.HasValue)
+        {
+            ShowMsg("Please select a user to send to.", false);
+            return;
+        }
+
+        isSending = true;
+        StateHasChanged();
+        try
+        {
+            if (sendMode == "broadcast")
+            {
+                var count = await NotificationService.SendBroadcastAsync(newTitle, newMessage, broadcastRole);
+                ShowMsg($"✅ Broadcast sent to {count} users successfully!", true);
+            }
+            else
+            {
+                await NotificationService.SendToUserAsync(newTitle, newMessage, selectedUserId!.Value);
+                ShowMsg($"✅ Notification sent to {selectedUserName} successfully!", true);
+            }
+            // Reset form
+            newTitle = ""; newMessage = "";
+            broadcastRole = "all"; ClearUserSelection();
+            await Task.WhenAll(LoadStatsAsync(), LoadHistoryAsync());
+        }
+        catch (Exception ex) { ShowMsg($"Error: {ex.Message}", false); }
+        finally { isSending = false; StateHasChanged(); }
+    }
+
+    private void ApplyTemplate((string Title, string Body) template)
+    {
+        newTitle   = template.Title;
+        newMessage = template.Body;
+        StateHasChanged();
+    }
+
+    // ─── User Search ──────────────────────────────────────────────────────────
+    private System.Timers.Timer? _userTimer;
+    private void OnUserSearch(ChangeEventArgs e)
+    {
+        userSearchQuery = e.Value?.ToString() ?? "";
+        _userTimer?.Stop();
+        _userTimer = new System.Timers.Timer(300);
+        _userTimer.Elapsed += async (_, _) =>
+        {
+            _userTimer?.Stop();
+            if (userSearchQuery.Length >= 2)
+                userSearchResults = await NotificationService.SearchUsersAsync(userSearchQuery);
+            else
+                userSearchResults = new();
+            await InvokeAsync(StateHasChanged);
+        };
+        _userTimer.Start();
+    }
+
+    private void SelectUser((int UserId, string FullName, string Email, string Role) u)
+    {
+        selectedUserId = u.UserId;
+        selectedUserName = u.FullName;
+        userSearchResults = new();
+        userSearchQuery = "";
+    }
+
+    private void ClearUserSelection()
+    {
+        selectedUserId = null; selectedUserName = "";
+        userSearchQuery = ""; userSearchResults = new();
+    }
+
+    // ─── History ──────────────────────────────────────────────────────────────
+    private async Task LoadHistoryAsync()
+    {
+        isHistoryLoading = true;
+        try
+        {
+            var (items, total) = await NotificationService.GetNotificationsAsync(historySearch, historyFilter, historyPage, historyPageSize);
+            notifications = items;
+            historyTotal = total;
+        }
+        catch (Exception ex) { ShowMsg($"Error loading history: {ex.Message}", false); }
+        finally { isHistoryLoading = false; StateHasChanged(); }
+    }
+
+    private System.Timers.Timer? _histTimer;
+    private void OnHistorySearch(ChangeEventArgs e)
+    {
+        historySearch = e.Value?.ToString() ?? "";
+        _histTimer?.Stop();
+        _histTimer = new System.Timers.Timer(380);
+        _histTimer.Elapsed += async (_, _) =>
+        {
+            _histTimer?.Stop();
+            historyPage = 1;
+            await InvokeAsync(LoadHistoryAsync);
+        };
+        _histTimer.Start();
+    }
+
+    private async Task SetHistoryFilter(bool? val)
+    {
+        historyFilter = val; historyPage = 1;
+        await LoadHistoryAsync();
+    }
+
+    private async Task PrevPage() { historyPage--; await LoadHistoryAsync(); }
+    private async Task NextPage() { historyPage++; await LoadHistoryAsync(); }
+
+    // ─── Actions ──────────────────────────────────────────────────────────────
+    private async Task MarkOneRead(NotificationItem n)
+    {
+        try { await NotificationService.MarkAsReadAsync(n.NotificationId); n.IsRead = true; await LoadStatsAsync(); StateHasChanged(); }
+        catch (Exception ex) { ShowMsg(ex.Message, false); }
+    }
+
+    private async Task MarkAllRead()
+    {
+        try
+        {
+            await NotificationService.MarkAllAsReadAsync();
+            ShowMsg("All notifications marked as read.", true);
+            await Task.WhenAll(LoadStatsAsync(), LoadHistoryAsync());
+        }
+        catch (Exception ex) { ShowMsg(ex.Message, false); }
+    }
+
+    private async Task DeleteOne(NotificationItem n)
+    {
+        try { await NotificationService.DeleteAsync(n.NotificationId); notifications.Remove(n); historyTotal--; await LoadStatsAsync(); StateHasChanged(); }
+        catch (Exception ex) { ShowMsg(ex.Message, false); }
+    }
+
+    private async Task DeleteAllRead()
+    {
+        showDeleteReadConfirm = false;
+        try
+        {
+            await NotificationService.DeleteAllReadAsync();
+            ShowMsg("All read notifications deleted.", true);
+            await Task.WhenAll(LoadStatsAsync(), LoadHistoryAsync());
+        }
+        catch (Exception ex) { ShowMsg(ex.Message, false); }
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    private static string GetRoleBadge(string? role) => role switch
+    {
+        "Admin"    => "bg-purple-500/20 text-purple-400",
+        "Landlord" => "bg-blue-500/20 text-blue-400",
+        "Tenant"   => "bg-emerald-500/20 text-emerald-400",
+        _          => "bg-slate-700 text-slate-400"
+    };
+
+    private void ShowMsg(string msg, bool success)
+    {
+        globalMsg     = msg;
+        globalMsgCss  = success
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+            : "bg-red-500/10 border-red-500/30 text-red-400";
+        globalMsgIcon = success ? "check_circle" : "error";
+        StateHasChanged();
+    }
+}
