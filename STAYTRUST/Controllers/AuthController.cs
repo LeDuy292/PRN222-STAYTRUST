@@ -1,5 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 using STAYTRUST.Services;
+using STAYTRUST.Data;
+using STAYTRUST.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace STAYTRUST.Controllers
 {
@@ -92,6 +99,92 @@ namespace STAYTRUST.Controllers
         {
             Response.Cookies.Delete("AuthToken");
             return Ok(new { message = "Logout successful" });
+        }
+
+        [HttpGet("login-google")]
+        public IActionResult LoginGoogle()
+        {
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback), "Auth")
+            };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("signin-google")]
+        public async Task<IActionResult> GoogleCallback()
+        {
+            // Authenticate with the Cookie scheme to get the Google identity
+            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+                return Redirect("/login?error=google_failed");
+
+            var principalClaims = result.Principal?.Claims;
+            var email = principalClaims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var fullName = principalClaims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? email ?? "Google User";
+
+            if (string.IsNullOrEmpty(email))
+                return Redirect("/login?error=google_no_email");
+
+            // Find or create the user in the database
+            var context = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var authService = HttpContext.RequestServices.GetRequiredService<IAuthService>();
+
+            var user = await context.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                // Auto-register new Google users as Tenants with a random password
+                await authService.RegisterUserAsync(fullName, email, Guid.NewGuid().ToString(), null, "Tenant");
+                user = await context.Users
+                    .Include(u => u.UserProfile)
+                    .FirstOrDefaultAsync(u => u.Email == email);
+            }
+
+            if (user == null)
+                return Redirect("/login?error=google_register_failed");
+
+            // Generate JWT directly (we can't use password-based auth for Google users)
+            var token = authService.GenerateTokenForUser(user);
+
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(30)
+            });
+
+            return Redirect(user.Role == "Landlord" ? "/landlord/home" : "/");
+        }
+
+        [HttpPost("refresh-token")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<IActionResult> RefreshToken([FromServices] AppDbContext context)
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                         ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            var user = await context.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null) return Unauthorized();
+
+            var newToken = _authService.GenerateTokenForUser(user);
+
+            Response.Cookies.Append("AuthToken", newToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(30)
+            });
+
+            return Ok(new { message = "Token refreshed successfully" });
         }
     }
 

@@ -18,6 +18,7 @@ namespace STAYTRUST.Services
         Task<string?> AuthenticateAsync(string email, string password);
         Task<string?> GetUserRoleAsync(string email);
         Task<User?> GetCurrentUserAsync();
+        string GenerateTokenForUser(User user);
     }
 
     public class AuthService : IAuthService
@@ -57,7 +58,9 @@ namespace STAYTRUST.Services
 
         public async Task<string?> AuthenticateAsync(string email, string password)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users
+                .Include(u => u.UserProfile)
+                .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
             {
@@ -91,7 +94,18 @@ namespace STAYTRUST.Services
                 return null;
             }
 
-            // Generate JWT Token
+            // Generate JWT Token consistently using the shared method
+            return GenerateTokenForUser(user);
+        }
+
+        public async Task<string?> GetUserRoleAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return user?.Role;
+        }
+
+        public string GenerateTokenForUser(User user)
+        {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -101,6 +115,7 @@ namespace STAYTRUST.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("FullName", user.FullName),
+                new Claim("AvatarUrl", user.UserProfile?.AvatarUrl ?? ""),
                 new Claim(ClaimTypes.Role, user.Role ?? "Tenant"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
@@ -109,22 +124,16 @@ namespace STAYTRUST.Services
                 issuer: _config["JwtSettings:Issuer"],
                 audience: _config["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"])),
+                expires: DateTime.UtcNow.AddDays(30),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<string?> GetUserRoleAsync(string email)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            return user?.Role;
-        }
-
         public async Task<User?> GetCurrentUserAsync()
         {
             var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext?.User == null || !httpContext.User.Identity?.IsAuthenticated == true)
+            if (httpContext?.User == null || !(httpContext.User.Identity?.IsAuthenticated == true))
             {
                 return null;
             }

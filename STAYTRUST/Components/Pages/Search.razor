@@ -80,10 +80,11 @@
                         @{
                             var user = context.User;
                             var fullName = user.FindFirst("FullName")?.Value ?? user.Identity?.Name ?? "User";
+                            var avatarUrl = user.FindFirst("AvatarUrl")?.Value ?? string.Empty;
                             var role = user.FindFirst("Role")?.Value ?? "Tenant";
                             var initial = !string.IsNullOrEmpty(fullName) ? fullName.Substring(0, 1).ToUpper() : "U";
                         }
-                        <UserMenu FullName="@fullName" Role="@role" Initial="@initial" IsDarkMode="true" />
+                        <UserMenu FullName="@fullName" Role="@role" Initial="@initial" AvatarUrl="@avatarUrl" IsDarkMode="true" />
                     </Authorized>
                     <NotAuthorized>
                         <a href="/login" class="px-4 py-2 bg-[#13ecda]/10 text-[#13ecda] border border-[#13ecda]/30 rounded-xl text-sm font-bold hover:bg-[#13ecda]/20 transition-all">Login</a>
