@@ -1,10 +1,14 @@
 @page "/profile"
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
 @using STAYTRUST.Models
 @using STAYTRUST.Services
+@using System.Net.Http.Json
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Http
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <nav class="absolute top-0 left-0 right-0 z-50 w-full px-4 lg:px-40 py-5">
@@ -13,7 +17,7 @@
         <div class="flex items-center gap-6">
             <a href="/" class="text-white text-sm font-semibold hover:text-emerald-400 transition-colors flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg">arrow_back</span>
-                Back to Home
+                Về trang chủ
             </a>
         </div>
     </div>
@@ -22,26 +26,35 @@
 <div class="min-h-screen bg-[#0c1117] pt-32 pb-20 px-4">
     <div class="max-w-4xl mx-auto">
         <div class="mb-10 text-center lg:text-left">
-            <h1 class="text-4xl font-black text-white mb-3">Update your <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Information</span></h1>
-            <p class="text-slate-400 font-medium">Keep your profile up to date for better coordination with landlords.</p>
+            <h1 class="text-4xl font-black text-white mb-3">Cập nhật <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">thông tin cá nhân</span></h1>
+            <p class="text-slate-400 font-medium">Giữ thông tin của bạn luôn chính xác để phối hợp tốt hơn với chủ nhà.</p>
         </div>
 
         @if (isLoading)
         {
             <div class="flex flex-col items-center justify-center py-20 gap-4">
                 <div class="size-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-                <p class="text-emerald-400 font-bold animate-pulse">Syncing encrypted data...</p>
+                <p class="text-emerald-400 font-bold animate-pulse">Đang tải dữ liệu...</p>
             </div>
         }
         else if (user != null)
         {
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Sidebar / Summary -->
+                <!-- Sidebar / Tóm tắt -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-xl">
-                        <div class="size-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-white text-4xl font-black shadow-lg shadow-emerald-500/20 mb-6">
-                            @FullName?[0].ToString().ToUpper()
-                        </div>
+                        <!-- Avatar hiển thị: URL ảnh upload hoặc chữ cái đầu -->
+                        @if (!string.IsNullOrEmpty(AvatarUrl))
+                        {
+                            <img src="@AvatarUrl" alt="Ảnh đại diện"
+                                 class="size-24 rounded-full object-cover mx-auto mb-6 border-2 border-emerald-500/40 shadow-lg shadow-emerald-500/20" />
+                        }
+                        else
+                        {
+                            <div class="size-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-white text-4xl font-black shadow-lg shadow-emerald-500/20 mb-6">
+                                @(FullName?.Length > 0 ? FullName[0].ToString().ToUpper() : "?")
+                            </div>
+                        }
                         <h2 class="text-xl font-bold text-white mb-1">@FullName</h2>
                         <p class="text-slate-500 text-sm font-medium mb-4">@user.Email</p>
                         <div class="inline-flex px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
@@ -50,26 +63,26 @@
                     </div>
 
                     <div class="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
-                        <h3 class="text-white font-bold text-sm uppercase tracking-widest mb-4 opacity-50">Account Integrity</h3>
+                        <h3 class="text-white font-bold text-sm uppercase tracking-widest mb-4 opacity-50">Bảo mật tài khoản</h3>
                         <ul class="space-y-4">
                             <li class="flex items-center gap-3 text-slate-300 text-sm">
                                 <span class="material-symbols-outlined text-emerald-500 text-lg">verified</span>
-                                Verified Identity
+                                Danh tính đã xác thực
                             </li>
                             <li class="flex items-center gap-3 text-slate-300 text-sm">
                                 <span class="material-symbols-outlined text-emerald-500 text-lg">security</span>
-                                Secure Encrypted Path
+                                Kết nối bảo mật mã hoá
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- Main Form -->
+                <!-- Form chính -->
                 <div class="lg:col-span-2">
                     <div class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
                         @if (!string.IsNullOrEmpty(statusMessage))
                         {
-                            <div class="mb-8 p-4 rounded-2xl @(isError ? "bg-red-500/10 border border-red-500/20 text-red-100" : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-100") flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                            <div class="mb-8 p-4 rounded-2xl @(isError ? "bg-red-500/10 border border-red-500/20 text-red-100" : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-100") flex items-center gap-3">
                                 <span class="material-symbols-outlined @(isError ? "text-red-500" : "text-emerald-500")">
                                     @(isError ? "error" : "check_circle")
                                 </span>
@@ -77,70 +90,116 @@
                             </div>
                         }
 
-                        <form @onsubmit="HandleUpdate" class="space-y-8">
-                            <!-- Section: Personal -->
+                        <form @onsubmit="HandleUpdate" @onsubmit:preventDefault class="space-y-8">
+                            <!-- Phần: Thông tin cơ bản -->
                             <div>
                                 <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                                     <span class="size-1.5 rounded-full bg-emerald-400"></span>
-                                    Core Identity
+                                    Thông tin cơ bản
                                 </h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Full Name</label>
-                                        <input @bind="FullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" required />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Họ và Tên</label>
+                                        <input @bind="FullName" type="text"
+                                               class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all"
+                                               placeholder="Nguyễn Văn A" required />
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
-                                        <input @bind="Phone" type="tel" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" required />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Số điện thoại</label>
+                                        <input @bind="Phone" type="tel"
+                                               class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all"
+                                               placeholder="0912 345 678" required />
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Section: Profile -->
+                            <!-- Phần: Thông tin bổ sung -->
                             <div>
                                 <h3 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-3 pt-4">
                                     <span class="size-1.5 rounded-full bg-emerald-400"></span>
-                                    Extended Metadata
+                                    Thông tin bổ sung
                                 </h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Identity Number (CCCD)</label>
-                                        <input @bind="IdentityNumber" type="text" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Số CCCD / CMND</label>
+                                        <input @bind="IdentityNumber" type="text"
+                                               class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all"
+                                               placeholder="012345678901" />
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Gender</label>
-                                        <select @bind="Gender" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer">
-                                            <option value="" class="bg-[#0c1117]">Select Gender</option>
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Giới tính</label>
+                                        <select @bind="Gender"
+                                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer">
+                                            <option value="" class="bg-[#0c1117]">-- Chọn giới tính --</option>
                                             <option value="Nam" class="bg-[#0c1117]">Nam</option>
                                             <option value="Nữ" class="bg-[#0c1117]">Nữ</option>
                                             <option value="Other" class="bg-[#0c1117]">Khác</option>
                                         </select>
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Date of Birth</label>
-                                        <input @bind="DateOfBirth" type="date" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Ngày sinh</label>
+                                        <input @bind="DateOfBirth" type="date"
+                                               class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" />
                                     </div>
+
+                                    <!-- Ảnh đại diện: InputFile thay thế input[type=url] -->
                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Avatar URL (Optional)</label>
-                                        <input @bind="AvatarUrl" type="url" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all" placeholder="https://..." />
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Ảnh đại diện</label>
+
+                                        @if (!string.IsNullOrEmpty(AvatarUrl))
+                                        {
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <img src="@AvatarUrl" alt="Preview"
+                                                     class="size-14 rounded-full object-cover border-2 border-emerald-500/40" />
+                                                <span class="text-emerald-400 text-xs font-semibold">Ảnh đã chọn</span>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrEmpty(uploadError))
+                                        {
+                                            <p class="text-red-400 text-xs font-semibold mb-1">⚠ @uploadError</p>
+                                        }
+
+                                        <div class="relative">
+                                            <InputFile id="avatarInput" OnChange="HandleAvatarUpload"
+                                                       accept="image/jpeg,image/png,image/gif,image/webp"
+                                                       class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
+                                            <div class="flex items-center gap-3 w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm transition-all hover:border-emerald-500/40 cursor-pointer @(isUploadingAvatar ? "opacity-60" : "")">
+                                                @if (isUploadingAvatar)
+                                                {
+                                                    <div class="size-4 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin"></div>
+                                                    <span class="text-slate-400">Đang tải ảnh lên...</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="material-symbols-outlined text-emerald-400 text-lg">upload</span>
+                                                    <span class="text-slate-400">Chọn ảnh từ máy tính <span class="text-slate-600 text-xs">(JPG, PNG, WEBP · tối đa 5MB)</span></span>
+                                                }
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div class="space-y-2 mt-6">
-                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Permanent Address</label>
-                                    <textarea @bind="Address" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all min-h-[100px]" placeholder="Enter your full address..."></textarea>
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Địa chỉ thường trú</label>
+                                    <textarea @bind="Address"
+                                              class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm outline-none focus:border-emerald-500/50 transition-all min-h-[100px]"
+                                              placeholder="Số nhà, phường/xã, quận/huyện, tỉnh/thành phố..."></textarea>
                                 </div>
                             </div>
 
-                            <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-[#0c1117] font-black py-4.5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed group uppercase text-xs tracking-[0.2em]" disabled="@isSubmitting">
+                            <button type="submit"
+                                    class="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-[#0c1117] font-black py-4 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed group uppercase text-xs tracking-[0.2em]"
+                                    disabled="@(isSubmitting || isUploadingAvatar)">
                                 @if (isSubmitting)
                                 {
                                     <div class="size-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
-                                    <span>Syncing Metadata...</span>
+                                    <span>Đang lưu...</span>
                                 }
                                 else
                                 {
-                                    <span>Sync Profile</span>
-                                    <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">database</span>
+                                    <span>Lưu thông tin</span>
+                                    <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">save</span>
                                 }
                             </button>
                         </form>
@@ -152,16 +211,15 @@
         {
             <div class="bg-red-500/10 border border-red-500/20 text-red-100 p-8 rounded-3xl text-center">
                 <span class="material-symbols-outlined text-4xl text-red-500 mb-4">error</span>
-                <h2 class="text-xl font-bold mb-2">Access Denied</h2>
-                <p class="text-sm opacity-70 mb-6">We could not identify your secure session. Please try logging in again.</p>
-                <a href="/login" class="inline-flex px-8 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors">Sign In</a>
+                <h2 class="text-xl font-bold mb-2">Không có quyền truy cập</h2>
+                <p class="text-sm opacity-70 mb-6">Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.</p>
+                <a href="/login" class="inline-flex px-8 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors">Đăng nhập</a>
             </div>
         }
     </div>
 </div>
 
 <style>
-    /* Premium aesthetics for form controls */
     ::-webkit-calendar-picker-indicator {
         filter: invert(1);
         cursor: pointer;
@@ -172,10 +230,12 @@
     private User? user;
     private bool isLoading = true;
     private bool isSubmitting = false;
+    private bool isUploadingAvatar = false;
     private string? statusMessage;
     private bool isError = false;
+    private string? uploadError;
 
-    // Form fields
+    // Các field của form
     private string? FullName;
     private string? Phone;
     private DateOnly? DateOfBirth;
@@ -191,7 +251,7 @@
 
         if (claimsUser.Identity?.IsAuthenticated == true)
         {
-            var userIdStr = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+            var userIdStr = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                         ?? claimsUser.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
                         ?? claimsUser.FindFirst("sub")?.Value;
 
@@ -200,7 +260,7 @@
                 user = await UserService.GetUserWithProfileAsync(userId);
                 if (user != null)
                 {
-                    FullName = user.UserName;
+                    FullName = user.FullName;  // FullName (đã fix Bug #1)
                     Phone = user.Phone;
                     if (user.UserProfile != null)
                     {
@@ -217,6 +277,65 @@
         isLoading = false;
     }
 
+    /// <summary>
+    /// Xử lý upload ảnh đại diện: gọi API /api/upload/avatar và cập nhật AvatarUrl ngay lập tức.
+    /// </summary>
+    private async Task HandleAvatarUpload(InputFileChangeEventArgs e)
+    {
+        uploadError = null;
+        var file = e.File;
+
+        // Validate kích thước phía client (5MB)
+        const long maxSize = 5 * 1024 * 1024;
+        if (file.Size > maxSize)
+        {
+            uploadError = "Ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB.";
+            return;
+        }
+
+        isUploadingAvatar = true;
+        StateHasChanged();
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var stream = file.OpenReadStream(maxAllowedSize: maxSize);
+            var streamContent = new StreamContent(stream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            content.Add(streamContent, "file", file.Name);
+
+            var response = await Http.PostAsync("/api/upload/avatar", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<UploadResult>();
+                if (result?.Url != null)
+                {
+                    // Cập nhật URL ngay lập tức để sidebar preview ảnh mới
+                    AvatarUrl = result.Url;
+                    uploadError = null;
+                }
+            }
+            else
+            {
+                var errorJson = await response.Content.ReadFromJsonAsync<ErrorResult>();
+                uploadError = errorJson?.Message ?? "Tải ảnh thất bại. Vui lòng thử lại.";
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Lỗi kết nối: {ex.Message}";
+        }
+        finally
+        {
+            isUploadingAvatar = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Lưu toàn bộ thông tin profile (bao gồm AvatarUrl đã upload) vào DB.
+    /// </summary>
     private async Task HandleUpdate()
     {
         if (user == null || isSubmitting) return;
@@ -239,17 +358,42 @@
 
         if (result)
         {
-            statusMessage = "Information synchronized successfully across all nodes.";
-            // Subtle delay to show success
-            await Task.Delay(1000);
-            // Optionally redirect or stay
+            statusMessage = "Thông tin đã được cập nhật thành công.";
+            // Đồng bộ object user cục bộ để sidebar re-render ngay (Bug #2 fix)
+            user.FullName = FullName ?? user.FullName;
+            user.Phone = Phone ?? user.Phone;
+            if (user.UserProfile != null)
+            {
+                user.UserProfile.AvatarUrl = AvatarUrl;
+                user.UserProfile.DateOfBirth = DateOfBirth;
+                user.UserProfile.Gender = Gender;
+                user.UserProfile.Address = Address;
+                user.UserProfile.IdentityNumber = IdentityNumber;
+            }
+
+            // Gọi API refresh token để cấp lại JWT cookie mới chứa FullName mới
+            try 
+            {
+                var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh-token");
+                await Http.SendAsync(refreshRequest);
+                
+                // Mất 1 giây để hiển thị success message, sau đó tự động reload trang 
+                // để Header (UserMenu) lấy cookie AuthToken mới và re-render
+                await Task.Delay(1000);
+                await JS.InvokeVoidAsync("location.reload");
+            }
+            catch { /* Lỗi network khi refresh token thì bỏ qua, trang vẫn update DB thành công */ }
         }
         else
         {
-            statusMessage = "Synchronization failed. Please check your data connectivity.";
+            statusMessage = "Lưu thất bại. Vui lòng kiểm tra lại kết nối.";
             isError = true;
         }
 
         isSubmitting = false;
     }
+
+    // Record dùng để deserialize JSON trả về từ upload API
+    private record UploadResult(string Url);
+    private record ErrorResult(string Message);
 }

@@ -42,7 +42,7 @@ namespace STAYTRUST.Services
             if (user == null) return false;
 
             // Update User fields
-            user.UserName = fullName;
+            user.FullName = fullName; // BUG FIX: UserName = email (dùng để login), FullName mới là tên hiển thị
             user.Phone = phone;
 
             // Update or Create UserProfile
