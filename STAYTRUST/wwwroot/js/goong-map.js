@@ -45,6 +45,13 @@ window.goongMap = {
                                     <span class="text-[10px] font-bold text-[#102220]">$${prop.price}</span>
                                 </div>
                             </div>`;
+                            
+            el.style.cursor = 'pointer';
+            el.onclick = () => {
+                if (prop.roomId) {
+                    window.location.href = `/rooms/${prop.roomId}`;
+                }
+            };
 
             const marker = new goongjs.Marker(el)
                 .setLngLat([prop.lng, prop.lat])

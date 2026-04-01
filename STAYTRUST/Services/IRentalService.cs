@@ -15,4 +15,5 @@ public interface IRentalService
     Task<RentalContract?> CreateRentalContractAsync(int userId, int roomId);
     Task<bool> TerminateRentalContractAsync(int contractId);
     Task<bool> SubmitFeedbackAsync(Feedback feedback);
+    Task<bool> CanFeedbackAsync(int userId, int roomId);
 }

@@ -266,22 +266,32 @@
                         }
 
                         <!-- Add Review Form -->
-                        <div class="glass-card rounded-2xl p-6 space-y-4">
-                            <h4 class="text-sm font-bold uppercase tracking-widest text-[#13ecda]">Leave a Review</h4>
-                            <div class="flex gap-2">
-                                @for (int i = 1; i <= 5; i++)
-                                {
-                                    int rating = i;
-                                    <button @onclick="() => newRating = rating" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all @(newRating >= rating ? "bg-yellow-400/20 border-yellow-400 text-yellow-400" : "bg-white/5 border-white/10 text-white/30 hover:border-yellow-400/50")">
-                                        <span class="material-symbols-outlined">star</span>
-                                    </button>
-                                }
+                        @if (canReview)
+                        {
+                            <div class="glass-card rounded-2xl p-6 space-y-4">
+                                <h4 class="text-sm font-bold uppercase tracking-widest text-[#13ecda]">Leave a Review</h4>
+                                <div class="flex gap-2">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        int rating = i;
+                                        <button @onclick="() => newRating = rating" class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all @(newRating >= rating ? "bg-yellow-400/20 border-yellow-400 text-yellow-400" : "bg-white/5 border-white/10 text-white/30 hover:border-yellow-400/50")">
+                                            <span class="material-symbols-outlined">star</span>
+                                        </button>
+                                    }
+                                </div>
+                                <textarea @bind="newComment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[100px] focus:border-[#13ecda]/50 focus:ring-0 transition-all text-white text-sm" placeholder="Share your experience..."></textarea>
+                                <button @onclick="SubmitReview" disabled="@isSubmittingReview" class="px-6 py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm hover:bg-[#10d4c4] transition-all disabled:opacity-50">
+                                    @(isSubmittingReview ? "Submitting..." : "Submit Review")
+                                </button>
                             </div>
-                            <textarea @bind="newComment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[100px] focus:border-[#13ecda]/50 focus:ring-0 transition-all text-white text-sm" placeholder="Share your experience..."></textarea>
-                            <button @onclick="SubmitReview" disabled="@isSubmittingReview" class="px-6 py-3 bg-[#13ecda] text-[#102220] font-bold rounded-xl text-sm hover:bg-[#10d4c4] transition-all disabled:opacity-50">
-                                @(isSubmittingReview ? "Submitting..." : "Submit Review")
-                            </button>
-                        </div>
+                        }
+                        else if (currentUserId != null)
+                        {
+                            <div class="glass-card rounded-2xl p-6 text-center text-[#92c9c5]">
+                                <span class="material-symbols-outlined text-4xl mb-3 opacity-40">lock</span>
+                                <p class="text-sm">Hệ thống bảo vệ Rating: Bạn phải thuê và trải nghiệm phòng này để được viết nhận xét.</p>
+                            </div>
+                        }
                     </section>
                 </div>
                 <!-- Sidebar Right (1/3) -->
@@ -507,6 +517,7 @@
     private bool agreedToTerms;
 
     // Review
+    private bool canReview;
     private int newRating = 5;
     private string newComment = "";
     private bool isSubmittingReview;
@@ -540,6 +551,7 @@
                 {
                     currentUserId = uid;
                     isFavorite = await FavoriteService.IsFavoriteAsync(uid, RoomId);
+                    canReview = await RentalService.CanFeedbackAsync(uid, RoomId);
                 }
             }
         }

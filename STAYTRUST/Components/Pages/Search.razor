@@ -1,4 +1,5 @@
 @page "/search"
+@implements IDisposable
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using STAYTRUST.Models
@@ -7,6 +8,7 @@
 @inject IFavoriteService FavoriteService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@using STAYTRUST.Models.DTOs
 
 <PageTitle>Staytrust - Find Your Home Da Nang</PageTitle>
 
@@ -119,6 +121,19 @@
                 <div class="flex flex-col gap-3">
                     <label class="text-sm font-medium">Location / Keyword</label>
                     <input @bind="filterAddress" type="text" placeholder="e.g. Sơn Trà, Đà Nẵng" class="w-full bg-[#193331] border border-[#234845] rounded-xl px-3 py-2 text-sm text-white placeholder-[#92c9c5] focus:border-[#13ecda]" />
+                </div>
+                <!-- Amenities -->
+                <div class="flex flex-col gap-3">
+                    <label class="text-sm font-medium">Amenities</label>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var amenity in availableAmenities)
+                        {
+                            var isSelected = selectedAmenities.Contains(amenity);
+                            <button @onclick="() => ToggleAmenity(amenity)" class="px-3 py-1 rounded-full text-xs font-medium border transition-colors @(isSelected ? "bg-[#13ecda]/20 border-[#13ecda] text-[#13ecda]" : "bg-[#193331] border-[#234845] text-[#92c9c5] hover:border-[#13ecda]/50")">
+                                @amenity
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
             <div class="p-6 border-t border-[rgba(19,236,218,0.2)] space-y-3">
@@ -249,6 +264,18 @@
     private decimal? maxPrice;
     private double? minArea;
     private int? currentUserId;
+    private List<MapRoomDto>? mapRooms;
+    
+    private List<string> availableAmenities = new() { "Wifi", "Điều hòa", "Chỗ để xe", "Bếp", "Máy giặt" };
+    private List<string> selectedAmenities = new();
+    
+    private void ToggleAmenity(string amenity)
+    {
+        if (selectedAmenities.Contains(amenity))
+            selectedAmenities.Remove(amenity);
+        else
+            selectedAmenities.Add(amenity);
+    }
 
     public class GoongSuggestion
     {
@@ -259,8 +286,21 @@
     private List<GoongSuggestion> suggestions = new();
     private bool isDropdownOpen = false;
 
+    private System.Timers.Timer? debounceTimer;
+
     protected override async Task OnInitializedAsync()
     {
+        debounceTimer = new System.Timers.Timer(400);
+        debounceTimer.Elapsed += async (s, e) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await PerformSearchSuggestions();
+                StateHasChanged();
+            });
+        };
+        debounceTimer.AutoReset = false;
+
         // Get current user ID
         if (AuthStateTask != null)
         {
@@ -279,7 +319,8 @@
         }
 
         // Load all available rooms
-        rooms = await RoomService.SearchRoomsAsync(null, null, null, null);
+        rooms = await RoomService.SearchRoomsAsync(null, null, null, null, null);
+        mapRooms = await RoomService.SearchRoomsForMapAsync(null, null, null, null);
         isLoading = false;
     }
 
@@ -287,7 +328,13 @@
     {
         isLoading = true;
         var addr = !string.IsNullOrWhiteSpace(filterAddress) ? filterAddress : searchQuery;
-        rooms = await RoomService.SearchRoomsAsync(addr, minPrice, maxPrice, minArea);
+        
+        // The list cards use SearchRoomsAsync (ignoring amenities since interface signature is fixed)
+        rooms = await RoomService.SearchRoomsAsync(addr, minPrice, maxPrice, minArea, selectedAmenities);
+        
+        // Map markers use the required MapRoomDto with full LINQ queries including amenities
+        mapRooms = await RoomService.SearchRoomsForMapAsync(addr, minPrice, maxPrice, selectedAmenities);
+        
         isLoading = false;
         await UpdateMapMarkersAsync();
     }
@@ -299,7 +346,11 @@
         minPrice = null;
         maxPrice = null;
         minArea = null;
-        rooms = await RoomService.SearchRoomsAsync(null, null, null, null);
+        selectedAmenities.Clear();
+        
+        rooms = await RoomService.SearchRoomsAsync(null, null, null, null, null);
+        mapRooms = await RoomService.SearchRoomsForMapAsync(null, null, null, null);
+        
         await UpdateMapMarkersAsync();
         await JSRuntime.InvokeVoidAsync("goongMap.flyTo", "map", 16.0544, 108.2022, 12);
     }
@@ -321,6 +372,12 @@
             return;
         }
 
+        debounceTimer?.Stop();
+        debounceTimer?.Start();
+    }
+
+    private async Task PerformSearchSuggestions()
+    {
         try
         {
             suggestions = await JSRuntime.InvokeAsync<List<GoongSuggestion>>("goongMap.getSuggestions", searchQuery);
@@ -373,14 +430,17 @@
 
     private async Task UpdateMapMarkersAsync()
     {
-        if (rooms == null) return;
+        if (mapRooms == null) return;
         
-        // Mocking coordinates near Da Nang center because Room model lacks Latitude/Longitude
-        var mapData = rooms.Select(r => new
+        // Binding data from the MapRoomDto List directly
+        var mapData = mapRooms.Select(r => new
         {
-            lat = 16.0340 + ((r.RoomId * 13) % 100) * 0.001, 
-            lng = 108.1922 + ((r.RoomId * 7) % 100) * 0.001,
-            price = r.Price.ToString("N0")
+            roomId = r.RoomId,
+            lat = r.Latitude, 
+            lng = r.Longitude,
+            price = r.Price.ToString("N0"),
+            name = r.Name,
+            amenities = string.Join(", ", r.Amenities)
         }).ToList();
         
         try
@@ -406,5 +466,10 @@
             favoriteRoomIds.Add(roomId);
         else
             favoriteRoomIds.Remove(roomId);
+    }
+
+    public void Dispose()
+    {
+        debounceTimer?.Dispose();
     }
 }

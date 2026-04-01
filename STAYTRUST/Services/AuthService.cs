@@ -62,7 +62,7 @@ namespace STAYTRUST.Services
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user == null)
+            if (user == null || user.Status != true)
             {
                 return null;
             }

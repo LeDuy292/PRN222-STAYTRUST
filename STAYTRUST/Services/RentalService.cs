@@ -149,4 +149,11 @@ public class RentalService : IRentalService
         await context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<bool> CanFeedbackAsync(int userId, int roomId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.RentalContracts
+            .AnyAsync(r => r.TenantId == userId && r.RoomId == roomId && (r.Status == "Terminated" || r.Status == "Completed" || r.Status == "Paid"));
+    }
 }
