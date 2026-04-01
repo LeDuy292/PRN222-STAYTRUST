@@ -1,415 +1,768 @@
-@using System.Text.Json
-@inject HttpClient Http
+﻿@using STAYTRUST.Services
+@inject IGeminiAIService GeminiService
 @inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<!-- Floating Chat Button -->
+<div class="staytrust-chatbox-wrapper">
+    <!-- Chat Toggle Button -->
+    <button class="chat-fab @(IsOpen ? "chat-fab-open" : "")" @onclick="ToggleChat" id="chat-fab-btn" title="Chat với AI StayTrust">
+        <span class="chat-fab-icon @(IsOpen ? "hidden" : "")">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
+                <circle cx="8.5" cy="10" r="1.5" />
+                <circle cx="12" cy="10" r="1.5" />
+                <circle cx="15.5" cy="10" r="1.5" />
+            </svg>
+        </span>
+        <span class="chat-fab-close @(IsOpen ? "" : "hidden")">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+        </span>
+        @if (!IsOpen && UnreadCount > 0)
+        {
+            <span class="chat-badge">@UnreadCount</span>
+        }
+    </button>
+
+    <!-- Chat Window -->
+    <div class="chat-window @(IsOpen ? "chat-window-visible" : "")">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-header-avatar">
+                <div class="avatar-ring">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ai-icon">
+                        <path d="M21.928 11.607c-.202-.488-.635-.605-.928-.633V8c0-1.103-.897-2-2-2h-6V4.61c.305-.274.5-.668.5-1.11a1.5 1.5 0 0 0-3 0c0 .442.195.836.5 1.11V6H5c-1.103 0-2 .897-2 2v2.997l-.082.006A1 1 0 0 0 2 12v2a1 1 0 0 0 1 1H3v5c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2v-5a1 1 0 0 0 1-1v-1.938a1.006 1.006 0 0 0-.072-.455zM5 8h14v2.997H5V8zm14 12H5v-5h14v5z" />
+                        <circle cx="8.5" cy="18" r="1.5" />
+                        <circle cx="15.5" cy="18" r="1.5" />
+                    </svg>
+                </div>
+                <span class="status-dot"></span>
+            </div>
+            <div class="chat-header-info">
+                <h3>StayTrust AI</h3>
+                <p>Trợ lý thông minh • Online</p>
+            </div>
+            <div class="chat-header-actions">
+                <button class="header-action-btn" @onclick="ClearChat" title="Xóa cuộc trò chuyện">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                    </svg>
+                </button>
+                <button class="header-action-btn" @onclick="ToggleChat" title="Đóng">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Suggestions (shown when no messages) -->
+        @if (!Messages.Any())
+        {
+            <div class="chat-suggestions">
+                <div class="chat-welcome">
+                    <div class="welcome-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.34 8-7 8-11.5C20 5.81 16.19 2 11.5 2zm1 14.5h-2v-2h2v2zm0-4h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z" />
+                        </svg>
+                    </div>
+                    <h4>Xin chào! Tôi là StayTrust AI</h4>
+                    <p>Tôi có thể giúp bạn về tìm phòng, hợp đồng thuê, thanh toán và nhiều vấn đề khác.</p>
+                </div>
+                <div class="suggestion-chips">
+                    @foreach (var suggestion in QuickSuggestions)
+                    {
+                        <button class="chip" @onclick="() => SendSuggestion(suggestion)">@suggestion</button>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chat-messages-@ComponentId">
+            @foreach (var msg in Messages)
+            {
+                <div class="message-row @(msg.Role == "user" ? "message-row-user" : "message-row-ai")">
+                    @if (msg.Role == "model")
+                    {
+                        <div class="message-avatar-small">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M21.928 11.607c-.202-.488-.635-.605-.928-.633V8c0-1.103-.897-2-2-2h-6V4.61c.305-.274.5-.668.5-1.11a1.5 1.5 0 0 0-3 0c0 .442.195.836.5 1.11V6H5c-1.103 0-2 .897-2 2v2.997l-.082.006A1 1 0 0 0 2 12v2a1 1 0 0 0 1 1H3v5c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2v-5a1 1 0 0 0 1-1v-1.938a1.006 1.006 0 0 0-.072-.455zM5 8h14v2.997H5V8zm14 12H5v-5h14v5z" />
+                            </svg>
+                        </div>
+                    }
+                    <div class="message-bubble @(msg.Role == "user" ? "bubble-user" : "bubble-ai")">
+                        <div class="message-text">@((MarkupString)FormatMessage(msg.Content))</div>
+                        <div class="message-time">@msg.Timestamp.ToString("HH:mm")</div>
+                    </div>
+                </div>
+            }
+
+            @if (IsLoading)
+            {
+                <div class="message-row message-row-ai">
+                    <div class="message-avatar-small">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21.928 11.607c-.202-.488-.635-.605-.928-.633V8c0-1.103-.897-2-2-2h-6V4.61c.305-.274.5-.668.5-1.11a1.5 1.5 0 0 0-3 0c0 .442.195.836.5 1.11V6H5c-1.103 0-2 .897-2 2v2.997l-.082.006A1 1 0 0 0 2 12v2a1 1 0 0 0 1 1H3v5c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2v-5a1 1 0 0 0 1-1v-1.938a1.006 1.006 0 0 0-.072-.455zM5 8h14v2.997H5V8zm14 12H5v-5h14v5z" />
+                        </svg>
+                    </div>
+                    <div class="message-bubble bubble-ai">
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+                <textarea class="chat-input"
+                          placeholder="Nhập tin nhắn..."
+                          @bind="InputMessage"
+                          @bind:event="oninput"
+                          @onkeydown="HandleKeyDown"
+                          rows="1"
+                          id="chat-input-@ComponentId"
+                          disabled="@IsLoading">
+                </textarea>
+                <button class="send-btn @(string.IsNullOrWhiteSpace(InputMessage) || IsLoading ? "send-btn-disabled" : "")"
+                        @onclick="SendMessage"
+                        disabled="@(string.IsNullOrWhiteSpace(InputMessage) || IsLoading)"
+                        title="Gửi tin nhắn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </div>
+            <p class="chat-footer-note">AI có thể mắc lỗi. Hãy kiểm tra các thông tin quan trọng.</p>
+        </div>
+    </div>
+</div>
 
 <style>
-    .chatbox-container {
+    /* ===== StayTrust Chatbox Styles ===== */
+    .staytrust-chatbox-wrapper {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
+        bottom: 24px;
+        right: 24px;
         z-index: 9999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
     }
 
-    .chatbox-button {
-        width: 64px;
-        height: 64px;
+    /* FAB Button */
+    .chat-fab {
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #06b6d4, #2563eb);
-        border: 3px solid white;
+        background: linear-gradient(135deg, #13ec92 0%, #00b4d8 100%);
         color: white;
-        font-size: 28px;
+        border: none;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.5), 0 8px 24px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
+        box-shadow: 0 8px 32px rgba(19, 236, 146, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         position: relative;
-        z-index: 9999;
+        outline: none;
     }
 
-    .chatbox-button:hover {
-        transform: scale(1.15);
-        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.7), 0 12px 32px rgba(0, 0, 0, 0.3);
+        .chat-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(19, 236, 146, 0.5), 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+    .chat-fab-open {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
-    .chatbox-button:active {
-        transform: scale(0.95);
+    .chat-fab svg {
+        width: 26px;
+        height: 26px;
+        transition: all 0.2s ease;
     }
 
-    .chatbox-button.active {
-        transform: rotate(45deg) scale(1.15);
+    .chat-fab-icon, .chat-fab-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .chatbox-window {
+        .chat-fab-icon.hidden, .chat-fab-close.hidden {
+            display: none;
+        }
+
+    .chat-badge {
         position: absolute;
-        bottom: 90px;
+        top: -4px;
+        right: -4px;
+        background: #ef4444;
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 2px solid white;
+        animation: pulse-badge 2s infinite;
+    }
+
+    @@keyframes pulse-badge {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.15);
+        }
+    }
+
+    /* Chat Window */
+    .chat-window {
+        position: absolute;
+        bottom: 76px;
         right: 0;
-        width: 420px;
-        height: 650px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.1);
+        width: 380px;
+        height: 560px;
+        background: #0f1923;
+        border: 1px solid rgba(19, 236, 146, 0.2);
+        border-radius: 20px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(19, 236, 146, 0.05);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        z-index: 9998;
+        transform: scale(0.8) translateY(20px);
+        transform-origin: bottom right;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        backdrop-filter: blur(20px);
     }
 
-    .chatbox-header {
-        background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
-        color: white;
-        padding: 20px;
-        border-bottom: none;
+    .chat-window-visible {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    /* Chat Header */
+    .chat-header {
+        background: linear-gradient(135deg, #0d1a14 0%, #162b21 100%);
+        padding: 16px 16px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid rgba(19, 236, 146, 0.15);
         flex-shrink: 0;
     }
 
-    .chatbox-header h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: -0.5px;
+    .chat-header-avatar {
+        position: relative;
+        flex-shrink: 0;
     }
 
-    .chatbox-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 28px;
-        cursor: pointer;
-        padding: 0;
-        width: 32px;
-        height: 32px;
+    .avatar-ring {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(19, 236, 146, 0.2) 0%, rgba(0, 180, 216, 0.2) 100%);
+        border: 2px solid rgba(19, 236, 146, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.2s ease;
+        animation: rotate-ring 8s linear infinite;
     }
 
-    .chatbox-close:hover {
-        transform: rotate(90deg);
+    @@keyframes rotate-ring {
+        0% {
+            border-color: rgba(19, 236, 146, 0.5);
+        }
+
+        25% {
+            border-color: rgba(0, 180, 216, 0.5);
+        }
+
+        50% {
+            border-color: rgba(19, 236, 146, 0.5);
+        }
+
+        75% {
+            border-color: rgba(0, 180, 216, 0.5);
+        }
+
+        100% {
+            border-color: rgba(19, 236, 146, 0.5);
+        }
     }
 
-    .chatbox-messages {
+    .ai-icon {
+        width: 22px;
+        height: 22px;
+        color: #13ec92;
+    }
+
+    .status-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 10px;
+        height: 10px;
+        background: #13ec92;
+        border-radius: 50%;
+        border: 2px solid #0d1a14;
+        animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse-dot {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.7;
+            transform: scale(0.85);
+        }
+    }
+
+    .chat-header-info {
+        flex: 1;
+    }
+
+        .chat-header-info h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+            letter-spacing: -0.3px;
+        }
+
+        .chat-header-info p {
+            font-size: 11px;
+            color: #13ec92;
+            margin: 2px 0 0;
+            font-weight: 500;
+        }
+
+    .chat-header-actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .header-action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .header-action-btn:hover {
+            background: rgba(19, 236, 146, 0.1);
+            border-color: rgba(19, 236, 146, 0.3);
+            color: #13ec92;
+        }
+
+        .header-action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+    /* Suggestions */
+    .chat-suggestions {
+        padding: 20px 16px;
+        flex-shrink: 0;
+    }
+
+    .chat-welcome {
+        text-align: center;
+        margin-bottom: 16px;
+    }
+
+    .welcome-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, rgba(19, 236, 146, 0.15) 0%, rgba(0, 180, 216, 0.15) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        border: 1px solid rgba(19, 236, 146, 0.25);
+    }
+
+        .welcome-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #13ec92;
+        }
+
+    .chat-welcome h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 6px;
+    }
+
+    .chat-welcome p {
+        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .suggestion-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .chip {
+        background: rgba(19, 236, 146, 0.08);
+        border: 1px solid rgba(19, 236, 146, 0.2);
+        color: #13ec92;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+        .chip:hover {
+            background: rgba(19, 236, 146, 0.2);
+            border-color: rgba(19, 236, 146, 0.4);
+            transform: translateY(-1px);
+        }
+
+    /* Messages */
+    .chat-messages {
         flex: 1;
         overflow-y: auto;
-        padding: 20px;
-        background: #f9fafb;
+        padding: 12px 16px;
         display: flex;
         flex-direction: column;
         gap: 12px;
+        scroll-behavior: smooth;
     }
 
-    .chatbox-messages::-webkit-scrollbar {
-        width: 6px;
-    }
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
 
-    .chatbox-messages::-webkit-scrollbar-track {
-        background: transparent;
-    }
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
 
-    .chatbox-messages::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-    }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(19, 236, 146, 0.3);
+            border-radius: 4px;
+        }
 
-    .chatbox-messages::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-
-    .message {
+    .message-row {
         display: flex;
-        margin-bottom: 8px;
-        animation: messageSlide 0.3s ease;
+        align-items: flex-end;
+        gap: 8px;
+        animation: fade-slide-in 0.3s ease;
     }
 
-    @@keyframes messageSlide {
+    @@keyframes fade-slide-in {
         from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(8px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
 
-    .message.user {
-        justify-content: flex-end;
+    .message-row-user {
+        flex-direction: row-reverse;
     }
 
-    .message-content {
+    .message-avatar-small {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, rgba(19, 236, 146, 0.2) 0%, rgba(0, 180, 216, 0.2) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid rgba(19, 236, 146, 0.3);
+    }
+
+        .message-avatar-small svg {
+            width: 14px;
+            height: 14px;
+            color: #13ec92;
+        }
+
+    .message-bubble {
         max-width: 75%;
-        padding: 12px 16px;
-        border-radius: 12px;
-        word-wrap: break-word;
-        font-size: 14px;
-        line-height: 1.5;
+        padding: 10px 14px;
+        border-radius: 16px;
+        position: relative;
     }
 
-    .message.user .message-content {
-        background: linear-gradient(135deg, #06b6d4, #2563eb);
-        color: white;
+    .bubble-user {
+        background: linear-gradient(135deg, #13ec92 0%, #00b4d8 100%);
         border-bottom-right-radius: 4px;
-        box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);
+        color: #0a1611;
     }
 
-    .message.bot .message-content {
-        background: #e5e7eb;
-        color: #1f2937;
+    .bubble-ai {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
         border-bottom-left-radius: 4px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        color: rgba(255,255,255,0.9);
     }
 
+    .message-text {
+        font-size: 13px;
+        line-height: 1.6;
+        word-break: break-word;
+    }
+
+    .bubble-user .message-text {
+        color: #0a1611;
+        font-weight: 500;
+    }
+
+    .message-text strong {
+        font-weight: 700;
+    }
+
+    .message-text ul, .message-text ol {
+        margin: 4px 0 4px 16px;
+        padding: 0;
+    }
+
+    .message-text li {
+        margin-bottom: 2px;
+    }
+
+    .message-time {
+        font-size: 10px;
+        margin-top: 4px;
+        text-align: right;
+        opacity: 0.6;
+        font-weight: 500;
+    }
+
+    .bubble-user .message-time {
+        color: rgba(10, 22, 17, 0.7);
+    }
+
+    .bubble-ai .message-time {
+        color: rgba(255,255,255,0.4);
+    }
+
+    /* Typing Indicator */
     .typing-indicator {
         display: flex;
         gap: 4px;
-        padding: 12px 16px;
-        background: #e5e7eb;
-        border-radius: 12px;
-        width: fit-content;
+        align-items: center;
+        padding: 2px 0;
     }
 
-    .typing-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #9ca3af;
-        animation: typing 1.4s infinite;
-    }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #13ec92;
+            border-radius: 50%;
+            animation: bounce-typing 1.4s ease-in-out infinite;
+        }
 
-    .typing-dot:nth-child(2) {
-        animation-delay: 0.2s;
-    }
+            .typing-indicator span:nth-child(1) {
+                animation-delay: 0s;
+            }
 
-    .typing-dot:nth-child(3) {
-        animation-delay: 0.4s;
-    }
+            .typing-indicator span:nth-child(2) {
+                animation-delay: 0.2s;
+            }
 
-    @@keyframes typing {
-        0%, 60%, 100% { 
+            .typing-indicator span:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+    @@keyframes bounce-typing {
+        0%, 80%, 100% {
             transform: translateY(0);
+            opacity: 0.4;
+        }
+
+        40% {
+            transform: translateY(-8px);
             opacity: 1;
         }
-        30% { 
-            transform: translateY(-10px);
-            opacity: 0.7;
-        }
     }
 
-    .chatbox-input-area {
-        padding: 16px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        gap: 8px;
-        background: white;
+    /* Input Area */
+    .chat-input-area {
+        padding: 12px 16px 14px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        background: rgba(0,0,0,0.2);
         flex-shrink: 0;
     }
 
-    .chatbox-input {
-        flex: 1;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
+    .chat-input-wrapper {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
         padding: 10px 12px;
-        font-size: 14px;
-        font-family: inherit;
-        transition: all 0.2s ease;
+        transition: border-color 0.2s ease;
     }
 
-    .chatbox-input:focus {
-        outline: none;
-        border-color: #06b6d4;
-        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-    }
-
-    .chatbox-input::placeholder {
-        color: #9ca3af;
-    }
-
-    .chatbox-send-btn {
-        background: linear-gradient(135deg, #06b6d4, #2563eb);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 16px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 16px;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 44px;
-    }
-
-    .chatbox-send-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
-    }
-
-    .chatbox-send-btn:active:not(:disabled) {
-        transform: translateY(0);
-    }
-
-    .chatbox-send-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #9ca3af;
-        padding: 20px;
-        text-align: center;
-    }
-
-    .empty-state-icon {
-        font-size: 56px;
-        margin-bottom: 16px;
-    }
-
-    .empty-state p {
-        margin: 4px 0;
-        font-size: 14px;
-    }
-
-    .empty-state p:first-of-type {
-        color: #1f2937;
-        font-weight: 600;
-    }
-
-    @@media (max-width: 768px) {
-        .chatbox-window {
-            width: 100vw;
-            height: 100vh;
-            bottom: 0;
-            right: 0;
-            border-radius: 0;
-            max-height: 100vh;
+        .chat-input-wrapper:focus-within {
+            border-color: rgba(19, 236, 146, 0.4);
+            box-shadow: 0 0 0 2px rgba(19, 236, 146, 0.08);
         }
 
-        .message-content {
-            max-width: 85%;
+    .chat-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.9);
+        font-size: 13px;
+        line-height: 1.5;
+        font-family: inherit;
+        resize: none;
+        outline: none;
+        max-height: 100px;
+        overflow-y: auto;
+        padding: 0;
+    }
+
+        .chat-input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .chat-input:disabled {
+            opacity: 0.6;
+        }
+
+    .send-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #13ec92, #00b4d8);
+        border: none;
+        color: #0a1611;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+        .send-btn:hover:not(.send-btn-disabled) {
+            transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(19, 236, 146, 0.4);
+        }
+
+    .send-btn-disabled {
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.2);
+        cursor: not-allowed;
+    }
+
+    .send-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .chat-footer-note {
+        font-size: 10px;
+        color: rgba(255,255,255,0.25);
+        margin: 8px 0 0;
+        text-align: center;
+        line-height: 1.4;
+    }
+
+    /* Responsive */
+    @@media (max-width: 480px) {
+        .chat-window {
+            width: calc(100vw - 32px);
+            right: -12px;
+            height: 70vh;
+        }
+
+        .staytrust-chatbox-wrapper {
+            bottom: 16px;
+            right: 16px;
         }
     }
 </style>
 
-<div class="chatbox-container">
-    <!-- Chatbox Button -->
-    <button class="chatbox-button @(isOpen ? "active" : "")" 
-            @onclick="ToggleChatbox"
-            title="M? tr? l� STAYTRUST">
-        @if (isOpen)
-        {
-            <span>?</span>
-        }
-        else
-        {
-            <span>??</span>
-        }
-    </button>
-
-    <!-- Chatbox Window -->
-    @if (isOpen)
-    {
-        <div class="chatbox-window">
-            <!-- Header -->
-            <div class="chatbox-header">
-                <div>
-                    <h3>?? Tr? l� STAYTRUST</h3>
-                </div>
-                <button class="chatbox-close" @onclick="ToggleChatbox" title="?�ng">?</button>
-            </div>
-
-            <!-- Messages -->
-            <div class="chatbox-messages" @ref="messagesContainer">
-                @if (messages.Count == 0)
-                {
-                    <div class="empty-state">
-                        <div class="empty-state-icon">??</div>
-                        <p>Xin ch�o! T�i l� tr? l� STAYTRUST.</p>
-                        <p>H?i t�i b?t c? ?i?u g� v? b?t ??ng s?n!</p>
-                    </div>
-                }
-                else
-                {
-                    @foreach (var msg in messages)
-                    {
-                        <div class="message @(msg.IsUser ? "user" : "bot")">
-                            <div class="message-content">
-                                @msg.Content
-                            </div>
-                        </div>
-                    }
-
-                    @if (isLoading)
-                    {
-                        <div class="typing-indicator">
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                        </div>
-                    }
-                }
-            </div>
-
-            <!-- Input Area -->
-            <div class="chatbox-input-area">
-                <input type="text" 
-                       class="chatbox-input" 
-                       placeholder="Nh?p c�u h?i..." 
-                       @bind="userInput"
-                       @keydown="HandleKeyDown"
-                       disabled="@isLoading" />
-                <button class="chatbox-send-btn" 
-                        @onclick="SendMessage"
-                        disabled="@(isLoading || string.IsNullOrWhiteSpace(userInput))"
-                        title="G?i">
-                    @if (isLoading)
-                    {
-                        <span>?</span>
-                    }
-                    else
-                    {
-                        <span>?</span>
-                    }
-                </button>
-            </div>
-        </div>
-    }
-</div>
-
 @code {
-    private bool isOpen = false;
-    private string userInput = "";
-    private bool isLoading = false;
-    private List<ChatMessage> messages = new();
-    private ElementReference messagesContainer;
+    private bool IsOpen { get; set; } = false;
+    private bool IsLoading { get; set; } = false;
+    private string InputMessage { get; set; } = string.Empty;
+    private int UnreadCount { get; set; } = 0;
+    private string ComponentId { get; } = Guid.NewGuid().ToString("N")[..8];
 
-    private class ChatMessage
+    private List<ChatMessage> Messages { get; set; } = new();
+
+    private List<string> QuickSuggestions { get; set; } = new()
     {
-        public string Content { get; set; } = "";
-        public bool IsUser { get; set; }
+        "🏠 Tìm phòng trọ ở đâu?",
+        "📋 Cách ký hợp đồng thuê?",
+        "💳 Thanh toán tiền thuê thế nào?",
+        "🔧 Báo cáo sự cố phòng?",
+        "📊 Xem lịch sử thanh toán?",
+        "⭐ Đánh giá chủ nhà?"
+    };
+
+    private void ToggleChat()
+    {
+        IsOpen = !IsOpen;
+        if (IsOpen)
+        {
+            UnreadCount = 0;
+            _ = ScrollToBottom();
+        }
     }
 
-    private void ToggleChatbox()
+    private void ClearChat()
     {
-        isOpen = !isOpen;
+        Messages.Clear();
+        UnreadCount = 0;
+    }
+
+    private async Task SendSuggestion(string suggestion)
+    {
+        InputMessage = suggestion;
+        await SendMessage();
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !isLoading && !string.IsNullOrWhiteSpace(userInput))
+        if (e.Key == "Enter" && !e.ShiftKey && !string.IsNullOrWhiteSpace(InputMessage) && !IsLoading)
         {
             await SendMessage();
         }
@@ -417,61 +770,80 @@
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(userInput) || isLoading)
-            return;
+        if (string.IsNullOrWhiteSpace(InputMessage) || IsLoading) return;
 
-        // Add user message
-        messages.Add(new ChatMessage { Content = userInput, IsUser = true });
-        var question = userInput;
-        userInput = "";
+        var userMsg = InputMessage.Trim();
+        InputMessage = string.Empty;
 
-        isLoading = true;
+        Messages.Add(new ChatMessage
+        {
+            Role = "user",
+            Content = userMsg,
+            Timestamp = DateTime.Now
+        });
+
+        IsLoading = true;
+        StateHasChanged();
         await ScrollToBottom();
 
         try
         {
-            var request = new { message = question };
-            var response = await Http.PostAsJsonAsync("api/chatbot/message", request);
+            // Build history list (exclude the just-added user message)
+            var history = Messages.Take(Messages.Count - 1)
+                .Select(m => new ChatMessage { Role = m.Role, Content = m.Content })
+                .ToList();
 
-            if (response.IsSuccessStatusCode)
-            {
-                var jsonContent = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(jsonContent);
-                var root = doc.RootElement;
+            var response = await GeminiService.SendMessageAsync(userMsg, history);
 
-                if (root.TryGetProperty("response", out var responseElement))
-                {
-                    var botResponse = responseElement.GetString() ?? "Xin l?i, t�i kh�ng th? tr? l?i c�u h?i n�y.";
-                    messages.Add(new ChatMessage { Content = botResponse, IsUser = false });
-                }
-            }
-            else
+            Messages.Add(new ChatMessage
             {
-                messages.Add(new ChatMessage 
-                { 
-                    Content = "Xin l?i, ?� x?y ra l?i. Vui l�ng th? l?i sau.", 
-                    IsUser = false 
-                });
-            }
+                Role = "model",
+                Content = response,
+                Timestamp = DateTime.Now
+            });
+
+            if (!IsOpen) UnreadCount++;
         }
         catch (Exception ex)
         {
-            messages.Add(new ChatMessage 
-            { 
-                Content = $"L?i: {ex.Message}", 
-                IsUser = false 
+            Messages.Add(new ChatMessage
+            {
+                Role = "model",
+                Content = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại!",
+                Timestamp = DateTime.Now
             });
         }
         finally
         {
-            isLoading = false;
+            IsLoading = false;
+            StateHasChanged();
             await ScrollToBottom();
         }
     }
 
+    private string FormatMessage(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+
+        // Convert markdown-like formatting to HTML
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*(.*?)\*\*", "<strong>$1</strong>");
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\*(.*?)\*", "<em>$1</em>");
+        text = text.Replace("\n", "<br>");
+
+        return text;
+    }
+
     private async Task ScrollToBottom()
     {
-        await Task.Delay(100);
-        await JS.InvokeVoidAsync("scrollToBottom", messagesContainer);
+        try
+        {
+            await JS.InvokeVoidAsync("scrollChatToBottom", $"chat-messages-{ComponentId}");
+        }
+        catch { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cleanup if needed
     }
 }
