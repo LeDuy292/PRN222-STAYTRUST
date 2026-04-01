@@ -374,12 +374,11 @@
     {
         if (rooms == null) return;
         
-        // Mocking coordinates near Da Nang center because Room model lacks Latitude/Longitude
-        var mapData = rooms.Select(r => new
+        // Pass room addresses so the JS side can use Goong geocoding API to find the real locations
+        var mapData = rooms.Where(r => !string.IsNullOrEmpty(r.Address)).Select(r => new
         {
-            lat = 16.0340 + ((r.RoomId * 13) % 100) * 0.001, 
-            lng = 108.1922 + ((r.RoomId * 7) % 100) * 0.001,
-            price = r.Price.ToString("N0")
+            address = r.Address,
+            price = r.Price >= 1000000 ? (r.Price / 1000000).ToString("0.#") + "tr" : (r.Price / 1000).ToString("0") + "k"
         }).ToList();
         
         try

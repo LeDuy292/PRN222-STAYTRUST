@@ -54,6 +54,10 @@
                         <span class="material-symbols-outlined text-yellow-400 group-hover:scale-110 transition-transform">history</span>
                         <span>My Reports</span>
                     </button>
+                    <button @onclick="NavigateToMessages" class="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors group">
+                        <span class="material-symbols-outlined text-blue-400 group-hover:scale-110 transition-transform">chat</span>
+                        <span>Messages</span>
+                    </button>
                 </div>
 
                 <div class="py-1 border-t border-white/5">
@@ -111,6 +115,12 @@
     {
         isDropdownOpen = false;
         NavigationManager.NavigateTo("/my-reports");
+    }
+
+    private void NavigateToMessages()
+    {
+        isDropdownOpen = false;
+        NavigationManager.NavigateTo("/messages");
     }
 
     private async Task HandleLogout()

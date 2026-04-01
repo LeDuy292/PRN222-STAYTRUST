@@ -38,4 +38,36 @@ public class ReportService : IReportService
         context.Reports.Add(report);
         await context.SaveChangesAsync();
     }
+
+    public async Task<List<Report>> GetLandlordReportsAsync(int landlordId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        // A report belongs to a room, and a room belongs to a landlord.
+        return await context.Reports
+            .Include(r => r.Room)
+            .Include(r => r.CreatedByNavigation)
+            .Where(r => r.Room != null && r.Room.LandlordId == landlordId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task UpdateReportStatusAsync(int reportId, string status)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        var report = await context.Reports.FindAsync(reportId);
+        if (report != null)
+        {
+            report.Status = status;
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<Report?> GetReportByIdAsync(int reportId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        return await context.Reports
+            .Include(r => r.Room)
+            .Include(r => r.CreatedByNavigation)
+            .FirstOrDefaultAsync(r => r.ReportId == reportId);
+    }
 }

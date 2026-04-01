@@ -70,4 +70,5 @@ public partial class Room
     public virtual ICollection<FavoriteRoom> FavoriteRooms { get; set; } = new List<FavoriteRoom>();
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using System.Text;
@@ -138,7 +139,7 @@ builder.Services.AddScoped(sp =>
 });
 
 
-builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, STAYTRUST.Providers.CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider, STAYTRUST.Providers.RevalidatingSessionProvider>();
 
 builder.Services.AddAuthorization();
 

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Caching.Distributed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -25,12 +26,14 @@ namespace STAYTRUST.Services
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly Microsoft.Extensions.Caching.Distributed.IDistributedCache _cache;
 
-        public AuthService(AppDbContext context, IConfiguration config, IHttpContextAccessor httpContextAccessor)
+        public AuthService(AppDbContext context, IConfiguration config, IHttpContextAccessor httpContextAccessor, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache)
         {
             _context = context;
             _config = config;
             _httpContextAccessor = httpContextAccessor;
+            _cache = cache;
         }
 
         public async Task<bool> RegisterUserAsync(string fullName, string email, string password, string? phoneNumber, string role)
@@ -91,6 +94,13 @@ namespace STAYTRUST.Services
                 return null;
             }
 
+            // Single Session Enforcement: Generate and store session ID
+            var sessionId = Guid.NewGuid().ToString();
+            await _cache.SetStringAsync($"ActiveSession_{user.UserId}", sessionId, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"]))
+            });
+
             // Generate JWT Token
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -102,7 +112,8 @@ namespace STAYTRUST.Services
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("FullName", user.FullName),
                 new Claim(ClaimTypes.Role, user.Role ?? "Tenant"),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("SessionId", sessionId)
             };
 
             var token = new JwtSecurityToken(
