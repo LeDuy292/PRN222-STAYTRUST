@@ -106,10 +106,11 @@
                         @{
                             var user = context.User;
                             var fullName = user.FindFirst("FullName")?.Value ?? user.Identity?.Name ?? "User";
+                            var avatarUrl = user.FindFirst("AvatarUrl")?.Value ?? string.Empty;
                             var role = user.FindFirst("Role")?.Value ?? "Tenant";
                             var initial = !string.IsNullOrEmpty(fullName) ? fullName.Substring(0, 1).ToUpper() : "U";
                         }
-                        <UserMenu FullName="@fullName" Role="@role" Initial="@initial" IsDarkMode="true" />
+                        <UserMenu FullName="@fullName" Role="@role" Initial="@initial" AvatarUrl="@avatarUrl" IsDarkMode="true" />
                     </Authorized>
                 </AuthorizeView>
             </div>

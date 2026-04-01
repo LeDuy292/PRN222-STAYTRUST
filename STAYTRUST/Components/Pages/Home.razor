@@ -20,10 +20,11 @@
             @{
                 var user = context.User;
                 var fullName = user.FindFirst("FullName")?.Value ?? user.Identity?.Name ?? "User";
+                var avatarUrl = user.FindFirst("AvatarUrl")?.Value ?? string.Empty;
                 var role = user.FindFirst("Role")?.Value ?? "Node";
                 var initial = !string.IsNullOrEmpty(fullName) ? fullName.Substring(0, 1).ToUpper() : "U";
             }
-            <UserMenu FullName="@fullName" Role="@role" Initial="@initial" />
+            <UserMenu FullName="@fullName" Role="@role" Initial="@initial" AvatarUrl="@avatarUrl" />
         </Authorized>
         <NotAuthorized>
             <a href="/login" class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-transparent hover:bg-slate-100 text-[#0d141b] text-sm font-bold leading-normal transition-colors">
