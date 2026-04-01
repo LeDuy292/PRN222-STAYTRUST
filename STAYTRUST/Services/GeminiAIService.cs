@@ -1,179 +1,99 @@
+Ôªøusing System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
-namespace STAYTRUST.Services
+namespace STAYTRUST.Services;
+
+public class GeminiAIService : IGeminiAIService
 {
-    public interface IGeminiAIService
+    private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<GeminiAIService> _logger;
+
+    public GeminiAIService(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiAIService> logger)
     {
-        Task<string> GenerateResponseAsync(string userMessage);
-        Task<string> GetSmartRecommendationAsync(string context);
+        _httpClient = httpClient;
+        _configuration = configuration;
+        _logger = logger;
     }
 
-    public class GeminiAIService : IGeminiAIService
+    public async Task<string> SendMessageAsync(string userMessage, List<ChatMessage> conversationHistory)
     {
-        private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<GeminiAIService> _logger;
-        private readonly string _apiKey;
-        private readonly string _endpoint;
-        private readonly string _model;
-
-        public GeminiAIService(HttpClient httpClient, IConfiguration configuration, ILogger<GeminiAIService> logger)
+        try
         {
-            _httpClient = httpClient;
-            _configuration = configuration;
-            _logger = logger;
-            _apiKey = configuration["GeminiAI:ApiKey"] ?? "";
-            _endpoint = configuration["GeminiAI:Endpoint"] ?? "";
-            _model = configuration["GeminiAI:Model"] ?? "gemini-1.5-flash";
-        }
+            var apiKey = _configuration["GeminiAI:ApiKey"];
+            var endpoint = _configuration["GeminiAI:Endpoint"]
+                ?? "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+            var systemPrompt = _configuration["GeminiAI:SystemPrompt"]
+                ?? "B·∫°n l√† tr·ª£ l√Ω AI th√¥ng minh c·ªßa StayTrust. H√£y tr·∫£ l·ªùi b·∫±ng ti·∫øng Vi·ªát.";
 
-        public async Task<string> GenerateResponseAsync(string userMessage)
-        {
-            try
+            if (string.IsNullOrEmpty(apiKey))
+                return "L·ªói: Ch∆∞a c·∫•u h√¨nh API key cho Gemini AI.";
+
+            // Build conversation contents
+            var contents = new List<object>();
+
+            // Add history
+            foreach (var msg in conversationHistory)
             {
-                // Validate input
-                if (string.IsNullOrWhiteSpace(userMessage))
+                contents.Add(new
                 {
-                    return "Xin l?i, tÙi khÙng hi?u c‚u h?i c?a b?n. Vui lÚng th? l?i.";
+                    role = msg.Role,
+                    parts = new[] { new { text = msg.Content } }
+                });
+            }
+
+            // Add current user message
+            contents.Add(new
+            {
+                role = "user",
+                parts = new[] { new { text = userMessage } }
+            });
+
+            var requestBody = new
+            {
+                system_instruction = new
+                {
+                    parts = new[] { new { text = systemPrompt } }
+                },
+                contents = contents,
+                generationConfig = new
+                {
+                    temperature = 0.7,
+                    topK = 40,
+                    topP = 0.95,
+                    maxOutputTokens = 1024
                 }
+            };
 
-                // Prepare system prompt for better context
-                var systemPrompt = @"B?n l‡ m?t tr? l˝ h? tr? kh·ch h‡ng thÙng minh cho ?ng d?ng qu?n l˝ phÚng cho thuÍ STAYTRUST. 
-B?n nÍn:
-1. Tr? l?i b?ng ti?ng Vi?t m?t c·ch l?ch s? v‡ chuyÍn nghi?p
-2. Gi˙p ng??i d˘ng v?i c·c c‚u h?i v? ?ng d?ng, quy trÏnh thuÍ phÚng, thanh to·n
-3. Cung c?p l?i khuyÍn h?u Ìch v? b?t ??ng s?n
-4. LuÙn gi? tÌnh tÌch c?c v‡ h? tr? t?i ?a
-5. N?u khÙng bi?t c‚u tr? l?i, h„y ?? xu?t liÍn h? v?i b? ph?n h? tr?
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-L?u ˝: B?n ?ang h? tr? cho ?ng d?ng STAYTRUST - m?t n?n t?ng qu?n l˝ v‡ cho thuÍ phÚng.";
+            var url = $"{endpoint}?key={apiKey}";
+            var response = await _httpClient.PostAsync(url, content);
 
-                var request = new GeminiRequest
-                {
-                    Contents = new List<GeminiContent>
-                    {
-                        new GeminiContent
-                        {
-                            Parts = new List<GeminiPart>
-                            {
-                                new GeminiPart { Text = systemPrompt },
-                                new GeminiPart { Text = userMessage }
-                            }
-                        }
-                    },
-                    GenerationConfig = new GenerationConfig
-                    {
-                        Temperature = 0.7f,
-                        MaxOutputTokens = 500,
-                        TopP = 0.9f,
-                        TopK = 40
-                    }
-                };
-
-                var url = $"{_endpoint}?key={_apiKey}";
-                var jsonContent = JsonSerializer.Serialize(request);
-                var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync(url, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseContent, 
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    if (geminiResponse?.Candidates?.Count > 0 && 
-                        geminiResponse.Candidates[0].Content?.Parts?.Count > 0)
-                    {
-                        var generatedText = geminiResponse.Candidates[0].Content.Parts[0].Text;
-                        return string.IsNullOrWhiteSpace(generatedText) 
-                            ? "Xin l?i, tÙi khÙng th? t?o c‚u tr? l?i. Vui lÚng th? l?i."
-                            : generatedText;
-                    }
-                }
-
-                _logger.LogWarning($"Gemini API returned status code: {response.StatusCode}");
-                return "Xin l?i, ?„ x?y ra l?i khi x? l˝ c‚u h?i c?a b?n. Vui lÚng th? l?i sau.";
-            }
-            catch (Exception ex)
+            if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError($"Error in GenerateResponseAsync: {ex.Message}");
-                return "Xin l?i, ?„ x?y ra l?i. Vui lÚng liÍn h? v?i b? ph?n h? tr?.";
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini API error: {StatusCode} - {Body}", response.StatusCode, errorBody);
+                return $"L·ªói k·∫øt n·ªëi v·ªõi AI: {response.StatusCode}. Vui l√≤ng th·ª≠ l·∫°i!";
             }
-        }
 
-        public async Task<string> GetSmartRecommendationAsync(string context)
+            var responseBody = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(responseBody);
+
+            var text = doc.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString();
+
+            return text ?? "Kh√¥ng c√≥ ph·∫£n h·ªìi t·ª´ AI.";
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                var prompt = $@"D?a trÍn b?i c?nh sau, h„y ??a ra l?i khuyÍn thÙng minh:
-B?i c?nh: {context}
-
-Vui lÚng cung c?p l?i khuyÍn ng?n g?n, h?u Ìch v‡ d? hi?u.";
-
-                return await GenerateResponseAsync(prompt);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error in GetSmartRecommendationAsync: {ex.Message}");
-                return "KhÙng th? l?y khuy?n ngh? v‡o l˙c n‡y.";
-            }
+            _logger.LogError(ex, "Error calling Gemini AI API");
+            return "ƒê√£ x·∫£y ra l·ªói khi k·∫øt n·ªëi v·ªõi tr·ª£ l√Ω AI. Vui l√≤ng th·ª≠ l·∫°i sau!";
         }
     }
-
-    #region Gemini API Models
-
-    public class GeminiRequest
-    {
-        [JsonPropertyName("contents")]
-        public List<GeminiContent> Contents { get; set; } = new();
-
-        [JsonPropertyName("generationConfig")]
-        public GenerationConfig GenerationConfig { get; set; } = new();
-    }
-
-    public class GeminiContent
-    {
-        [JsonPropertyName("parts")]
-        public List<GeminiPart> Parts { get; set; } = new();
-    }
-
-    public class GeminiPart
-    {
-        [JsonPropertyName("text")]
-        public string Text { get; set; } = string.Empty;
-    }
-
-    public class GenerationConfig
-    {
-        [JsonPropertyName("temperature")]
-        public float Temperature { get; set; } = 0.7f;
-
-        [JsonPropertyName("maxOutputTokens")]
-        public int MaxOutputTokens { get; set; } = 500;
-
-        [JsonPropertyName("topP")]
-        public float TopP { get; set; } = 0.9f;
-
-        [JsonPropertyName("topK")]
-        public int TopK { get; set; } = 40;
-    }
-
-    public class GeminiResponse
-    {
-        [JsonPropertyName("candidates")]
-        public List<GeminiCandidate> Candidates { get; set; } = new();
-    }
-
-    public class GeminiCandidate
-    {
-        [JsonPropertyName("content")]
-        public GeminiContent Content { get; set; } = new();
-
-        [JsonPropertyName("finishReason")]
-        public string FinishReason { get; set; } = string.Empty;
-    }
-
-    #endregion
 }
