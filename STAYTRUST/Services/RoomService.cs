@@ -57,7 +57,7 @@ namespace STAYTRUST.Services
                 .Include(r => r.Landlord)
                 .Include(r => r.RoomImages)
                 .Include(r => r.Feedbacks)
-                .Where(r => r.Status != "Rented" && r.Status != "Maintenance")
+                .Where(r => r.Status == "Active" || r.Status == "Available")
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(address))

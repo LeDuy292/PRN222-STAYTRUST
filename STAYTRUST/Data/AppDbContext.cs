@@ -215,6 +215,10 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Reports)
                 .HasForeignKey(d => d.CreatedBy)
                 .HasConstraintName("FK_Report_User");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.Reports)
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_Report_Room");
         });
 
         modelBuilder.Entity<Room>(entity =>

@@ -600,9 +600,12 @@
             var contract = await RentalService.CreateRentalContractAsync(userId, RoomId);
             if (contract != null)
             {
-                bookingMessage = "Đặt phòng thành công! Bạn có thể xem hợp đồng và thanh toán trong phần 'My Rentals'.";
+                bookingMessage = "Đặt phòng thành công! Bạn đang được chuyển hướng đến trang quản lý thuê phòng...";
                 bookingSuccess = true;
                 showContractModal = false;
+                StateHasChanged();
+                await Task.Delay(1500); // Give user a moment to see the message
+                NavigationManager.NavigateTo("/my-rentals");
             }
             else
             {

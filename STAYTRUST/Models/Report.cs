@@ -15,7 +15,10 @@ public partial class Report
 
     public int? CreatedBy { get; set; }
 
+    public int? RoomId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual User? CreatedByNavigation { get; set; }
+    public virtual Room? Room { get; set; }
 }

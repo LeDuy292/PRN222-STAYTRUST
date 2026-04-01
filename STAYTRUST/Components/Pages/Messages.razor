@@ -1,0 +1,279 @@
+@page "/messages"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using STAYTRUST.Models
+@using STAYTRUST.Services
+@inject IMessageService MessageService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="min-h-screen bg-[#0d141b] text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <h1 class="text-4xl font-black tracking-tighter mb-2">COMMUNICATION HUB</h1>
+                <p class="text-slate-500 font-medium max-w-xl">Manage your residential dialogues and maintenance inquiries in one synchronized interface.</p>
+            </div>
+            <div class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+                <div class="size-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined font-black">chat</span>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Conversations</p>
+                    <p class="text-xl font-black">@(conversations?.Count ?? 0)</p>
+                </div>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="flex flex-col items-center justify-center py-32 space-y-4">
+                <div class="size-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                <p class="text-slate-500 font-black uppercase tracking-widest text-xs animate-pulse">Initializing Secure Protocol...</p>
+            </div>
+        }
+        else if (conversations == null || !conversations.Any())
+        {
+            <div class="glass-card rounded-[40px] p-24 text-center border border-white/5 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent"></div>
+                <div class="relative z-10 flex flex-col items-center">
+                    <div class="size-32 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-8">
+                        <span class="material-symbols-outlined text-6xl text-slate-700">forum</span>
+                    </div>
+                    <h3 class="text-3xl font-black mb-4">No Dialogues Found</h3>
+                    <p class="text-slate-500 mb-10 max-w-md mx-auto">You haven't initiated any conversations with landlords or tenants yet. Messages will appear here once communication begins.</p>
+                    <button @onclick='() => NavigationManager.NavigateTo("/search")' class="bg-primary px-10 py-5 rounded-2xl font-black text-black hover:scale-105 transition-all shadow-lg shadow-primary/20">
+                        BROWSE PROPERTIES
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[750px]">
+                <!-- Conversation List -->
+                <div class="lg:col-span-4 flex flex-col gap-4 overflow-hidden">
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                        @foreach (var conv in conversations)
+                        {
+                            bool isActive = selectedConversation?.OtherUserId == conv.OtherUserId && selectedConversation?.RoomId == conv.RoomId;
+                            <div @onclick="() => SelectConversation(conv)" class="group cursor-pointer glass-card rounded-3xl p-5 border transition-all duration-300 @(isActive ? "border-primary bg-primary/5 shadow-lg shadow-primary/5" : "border-white/5 hover:border-white/20 hover:bg-white/[0.02]") relative">
+                                @if (conv.UnreadCount > 0)
+                                {
+                                    <div class="absolute -top-1 -right-1 size-6 rounded-full bg-red-500 border-4 border-[#0d141b] text-[10px] font-black flex items-center justify-center">
+                                        @conv.UnreadCount
+                                    </div>
+                                }
+                                <div class="flex gap-4">
+                                    <div class="size-14 rounded-2xl @(isActive ? "bg-primary" : "bg-white/5") flex items-center justify-center text-xl font-black @(isActive ? "text-black" : "text-white") transition-colors">
+                                        @(conv.OtherUserName.FirstOrDefault())
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <h4 class="font-black text-sm truncate pr-2">@conv.OtherUserName</h4>
+                                            <span class="text-[10px] font-bold text-slate-500 whitespace-nowrap">@FormatTime(conv.LastMessageTime)</span>
+                                        </div>
+                                        @if (conv.RoomTitle != null)
+                                        {
+                                            <p class="text-[9px] font-black uppercase tracking-widest text-primary mb-2">@conv.RoomTitle</p>
+                                        }
+                                        <p class="text-xs text-slate-400 truncate font-medium">@conv.LastMessage</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div class="lg:col-span-8 glass-card rounded-[40px] border border-white/10 flex flex-col overflow-hidden relative">
+                    @if (selectedConversation != null)
+                    {
+                        <!-- Chat Header -->
+                        <div class="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+                            <div class="flex items-center gap-5">
+                                <div class="size-14 rounded-2xl bg-primary flex items-center justify-center text-black font-black text-xl">
+                                    @(selectedConversation.OtherUserName.FirstOrDefault())
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-black">@selectedConversation.OtherUserName</h3>
+                                    <div class="flex items-center gap-2">
+                                        <div class="size-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Connected</p>
+                                        @if (selectedConversation.RoomTitle != null)
+                                        {
+                                            <span class="text-[10px] text-slate-700 mx-2">|</span>
+                                            <span class="text-[10px] font-black uppercase tracking-widest text-primary">RE: @selectedConversation.RoomTitle</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <button @onclick="RefreshMessages" class="size-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all">
+                                <span class="material-symbols-outlined text-slate-400">refresh</span>
+                            </button>
+                        </div>
+
+                        <!-- Messages scroll area -->
+                        <div class="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-gradient-to-b from-transparent to-black/20" id="message-container">
+                            @if (currentMessages == null)
+                            {
+                                <div class="flex items-center justify-center h-full">
+                                    <div class="size-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                </div>
+                            }
+                            else
+                            {
+                                DateTime? lastDate = null;
+                                @foreach (var msg in currentMessages)
+                                {
+                                    bool isMe = msg.SenderId == currentUserId;
+                                    @if (!lastDate.HasValue || lastDate.Value.Date != (msg.CreatedAt ?? DateTime.Now).Date)
+                                    {
+                                        lastDate = msg.CreatedAt ?? DateTime.Now;
+                                        <div class="flex justify-center my-8">
+                                            <span class="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500">@lastDate.Value.ToString("dd MMMM yyyy")</span>
+                                        </div>
+                                    }
+                                    <div class="flex @(isMe ? "justify-end" : "justify-start")">
+                                        <div class="max-w-[80%] @(isMe ? "items-end" : "items-start") flex flex-col gap-2">
+                                            <div class="px-6 py-4 rounded-3xl @(isMe ? "bg-primary text-black rounded-tr-none" : "bg-white/5 border border-white/10 text-white rounded-tl-none shadow-xl")">
+                                                <p class="text-sm font-medium leading-relaxed">@msg.Content</p>
+                                            </div>
+                                            <span class="text-[9px] font-bold text-slate-600 px-1">@msg.CreatedAt?.ToString("HH:mm")</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="p-8 bg-white/[0.02] border-t border-white/5">
+                            <div class="flex gap-4">
+                                <input @bind="newMessageContent" 
+                                       @onkeyup='(e) => { if(e.Key == "Enter") HandleSendMessage(); }'
+                                       placeholder="Compose a message..." 
+                                       class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-5 focus:border-primary/50 focus:ring-0 transition-all font-medium text-white placeholder:text-slate-600" />
+                                <button @onclick="HandleSendMessage" disabled="@(string.IsNullOrWhiteSpace(newMessageContent) || isSending)" class="bg-primary px-8 rounded-2xl font-black text-black hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-3">
+                                    @if (isSending)
+                                    {
+                                        <div class="size-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined font-black">send</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-40">
+                            <div class="size-48 rounded-full bg-white/5 flex items-center justify-center mb-8 border-4 border-dashed border-white/10">
+                                <span class="material-symbols-outlined text-8xl">forum</span>
+                            </div>
+                            <h3 class="text-2xl font-black mb-2 uppercase tracking-tighter">Secure Communication Protocol</h3>
+                            <p class="max-w-xs font-medium">Select a conversation from the left to engage in end-to-end encrypted resident dialogue.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(19, 236, 218, 0.3);
+    }
+</style>
+
+@code {
+    private List<ConversationSummary>? conversations;
+    private ConversationSummary? selectedConversation;
+    private List<Message>? currentMessages;
+    private string newMessageContent = "";
+    private bool isLoading = true;
+    private bool isSending = false;
+    private int currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                          ?? user.FindFirst("sub")?.Value;
+
+            if (int.TryParse(userIdStr, out currentUserId))
+            {
+                conversations = await MessageService.GetUserConversationsAsync(currentUserId);
+            }
+        }
+        
+        isLoading = false;
+    }
+
+    private async Task SelectConversation(ConversationSummary conv)
+    {
+        selectedConversation = conv;
+        currentMessages = null;
+        StateHasChanged();
+        
+        currentMessages = await MessageService.GetConversationAsync(currentUserId, conv.OtherUserId, conv.RoomId);
+        StateHasChanged();
+    }
+
+    private async Task RefreshMessages()
+    {
+        if (selectedConversation == null) return;
+        currentMessages = await MessageService.GetConversationAsync(currentUserId, selectedConversation.OtherUserId, selectedConversation.RoomId);
+        StateHasChanged();
+    }
+
+    private async Task HandleSendMessage()
+    {
+        if (selectedConversation == null || string.IsNullOrWhiteSpace(newMessageContent) || isSending) return;
+
+        isSending = true;
+        var content = newMessageContent;
+        newMessageContent = ""; // Clear input immediately
+        
+        await MessageService.SendMessageAsync(currentUserId, selectedConversation.OtherUserId, selectedConversation.RoomId, content);
+        
+        await RefreshMessages();
+        
+        // Also refresh conversation list to update last message
+        conversations = await MessageService.GetUserConversationsAsync(currentUserId);
+        
+        isSending = false;
+        StateHasChanged();
+    }
+
+    private string FormatTime(DateTime? time)
+    {
+        if (!time.HasValue) return "";
+        var diff = DateTime.Now - time.Value;
+        if (diff.TotalDays < 1) return time.Value.ToString("HH:mm");
+        if (diff.TotalDays < 7) return time.Value.ToString("ddd");
+        return time.Value.ToString("dd/MM");
+    }
+}

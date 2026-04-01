@@ -1243,6 +1243,7 @@
             if (int.TryParse(userIdStr, out var userId))
             {
                 newReport.CreatedBy = userId;
+                newReport.RoomId = selectedRentalForReport.RoomId;
                 newReport.Status = "Pending";
                 newReport.CreatedAt = DateTime.Now;
                 
